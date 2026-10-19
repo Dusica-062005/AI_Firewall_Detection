@@ -63,6 +63,7 @@ const STYLES: Record<string, BadgeStyle> = {
   APPROVED: { variant: 'success', icon: 'circle-check' },
   UNDER_REVIEW: { variant: 'warning', icon: 'clock' },
   RETIRED: { variant: 'neutral', icon: 'circle-minus' },
+  OVERDUE: { variant: 'error', icon: 'clock' },
   // Incidents
   CRITICAL: { variant: 'error', icon: 'shield-alert' },
   HIGH: { variant: 'warning', icon: 'triangle-alert' },

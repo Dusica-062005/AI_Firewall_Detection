@@ -1,0 +1,228 @@
+<div class="row wrap toolbar--filters">
+  <div class="field">
+    <label for="dr-status" class="sr-only">Status</label>
+    <select id="dr-status" class="select" (change)="setStatus($any($event.target).value)">
+      <option value="">All requests</option>
+      @for (s of statuses; track s) { <option [value]="s">{{ s | humanize }}</option> }
+    </select>
+  </div>
+  <span class="spacer"></span>
+  <div class="toolbar">
+    <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
+      <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>Refresh
+    </button>
+    <button type="button" class="btn btn-primary" (click)="openCreate()">
+      <svg class="icon" lucideIcon="plus" aria-hidden="true"></svg>Log request
+    </button>
+  </div>
+</div>
+
+<app-error-alert [error]="error()" title="Data requests could not be loaded" [retryable]="true" (retry)="load()" />
+
+<section class="card">
+  <div class="card-header">
+    <h2><svg class="icon" lucideIcon="user-round" aria-hidden="true"></svg>Data-subject requests</h2>
+    <span class="card-header__meta">{{ visible().length }} {{ visible().length === 1 ? 'request' : 'requests' }}</span>
+  </div>
+  <div class="card-body card-body--flush table-wrap">
+    @if (visible().length) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Request</th>
+            <th scope="col">Type</th>
+            <th scope="col">Status</th>
+            <th scope="col">Systems</th>
+            <th scope="col">Deadline</th>
+            <th scope="col">Received</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of visible(); track r.request_id) {
+            <tr class="is-clickable" tabindex="0" (click)="open(r)" (keydown.enter)="open(r)" [attr.aria-label]="'Open request ' + r.subject_reference">
+              <td>
+                <strong>{{ r.subject_reference }}</strong><br />
+                <span class="text-xs muted mono">{{ r.request_id }}</span>
+              </td>
+              <td><app-status-badge [value]="r.request_type" /></td>
+              <td><app-status-badge [value]="r.status" /></td>
+              <td style="min-width: 140px">
+                <div class="stack" style="gap: 4px">
+                  <span class="text-xs">{{ r.systems_done }} of {{ r.systems_total }} done</span>
+                  <div class="meter" [class.meter--success]="r.status === 'COMPLETED'" [class.meter--error]="r.overdue"
+                       role="progressbar" [attr.aria-valuenow]="progress(r)" aria-valuemin="0" aria-valuemax="100">
+                    <div class="meter__fill" [style.width.%]="progress(r)"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="nowrap">
+                @if (r.overdue) { <app-status-badge value="OVERDUE" label="Overdue" /> }
+                @if (r.completed_at) {
+                  <span class="text-xs muted">Completed {{ r.completed_at | date: 'MMM d' }}</span>
+                } @else if (deadlineLabel(r); as label) {
+                  <span class="text-xs muted"> {{ label }}</span>
+                }
+              </td>
+              <td class="nowrap">{{ r.received_at | date: 'MMM d, y' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else if (loading()) {
+      <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Loading data requests</span></div>
+    } @else if (!error()) {
+      <div class="empty-state">
+        <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
+        <span class="empty-state__title">No data requests</span>
+        <span>Log a request when a customer asks for their data to be deleted or for a copy of it.</span>
+      </div>
+    }
+  </div>
+  <p class="pager-hint text-xs muted">
+    GDPR gives one month to respond. Use a ticket or case reference only; never enter the person's name or contact details.
+  </p>
+</section>
+
+@if (creating()) {
+  <div class="overlay" (click)="closeAll()"></div>
+  <aside class="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="dr-create-title">
+    <div class="drawer__header">
+      <h2 id="dr-create-title">Log a data-subject request</h2>
+      <button type="button" class="btn btn-ghost btn-icon" aria-label="Close" (click)="closeAll()">
+        <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+      </button>
+    </div>
+    <form class="drawer__body" [formGroup]="createForm" (ngSubmit)="submitCreate()" novalidate>
+      <app-error-alert [error]="formError()" title="The request was not saved" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="dc-type">Request type</label>
+          <select id="dc-type" class="select" formControlName="request_type">
+            @for (t of types; track t) { <option [value]="t">{{ t | humanize }}</option> }
+          </select>
+          <span class="field__hint">
+            {{ createForm.controls.request_type.value === 'ERASURE' ? 'Delete their data from each selected system.' : 'Send them a copy of the data each system holds.' }}
+          </span>
+        </div>
+        <div class="field">
+          <label for="dc-ref">Case reference</label>
+          <input id="dc-ref" class="input" formControlName="subject_reference" placeholder="e.g. TICKET-4821" autocomplete="off" />
+          @if (createForm.controls.subject_reference.touched && createForm.controls.subject_reference.invalid) {
+            <span class="field__error">Enter a reference between 3 and 80 characters.</span>
+          } @else {
+            <span class="field__hint">Do not enter the person's name or contact details.</span>
+          }
+        </div>
+        <div class="field span-2">
+          <div class="row">
+            <span class="section-title">AI systems that may hold their data</span>
+            <span class="spacer"></span>
+            @if (activeSystems().length) {
+              <button type="button" class="btn btn-ghost" (click)="selectAllSystems()">Select all</button>
+            }
+          </div>
+          <div class="check-list" role="group" aria-label="AI systems">
+            @for (s of activeSystems(); track s.system_id) {
+              <label class="checkbox">
+                <input type="checkbox" [checked]="hasSystem(s.system_id)" (change)="toggleSystem(s.system_id, $any($event.target).checked)" />
+                <span>{{ s.name }}</span>
+                <span class="text-xs muted">&middot; {{ s.hosting | humanize }}</span>
+              </label>
+            } @empty {
+              <span class="text-sm muted">No active AI systems. Register one on the AI systems tab first.</span>
+            }
+          </div>
+          @if (createForm.controls.system_ids.touched && !createForm.controls.system_ids.value.length) {
+            <span class="field__error">Select at least one AI system.</span>
+          }
+        </div>
+      </div>
+      <div class="row">
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-secondary" (click)="closeAll()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner" aria-hidden="true"></span> }
+          Log request
+        </button>
+      </div>
+    </form>
+  </aside>
+}
+
+@if (selected(); as req) {
+  <div class="overlay" (click)="closeAll()"></div>
+  <aside class="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="dr-title">
+    <div class="drawer__header">
+      <div class="stack" style="gap: 2px">
+        <h2 id="dr-title">{{ req.subject_reference }}</h2>
+        <span class="text-xs mono muted">{{ req.request_id }}</span>
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" aria-label="Close request" (click)="closeAll()">
+        <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+      </button>
+    </div>
+    <div class="drawer__body">
+      <app-error-alert [error]="formError()" title="The change was not saved" />
+
+      <div class="row wrap">
+        <app-status-badge [value]="req.request_type" [strong]="true" />
+        <app-status-badge [value]="req.status" [strong]="true" />
+        @if (req.overdue) { <app-status-badge value="OVERDUE" label="Overdue" [strong]="true" /> }
+        @if (!req.completed_at && deadlineLabel(req); as label) { <span class="text-sm muted">{{ label }}</span> }
+      </div>
+
+      <section class="stack">
+        <span class="section-title">Details</span>
+        <dl class="kv">
+          <dt>Received</dt><dd>{{ req.received_at | date: 'MMM d, y' }}</dd>
+          <dt>Due</dt><dd>{{ req.due_at | date: 'MMM d, y' }}</dd>
+          @if (req.completed_at) { <dt>Completed</dt><dd>{{ req.completed_at | date: 'MMM d, y, HH:mm' }}</dd> }
+          <dt>Progress</dt><dd>{{ req.systems_done }} of {{ req.systems_total }} systems done</dd>
+        </dl>
+      </section>
+
+      <section class="stack">
+        <span class="section-title">Per-system tasks</span>
+        @for (t of req.systems; track t.system_id) {
+          <div class="system-task">
+            <div class="row wrap">
+              <strong>{{ t.system_name }}</strong>
+              <app-status-badge [value]="t.status" />
+              <span class="spacer"></span>
+              @if (t.updated_at) { <span class="text-xs muted">{{ t.updated_at | date: 'MMM d, HH:mm' }}</span> }
+            </div>
+            @if (req.status === 'OPEN') {
+              <div class="field">
+                <label [for]="'note-' + t.system_id" class="sr-only">Note for {{ t.system_name }}</label>
+                <input [id]="'note-' + t.system_id" class="input" maxlength="300" placeholder="Note (optional)" autocomplete="off"
+                       [value]="notes()[t.system_id] ?? t.note" (input)="setNote(t.system_id, $any($event.target).value)" />
+              </div>
+              <div class="row wrap">
+                <button type="button" class="btn btn-secondary" [disabled]="saving() || t.status === 'DONE'" (click)="updateSystem(req, t, 'DONE')">
+                  <svg class="icon" lucideIcon="check" aria-hidden="true"></svg>{{ req.request_type === 'ERASURE' ? 'Data deleted' : 'Data exported' }}
+                </button>
+                <button type="button" class="btn btn-secondary" [disabled]="saving() || t.status === 'NOT_HELD'" (click)="updateSystem(req, t, 'NOT_HELD')">
+                  <svg class="icon" lucideIcon="circle-minus" aria-hidden="true"></svg>No data held
+                </button>
+                @if (t.status !== 'PENDING') {
+                  <button type="button" class="btn btn-ghost" [disabled]="saving()" (click)="updateSystem(req, t, 'PENDING')">
+                    <svg class="icon" lucideIcon="rotate-ccw" aria-hidden="true"></svg>Undo
+                  </button>
+                }
+              </div>
+            } @else if (t.note) {
+              <span class="text-sm">{{ t.note }}</span>
+            }
+          </div>
+        }
+      </section>
+
+      @if (req.status === 'COMPLETED') {
+        <div class="alert alert-success">
+          <svg class="icon" lucideIcon="circle-check" aria-hidden="true"></svg>
+          <span>Every system has been handled. Completed requests cannot be changed.</span>
+        </div>
+      }
+    </div>
+  </aside>
+}

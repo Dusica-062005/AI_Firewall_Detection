@@ -1,0 +1,206 @@
+<div class="row wrap toolbar--filters">
+  @if (overdueCount(); as overdue) {
+    <span class="text-sm">
+      <svg class="icon icon--warning" lucideIcon="triangle-alert" aria-hidden="true"></svg>
+      {{ overdue }} {{ overdue === 1 ? 'system is' : 'systems are' }} overdue for review
+    </span>
+  }
+  <span class="spacer"></span>
+  <div class="toolbar">
+    <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
+      <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>Refresh
+    </button>
+    <button type="button" class="btn btn-primary" (click)="openCreate()">
+      <svg class="icon" lucideIcon="plus" aria-hidden="true"></svg>Register system
+    </button>
+  </div>
+</div>
+
+<app-error-alert [error]="error()" title="AI systems could not be loaded" [retryable]="true" (retry)="load()" />
+
+<section class="card">
+  <div class="card-header">
+    <h2><svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>AI system register</h2>
+    <span class="card-header__meta">{{ items().length }} {{ items().length === 1 ? 'system' : 'systems' }}</span>
+  </div>
+  <div class="card-body card-body--flush table-wrap">
+    @if (items().length) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">System</th>
+            <th scope="col">Status</th>
+            <th scope="col">Hosting</th>
+            <th scope="col">Owner</th>
+            <th scope="col">Data categories</th>
+            <th scope="col">Next review</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of items(); track s.system_id) {
+            <tr class="is-clickable" tabindex="0" (click)="open(s)" (keydown.enter)="open(s)" [attr.aria-label]="'Open AI system ' + s.name">
+              <td class="cell-wrap">
+                <strong>{{ s.name }}</strong><br />
+                <span class="text-xs muted">{{ s.purpose }}</span>
+              </td>
+              <td><app-status-badge [value]="s.status" /></td>
+              <td><app-status-badge [value]="s.hosting" /></td>
+              <td>{{ s.owner }}</td>
+              <td class="cell-wrap text-xs mono">{{ s.data_categories.length ? s.data_categories.join(', ') : '-' }}</td>
+              <td class="nowrap">
+                {{ s.next_review_due | date: 'MMM d, y' }}
+                @if (s.review_overdue) { <app-status-badge value="OVERDUE" label="Overdue" /> }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else if (loading()) {
+      <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Loading AI systems</span></div>
+    } @else if (!error()) {
+      <div class="empty-state">
+        <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
+        <span class="empty-state__title">No AI systems registered</span>
+        <span>Register every AI tool that handles customer data so it can be reviewed on a schedule.</span>
+      </div>
+    }
+  </div>
+  <p class="pager-hint text-xs muted">
+    Each system is reviewed on its own interval. Recording a review resets the next due date.
+  </p>
+</section>
+
+@if (creating()) {
+  <div class="overlay" (click)="closeAll()"></div>
+  <aside class="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="sys-create-title">
+    <div class="drawer__header">
+      <h2 id="sys-create-title">Register an AI system</h2>
+      <button type="button" class="btn btn-ghost btn-icon" aria-label="Close" (click)="closeAll()">
+        <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+      </button>
+    </div>
+    <form class="drawer__body" [formGroup]="createForm" (ngSubmit)="submitCreate()" novalidate>
+      <app-error-alert [error]="formError()" title="The system was not saved" />
+      <div class="form-grid">
+        <div class="field">
+          <label for="sc-name">Name</label>
+          <input id="sc-name" class="input" formControlName="name" autocomplete="off" />
+          @if (createForm.controls.name.touched && createForm.controls.name.invalid) {
+            <span class="field__error">Enter a name between 3 and 80 characters.</span>
+          }
+        </div>
+        <div class="field">
+          <label for="sc-owner">Owner</label>
+          <input id="sc-owner" class="input" formControlName="owner" autocomplete="off" />
+          @if (createForm.controls.owner.touched && createForm.controls.owner.invalid) {
+            <span class="field__error">Enter an owner between 2 and 80 characters.</span>
+          }
+        </div>
+        <div class="field span-2">
+          <label for="sc-purpose">Purpose</label>
+          <input id="sc-purpose" class="input" formControlName="purpose" autocomplete="off" />
+          @if (createForm.controls.purpose.touched && createForm.controls.purpose.invalid) {
+            <span class="field__error">Describe the purpose in 3 to 300 characters.</span>
+          }
+        </div>
+        <div class="field">
+          <label for="sc-hosting">Hosting</label>
+          <select id="sc-hosting" class="select" formControlName="hosting">
+            @for (h of hostings; track h) { <option [value]="h">{{ h | humanize }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="sc-status">Status</label>
+          <select id="sc-status" class="select" formControlName="status">
+            @for (s of statuses; track s) { <option [value]="s">{{ s | humanize }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="sc-interval">Review every (days)</label>
+          <input id="sc-interval" class="input" type="number" min="30" max="730" formControlName="review_interval_days" />
+          @if (createForm.controls.review_interval_days.invalid) {
+            <span class="field__error">Use a value between 30 and 730 days.</span>
+          }
+        </div>
+        <div class="field span-2">
+          <span class="section-title">Data categories it handles</span>
+          <div class="check-list" role="group" aria-label="Data categories">
+            @for (c of categories(); track c) {
+              <label class="checkbox">
+                <input type="checkbox" [checked]="hasCategory(c)" (change)="toggleCategory(c, $any($event.target).checked)" />
+                <span class="mono">{{ c }}</span>
+              </label>
+            } @empty {
+              <span class="text-sm muted">No categories available.</span>
+            }
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-secondary" (click)="closeAll()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner" aria-hidden="true"></span> }
+          Register system
+        </button>
+      </div>
+    </form>
+  </aside>
+}
+
+@if (selected(); as sys) {
+  <div class="overlay" (click)="closeAll()"></div>
+  <aside class="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="sys-title">
+    <div class="drawer__header">
+      <div class="stack" style="gap: 2px">
+        <h2 id="sys-title">{{ sys.name }}</h2>
+        <span class="text-xs mono muted">{{ sys.system_id }}</span>
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" aria-label="Close AI system" (click)="closeAll()">
+        <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+      </button>
+    </div>
+    <div class="drawer__body">
+      <app-error-alert [error]="formError()" title="The review was not saved" />
+
+      <div class="row wrap">
+        <app-status-badge [value]="sys.status" [strong]="true" />
+        <app-status-badge [value]="sys.hosting" [strong]="true" />
+        @if (sys.review_overdue) { <app-status-badge value="OVERDUE" label="Review overdue" [strong]="true" /> }
+      </div>
+
+      <section class="stack">
+        <span class="section-title">Details</span>
+        <dl class="kv">
+          <dt>Purpose</dt><dd>{{ sys.purpose }}</dd>
+          <dt>Owner</dt><dd>{{ sys.owner }}</dd>
+          <dt>Data categories</dt><dd class="mono">{{ sys.data_categories.length ? sys.data_categories.join(', ') : 'None recorded' }}</dd>
+          <dt>Review interval</dt><dd>Every {{ sys.review_interval_days }} days</dd>
+          <dt>Last reviewed</dt><dd>{{ sys.last_reviewed_at | date: 'MMM d, y' }}</dd>
+          <dt>Next review due</dt><dd>{{ sys.next_review_due | date: 'MMM d, y' }}</dd>
+          <dt>Registered</dt><dd>{{ sys.created_at | date: 'MMM d, y' }}</dd>
+        </dl>
+      </section>
+
+      <section class="stack">
+        <span class="section-title">Record a review</span>
+        <div class="field">
+          <label for="rv-status">Change status</label>
+          <select id="rv-status" class="select" [formControl]="reviewStatus">
+            <option value="">Keep as {{ sys.status | humanize }}</option>
+            @for (s of statuses; track s) {
+              @if (s !== sys.status) { <option [value]="s">{{ s | humanize }}</option> }
+            }
+          </select>
+          <span class="field__hint">The next review will be due {{ sys.review_interval_days }} days from today.</span>
+        </div>
+        <div class="row">
+          <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="markReviewed(sys)">
+            @if (saving()) { <span class="spinner" aria-hidden="true"></span> }
+            <svg class="icon" lucideIcon="clipboard-check" aria-hidden="true"></svg>Mark reviewed
+          </button>
+        </div>
+      </section>
+    </div>
+  </aside>
+}
