@@ -233,7 +233,7 @@ def test_evidence_pack_json_and_markdown(harness):
     assert pack["audit"]["event_count"] == 1
     assert pack["audit"]["stores_raw_transcripts"] is False
     assert len(pack["ai_systems"]) == 5
-    assert pack["policies"]["enabled"] == pack["policies"]["total"] == 7
+    assert pack["policies"]["enabled"] == pack["policies"]["total"] == 9
     assert "not legal advice" in pack["disclaimer"]
 
     md = harness.client.get("/api/compliance/evidence/HIPAA/markdown")

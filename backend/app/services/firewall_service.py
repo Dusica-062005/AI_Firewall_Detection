@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 from app.detection.analyzer import DetectionError, SensitiveDataAnalyzer
 from app.detection.entities import DetectedEntity
+from app.policy.dial import dial_extra_entities, dial_protects
 from app.policy.engine import PolicyDecision, PolicyEngine, PolicyEvaluationError
 from app.policy.models import Action, Destination, Policy
 from app.security.outbound_validator import (
@@ -21,7 +22,7 @@ from app.security.outbound_validator import (
     ValidatedPayload,
     ValidationCheck,
 )
-from app.security.redactor import RedactionError, Redactor
+from app.security.redactor import RedactionError, Redactor, TokenInfo
 
 
 @dataclass(frozen=True)
@@ -35,7 +36,11 @@ class Failure:
 class ProtectionOutcome:
     entities: list[DetectedEntity] = field(default_factory=list)
     decision: PolicyDecision | None = None
-    redacted_text: str | None = None
+    redacted_text: str | None = None  # tokenized text, e.g. "[PERSON_1] called about ..."
+    tokens: tuple[TokenInfo, ...] = ()
+    # Everything that was tokenized: the policy's redactions plus any the dial added.
+    protected_entities: list[DetectedEntity] = field(default_factory=list)
+    dial: str = "max_quality"
     failure: Failure | None = None
     detection_ms: float | None = None
     policy_ms: float | None = None
@@ -67,8 +72,8 @@ class FirewallService:
         self.validator = validator
         self._policy_source = policy_source
 
-    def protect(self, text: str, profile: str, channel: str) -> ProtectionOutcome:
-        outcome = ProtectionOutcome()
+    def protect(self, text: str, profile: str, channel: str, dial: str = "max_quality") -> ProtectionOutcome:
+        outcome = ProtectionOutcome(dial=dial)
 
         started = time.perf_counter()
         try:
@@ -95,23 +100,27 @@ class FirewallService:
         outcome.policy_ms = _ms(started)
 
         started = time.perf_counter()
+        protected = list(outcome.decision.entities_to_redact) + dial_extra_entities(dial, outcome.decision)
         try:
-            outcome.redacted_text = self.redactor.redact(text, outcome.decision.entities_to_redact)
+            tokenized = self.redactor.redact(text, protected)
         except RedactionError:
             outcome.protection_ms = _ms(started)
             outcome.failure = Failure("REDACTION_FAILURE", "protected", "Redaction could not be completed or verified.")
             outcome.redacted_text = None
             return outcome
+        outcome.redacted_text = tokenized.text
+        outcome.tokens = tokenized.tokens
+        outcome.protected_entities = protected
         outcome.protection_ms = _ms(started)
         return outcome
 
-    def restricted_categories(self, decision: PolicyDecision) -> set[str]:
+    def restricted_categories(self, decision: PolicyDecision, dial: str = "max_quality") -> set[str]:
         """Categories that must not appear in a cloud-bound payload for this request."""
         policies = self._policy_source()
         restricted: set[str] = set()
         for category in self.analyzer.categories:
             action, destination = self.engine.resolve_category(category, policies, decision.profile, decision.channel)
-            if action is not Action.ALLOW or destination is not Destination.CLOUD:
+            if action is not Action.ALLOW or destination is not Destination.CLOUD or dial_protects(dial, category):
                 restricted.add(category)
         return restricted
 
@@ -140,11 +149,11 @@ class FirewallService:
             "sanitized_transcript": outcome.redacted_text,
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
-        sensitive_values = [e.value for e in decision.entities_to_redact]
+        sensitive_values = [e.value for e in outcome.protected_entities]
         return self.validator.validate(
             payload_data,
             decision,
             request_id,
             sensitive_values,
-            self.restricted_categories(decision),
+            self.restricted_categories(decision, outcome.dial),
         )

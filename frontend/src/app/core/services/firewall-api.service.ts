@@ -10,7 +10,11 @@ import {
   AuditFilters,
   AuditListResponse,
   ComplianceOverview,
+  Controls,
   DataRequest,
+  DialPosition,
+  ReceiptListResponse,
+  VerifyResult,
   DataRequestCreate,
   EvidencePack,
   FirewallResult,
@@ -128,6 +132,31 @@ export class FirewallApiService {
 
   purgeAudit(): Observable<{ deleted: number; retention_days: number }> {
     return this.http.post<{ deleted: number; retention_days: number }>(this.url('/audit/purge'), {});
+  }
+
+  // Trust layer: operator controls and signed receipts
+  controls(): Observable<Controls> {
+    return this.http.get<Controls>(this.url('/controls'));
+  }
+
+  setKillSwitch(enabled: boolean): Observable<Controls> {
+    return this.http.put<Controls>(this.url('/controls/kill-switch'), { enabled });
+  }
+
+  setDial(position: DialPosition): Observable<Controls> {
+    return this.http.put<Controls>(this.url('/controls/dial'), { position });
+  }
+
+  receipts(page: number, pageSize: number): Observable<ReceiptListResponse> {
+    return this.http.get<ReceiptListResponse>(this.url('/receipts'), {
+      params: new HttpParams().set('page', page).set('page_size', pageSize),
+    });
+  }
+
+  verifyReceipts(tamperDemo: boolean): Observable<VerifyResult> {
+    return this.http.post<VerifyResult>(this.url('/receipts/verify'), {}, {
+      params: new HttpParams().set('tamper_demo', tamperDemo),
+    });
   }
 
   // Compliance & incident center

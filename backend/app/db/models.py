@@ -84,6 +84,45 @@ class DataRequestRecord(Base):
     systems: Mapped[list] = mapped_column(JSON)
 
 
+class VaultEntryRecord(Base):
+    """Token vault (Feature 1). The real value is stored only Fernet-encrypted."""
+
+    __tablename__ = "vault_entries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    request_id: Mapped[str] = mapped_column(String(64), index=True)
+    token: Mapped[str] = mapped_column(String(48))
+    entity_type: Mapped[str] = mapped_column(String(40))
+    encrypted_value: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class RuntimeControlRecord(Base):
+    """Operator controls that take effect immediately: kill switch and privacy-utility dial."""
+
+    __tablename__ = "runtime_controls"
+
+    key: Mapped[str] = mapped_column(String(40), primary_key=True)
+    value: Mapped[str] = mapped_column(String(80))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class ReceiptRecord(Base):
+    """Signed, hash-chained audit receipt (Feature 2). ``body`` is the exact signed JSON."""
+
+    __tablename__ = "receipts"
+
+    seq: Mapped[int] = mapped_column(Integer, primary_key=True)
+    receipt_id: Mapped[str] = mapped_column(String(40), unique=True, index=True)
+    request_id: Mapped[str] = mapped_column(String(64), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    body: Mapped[str] = mapped_column(Text)
+    prev_hash: Mapped[str] = mapped_column(String(64))
+    hash: Mapped[str] = mapped_column(String(64))
+    signature: Mapped[str | None] = mapped_column(Text, nullable=True)
+    key_id: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
+
 class AuditEventRecord(Base):
     __tablename__ = "audit_events"
 

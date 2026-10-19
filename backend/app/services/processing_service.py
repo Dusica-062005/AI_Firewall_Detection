@@ -1,10 +1,12 @@
 """End-to-end, policy-controlled processing workflow.
 
-Received -> Analyzed -> Policy evaluated -> Protected -> Local AI / Cloud decision -> Audited
+Received -> Analyzed -> Policy evaluated -> Protected (tokenized) -> Routed: Local AI / Cloud
+-> Re-hydrated locally -> Audited + signed receipt
 
-The local model is called only when the policy decision authorizes local processing, and
-the cloud receiver is called only when the decision authorizes cloud transmission and the
-final payload passed outbound validation. Nothing here trusts client-supplied decisions.
+The local model is called only when the policy decision authorizes local processing. The
+cloud receiver is called only when the router chooses the cloud path (policy, kill switch,
+dial and detection confidence all allow it) and the final payload passed outbound
+validation. Nothing here trusts client-supplied decisions.
 """
 
 from __future__ import annotations
@@ -16,23 +18,33 @@ from datetime import datetime, timezone
 
 from starlette.concurrency import run_in_threadpool
 
-from app.ai.summarizer import Summarizer
+from app.ai.summarizer import MAX_SUMMARY_CHARS, Summarizer
 from app.audit.service import AuditEntry, AuditService
+from app.detection.analyzer import DetectionError
 from app.integrations.cloudlink_client import HANDOFF_PATH, CloudLinkClient, CloudLinkRefused
 from app.policy.models import Action
 from app.schemas.requests import ProcessingMode
 from app.schemas.responses import (
+    AgentView,
     EntityResult,
     FirewallResult,
     LatencyBreakdown,
     MatchedPolicyResult,
     OutboundInfo,
     ProcessingStep,
+    ReceiptRef,
+    RoutingInfo,
     SummaryInfo,
+    TokenResult,
     ValidationCheckResult,
 )
 from app.security.outbound_validator import OutboundValidationError
+from app.security.redactor import contains_value
 from app.services.firewall_service import FirewallService, ProtectionOutcome
+from app.services.router import RouteDecision, decide_route
+from app.trust.controls import ControlsService
+from app.trust.receipts import ReceiptFacts, ReceiptService
+from app.trust.vault import TokenVault, VaultUnavailable
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +61,8 @@ OUTBOUND_WARNINGS = {
     "REJECTED": "CLOUDLINK_REJECTED",
     "ERROR": "CLOUDLINK_ERROR",
 }
+# Outbound statuses where the router (not policy) held the request back.
+HELD_STATUS = {"kill_switch": "KILL_SWITCH"}
 
 
 def _ms(started: float) -> float:
@@ -63,12 +77,22 @@ class ProcessingService:
         cloudlink: CloudLinkClient,
         audit: AuditService,
         expose_detected_values: bool,
+        controls: ControlsService,
+        vault: TokenVault,
+        receipts: ReceiptService,
+        low_confidence_stays_local: bool = True,
+        normalize_on: bool = False,
     ) -> None:
         self.firewall = firewall
         self.summarizer = summarizer
         self.cloudlink = cloudlink
         self.audit = audit
         self.expose_detected_values = expose_detected_values
+        self.controls = controls
+        self.vault = vault
+        self.receipts = receipts
+        self.low_confidence_stays_local = low_confidence_stays_local
+        self.normalize_on = normalize_on
 
     async def run(
         self,
@@ -79,7 +103,15 @@ class ProcessingService:
         channel: str,
         mode: ProcessingMode,
         operation: str,
+        dial: str | None = None,
+        run_models: bool = True,
     ) -> FirewallResult:
+        """Process one call.
+
+        ``dial`` overrides the operator dial for this request only (used by measurement runs).
+        ``run_models=False`` skips both summaries while keeping routing, the real outbound
+        handoff and the receipt (used by leak-canary batches, where only the payload matters).
+        """
         total_started = time.perf_counter()
         warnings: list[tuple[str, str]] = []
         steps: list[ProcessingStep] = [
@@ -91,12 +123,35 @@ class ProcessingService:
             )
         ]
 
-        outcome: ProtectionOutcome = await run_in_threadpool(self.firewall.protect, transcript, profile, channel)
+        controls = await run_in_threadpool(self.controls.get)
+        dial = dial or controls.dial
+        outcome: ProtectionOutcome = await run_in_threadpool(self.firewall.protect, transcript, profile, channel, dial)
         decision = outcome.decision
         failure = outcome.failure
         label = outcome.label
 
         steps.extend(self._security_steps(outcome))
+
+        route = decide_route(
+            failed=failure is not None,
+            decision=decision,
+            mode=mode,
+            kill_switch=controls.kill_switch,
+            dial=dial,
+            entities=outcome.entities,
+            low_confidence_stays_local=self.low_confidence_stays_local,
+        )
+
+        # ---- Vault: store the encrypted token -> value map locally ----------------------
+        vault_ready = False
+        if failure is None and outcome.tokens:
+            try:
+                await run_in_threadpool(self.vault.store, request_id, outcome.tokens)
+                vault_ready = True
+            except VaultUnavailable as exc:
+                warnings.append(("VAULT_UNAVAILABLE", f"Tokens could not be stored in the vault: {exc}"))
+            except Exception:  # noqa: BLE001 - the vault only affects re-hydration, never protection
+                warnings.append(("VAULT_UNAVAILABLE", "Tokens could not be stored in the vault."))
 
         summary = SummaryInfo(status="SKIPPED_BY_MODE", text=None, model=None, latency_ms=None, message="")
         outbound = OutboundInfo(
@@ -115,6 +170,8 @@ class ProcessingService:
             summary = summary.model_copy(update={"message": "Not run: inspection mode does not invoke AI."})
         elif not decision.local_ai_authorized:
             summary = summary.model_copy(update={"status": "NOT_AUTHORIZED", "message": "Not run: the policy decision does not permit AI processing."})
+        elif not run_models:
+            summary = summary.model_copy(update={"message": "Not run: model calls are disabled for this measurement run."})
         else:
             started = time.perf_counter()
             result = await self.summarizer.summarize(outcome.redacted_text or "")
@@ -125,7 +182,15 @@ class ProcessingService:
             if result.status in SUMMARY_WARNINGS:
                 warnings.append((SUMMARY_WARNINGS[result.status], result.message))
 
-        # ---- Cloud handoff ------------------------------------------------------------
+        # ---- Cloud handoff (only when the router chose the cloud path) --------------------
+        cloud_summary_status: str | None = None
+        cloud_summary: str | None = None
+        cloud_model: str | None = None
+        cloud_latency: float | None = None
+        if route.route == "CLOUD" and await run_in_threadpool(self.controls.kill_switch_on):
+            # Re-checked immediately before sending so a toggle mid-batch takes effect at once.
+            route = RouteDecision("LOCAL", "kill_switch", "Kill switch turned on before sending: the cloud path is blocked.")
+
         if failure is not None or decision is None:
             outbound = outbound.model_copy(update={"status": "NOT_AUTHORIZED", "message": "No outbound request: enforcement did not complete."})
         elif mode is not ProcessingMode.FULL:
@@ -133,6 +198,10 @@ class ProcessingService:
         elif not decision.cloud_authorized:
             outbound = outbound.model_copy(
                 update={"status": "NOT_AUTHORIZED", "message": f"No outbound request: decision {label} does not authorize cloud transmission."}
+            )
+        elif route.route != "CLOUD":
+            outbound = outbound.model_copy(
+                update={"status": HELD_STATUS.get(route.reason, "HELD_LOCAL"), "message": f"No outbound request: {route.message}"}
             )
         else:
             summary_text = summary.text if summary.status == "GENERATED" else None
@@ -161,7 +230,7 @@ class ProcessingService:
                 checks = [ValidationCheckResult(name=c.name, passed=c.passed, detail=c.detail) for c in validated.checks]
                 started = time.perf_counter()
                 try:
-                    handoff = await self.cloudlink.send(validated)
+                    handoff = await self.cloudlink.send(validated, skip_cloud_summary=not run_models)
                     cloud_ms = _ms(started)
                     sent = handoff.http_status is not None
                     outbound = OutboundInfo(
@@ -176,7 +245,13 @@ class ProcessingService:
                         message=handoff.message,
                     )
                     if handoff.status == "SENT" and handoff.receiver_response:
-                        receipt_id = handoff.receiver_response.get("receipt_id")
+                        response = handoff.receiver_response
+                        receipt_id = response.get("receipt_id")
+                        cloud_model = response.get("cloud_model")
+                        cloud_latency = response.get("cloud_latency_ms")
+                        cloud_summary_status, cloud_summary = await run_in_threadpool(
+                            self._check_cloud_summary, response, outcome
+                        )
                 except CloudLinkRefused as exc:
                     cloud_ms = _ms(started)
                     outbound = outbound.model_copy(
@@ -184,11 +259,29 @@ class ProcessingService:
                     )
             if outbound.status in OUTBOUND_WARNINGS:
                 warnings.append((OUTBOUND_WARNINGS[outbound.status], outbound.message))
+            if outbound.status == "VALIDATION_FAILED":
+                route = RouteDecision("LOCAL", "cloud_validation_failed", "The cloud payload failed validation, so nothing was sent.")
+            elif outbound.status in ("UNAVAILABLE", "REJECTED", "ERROR"):
+                route = RouteDecision("LOCAL", "cloud_unavailable", "The cloud stand-in was unavailable; the local result is used.")
 
         if decision is not None and decision.no_applicable_policy:
             warnings.append(("NO_APPLICABLE_POLICY", decision.reasons[0]))
 
-        steps.append(self._ai_step(label, mode, summary, outbound, failure is not None, local_ai_ms, cloud_ms))
+        # ---- Re-hydrate locally for the agent ------------------------------------------------
+        agent_view = await self._agent_view(request_id, outcome, summary, cloud_summary, vault_ready, warnings)
+
+        routing = RoutingInfo(
+            route=route.route,  # type: ignore[arg-type]
+            reason=route.reason,
+            message=route.message,
+            kill_switch=controls.kill_switch or route.reason == "kill_switch",
+            dial=dial,
+            cloud_model=cloud_model,
+            cloud_summary_status=cloud_summary_status,
+            cloud_summary=cloud_summary,
+            cloud_latency_ms=cloud_latency,
+        )
+        steps.append(self._ai_step(label, mode, summary, outbound, failure is not None, local_ai_ms, cloud_ms, route))
 
         status = "FAILED" if failure else ("COMPLETED_WITH_WARNINGS" if warnings else "COMPLETED")
         total_ms = _ms(total_started)
@@ -233,17 +326,32 @@ class ProcessingService:
                 cloud_receipt_id=receipt_id,
             )
             event_id = await run_in_threadpool(self.audit.record, entry)
-            audit_ms = _ms(audit_started)
-            steps.append(ProcessingStep(key="audited", label="Audited", status="COMPLETED", duration_ms=audit_ms,
-                                        detail=f"Audit event {event_id} recorded without transcript content or entity values."))
+            audit_detail = f"Audit event {event_id} recorded without transcript content or entity values."
+            audit_status = "COMPLETED"
         except Exception:  # noqa: BLE001
-            audit_ms = _ms(audit_started)
             logger.error("audit write failed", extra={"request_id": request_id})
             warnings.append(("AUDIT_WRITE_FAILED", "The audit event could not be written to the database."))
-            if status == "COMPLETED":
-                status = "COMPLETED_WITH_WARNINGS"
-            steps.append(ProcessingStep(key="audited", label="Audited", status="FAILED", duration_ms=audit_ms,
-                                        detail="Audit event could not be written."))
+            audit_detail = "Audit event could not be written."
+            audit_status = "FAILED"
+
+        # ---- Signed, hash-chained receipt -------------------------------------------------
+        receipt_ref: ReceiptRef | None = None
+        try:
+            facts = self._receipt_facts(request_id, event_id, operation, label, decision, outcome, route,
+                                        summary, cloud_model, outbound, controls.kill_switch, dial)
+            record = await run_in_threadpool(self.receipts.append, facts)
+            receipt_ref = ReceiptRef(receipt_id=record.receipt_id, seq=record.seq, hash=record.hash, signed=record.signature is not None)
+            audit_detail += f" Receipt #{record.seq} {'signed' if record.signature else 'UNSIGNED'} and chained."
+            if record.signature is None:
+                warnings.append(("RECEIPT_UNSIGNED", f"Receipt written without a signature: {self.receipts.key_status.message}"))
+        except Exception:  # noqa: BLE001
+            logger.error("receipt write failed", extra={"request_id": request_id})
+            warnings.append(("RECEIPT_WRITE_FAILED", "The signed receipt could not be written."))
+            audit_status = "FAILED"
+        if warnings and status == "COMPLETED":
+            status = "COMPLETED_WITH_WARNINGS"
+        audit_ms = _ms(audit_started)
+        steps.append(ProcessingStep(key="audited", label="Audited", status=audit_status, duration_ms=audit_ms, detail=audit_detail))
         latency = latency.model_copy(update={"audit_ms": audit_ms})
 
         logger.info(
@@ -284,11 +392,99 @@ class ProcessingService:
                 for p in (decision.matched_policies if decision else ())
             ],
             redacted_transcript=outcome.redacted_text if not failure else None,
+            tokens=[
+                TokenResult(token=t.token, entity_type=t.entity_type, value=t.value if self.expose_detected_values else None)
+                for t in outcome.tokens
+            ] if not failure else [],
             summary=summary,
             outbound=outbound,
+            routing=routing,
+            agent_view=agent_view,
+            receipt=receipt_ref,
             steps=steps,
             latency=latency,
             created_at=datetime.now(timezone.utc),
+        )
+
+    def _check_cloud_summary(self, response: dict, outcome: ProtectionOutcome) -> tuple[str, str | None]:
+        """The cloud answer is untrusted: size, protected values and a restricted re-scan."""
+        status = str(response.get("cloud_summary_status") or "DISABLED")
+        text = response.get("cloud_summary")
+        if status != "GENERATED":
+            return status, None
+        if not isinstance(text, str) or not text.strip() or len(text) > MAX_SUMMARY_CHARS:
+            return "INVALID_OUTPUT", None
+        if any(contains_value(text, e.value) for e in outcome.protected_entities):
+            return "INVALID_OUTPUT", None
+        try:
+            restricted = self.firewall.restricted_categories(outcome.decision, outcome.dial)
+            if any(e.entity_type in restricted for e in self.firewall.analyzer.scan(text, resolve_overlaps=False)):
+                return "INVALID_OUTPUT", None
+        except DetectionError:
+            return "INVALID_OUTPUT", None
+        return "GENERATED", text
+
+    async def _agent_view(
+        self,
+        request_id: str,
+        outcome: ProtectionOutcome,
+        summary: SummaryInfo,
+        cloud_summary: str | None,
+        vault_ready: bool,
+        warnings: list[tuple[str, str]],
+    ) -> AgentView:
+        if cloud_summary:
+            source, tokenized = "CLOUD", cloud_summary
+        elif summary.status == "GENERATED" and summary.text:
+            source, tokenized = "LOCAL", summary.text
+        else:
+            return AgentView(status="NO_SUMMARY", source="NONE", summary=None, tokenized_summary=None,
+                             message="No summary was produced for this request.")
+        label = "cloud stand-in" if source == "CLOUD" else "local model"
+        if not outcome.tokens:
+            return AgentView(status="REHYDRATED", source=source, summary=tokenized, tokenized_summary=tokenized,
+                             message=f"Summary from the {label}; there were no tokens to restore.")
+        if not vault_ready:
+            return AgentView(status="TOKENS_ONLY", source=source, summary=None, tokenized_summary=tokenized,
+                             message="The vault is not available, so tokens cannot be restored.")
+        try:
+            restored = await run_in_threadpool(self.vault.rehydrate, request_id, tokenized)
+        except VaultUnavailable as exc:
+            warnings.append(("VAULT_UNAVAILABLE", str(exc)))
+            return AgentView(status="TOKENS_ONLY", source=source, summary=None, tokenized_summary=tokenized,
+                             message="Tokens could not be restored from the vault.")
+        return AgentView(status="REHYDRATED", source=source, summary=restored, tokenized_summary=tokenized,
+                         message=f"Summary from the {label}; tokens restored locally from the encrypted vault.")
+
+    def _receipt_facts(
+        self, request_id, event_id, operation, label, decision, outcome: ProtectionOutcome, route: RouteDecision,
+        summary: SummaryInfo, cloud_model, outbound: OutboundInfo, kill_switch: bool, dial: str,
+    ) -> ReceiptFacts:
+        sent_texts = [t for t in ((outbound.payload or {}).get(k) for k in ("sanitized_transcript", "sanitized_summary")) if t]
+        protected_ids = {id(e) for e in outcome.protected_entities}
+        protected_left = any(contains_value(t, e.value) for e in outcome.protected_entities for t in sent_texts)
+        allowed_sent = sorted({
+            e.entity_type for e in outcome.entities
+            if id(e) not in protected_ids and any(contains_value(t, e.value) for t in sent_texts)
+        })
+        return ReceiptFacts(
+            request_id=request_id,
+            event_id=event_id,
+            operation=operation,
+            decision=label,
+            policy_version=decision.policy_version if decision else "unavailable",
+            entity_counts=dict(Counter(e.entity_type for e in outcome.entities)),
+            tokens_created=len(outcome.tokens),
+            route=route.route,
+            route_reason=route.reason,
+            local_model=summary.model if summary.status == "GENERATED" else None,
+            cloud_model=cloud_model,
+            cloud_sent=outbound.reached_receiver,
+            protected_values_left=protected_left,
+            allowed_categories_sent=allowed_sent,
+            kill_switch=kill_switch,
+            dial=dial,
+            normalize_on=self.normalize_on,
         )
 
     def _entity_results(self, outcome: ProtectionOutcome) -> list[EntityResult]:
@@ -356,7 +552,7 @@ class ProcessingService:
         return steps
 
     @staticmethod
-    def _ai_step(label, mode, summary, outbound, failed, local_ai_ms, cloud_ms) -> ProcessingStep:
+    def _ai_step(label, mode, summary, outbound, failed, local_ai_ms, cloud_ms, route: RouteDecision) -> ProcessingStep:
         duration = sum(v for v in (local_ai_ms, cloud_ms) if v is not None) or None
         if failed:
             return ProcessingStep(key="ai", label="Local AI / Cloud", status="SKIPPED", detail="No AI processing or outbound request after an enforcement failure.")
@@ -364,6 +560,10 @@ class ProcessingService:
             return ProcessingStep(key="ai", label="Local AI / Cloud", status="BLOCKED", detail="Blocked by policy: no local model call and no outbound request.")
         if mode is ProcessingMode.INSPECT:
             return ProcessingStep(key="ai", label="Local AI / Cloud", status="SKIPPED", detail="Inspection mode: no model call and no outbound request.")
-        parts = [f"Local AI: {summary.status.replace('_', ' ').lower()}.", f"Cloud: {outbound.status.replace('_', ' ').lower()}."]
+        parts = [
+            f"Route {route.route} ({route.reason.replace('_', ' ')}).",
+            f"Local AI: {summary.status.replace('_', ' ').lower()}.",
+            f"Cloud: {outbound.status.replace('_', ' ').lower()}.",
+        ]
         problem = summary.status in SUMMARY_WARNINGS or outbound.status in OUTBOUND_WARNINGS
         return ProcessingStep(key="ai", label="Local AI / Cloud", status="WARNING" if problem else "COMPLETED", duration_ms=duration, detail=" ".join(parts))

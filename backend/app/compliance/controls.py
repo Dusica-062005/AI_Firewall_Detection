@@ -16,6 +16,9 @@ from app.schemas.compliance import AiSystem, ControlResult, DataRequest, Framewo
 
 HIGH_RISK_CATEGORIES = ("GOVERNMENT_ID", "CREDIT_CARD", "ACCOUNT_NUMBER")
 PHI_CATEGORY = "PATIENT_ID"
+# Context details rather than identifiers: allowed by policy so summaries stay useful, and
+# tokenized by the privacy-utility dial (balanced and maximum privacy) instead.
+CONTEXT_CATEGORIES = frozenset({"DATE_TIME", "HEALTH_TERM"})
 FORBIDDEN_AUDIT_COLUMNS = {
     "transcript", "transcript_text", "text", "content", "payload", "summary", "entity_values", "values", "detected_values",
 }
@@ -90,7 +93,7 @@ def _policy_enforced(ctx: ControlContext) -> CheckResult:
 
 
 def _sensitive_protected(ctx: ControlContext) -> CheckResult:
-    categories = ctx.known_categories
+    categories = [c for c in ctx.known_categories if c not in CONTEXT_CATEGORIES]
     uncovered = [
         c
         for c in categories

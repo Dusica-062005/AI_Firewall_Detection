@@ -47,7 +47,35 @@ def test_government_id_detected(analyzer):
 
 
 def test_normal_transcript_has_no_entities(analyzer):
-    assert analyzer.analyze("Hi, what are your support hours on Saturday?") == []
+    assert analyzer.analyze("Hi, what are your support hours?") == []
+
+
+def test_concrete_dates_are_kept_and_vague_ones_dropped(analyzer):
+    dates = by_type(analyzer.analyze("What are your support hours on Saturday?"), "DATE_TIME")
+    assert [d.value for d in dates] == ["Saturday"]
+
+
+def test_indian_identifiers_are_detected(analyzer):
+    entities = analyzer.analyze("Mera Aadhaar number hai 2345 6789 0123 aur mobile +91 98765 43210 hai.")
+    assert [e.value for e in by_type(entities, "GOVERNMENT_ID")] == ["2345 6789 0123"]
+    assert [e.value for e in by_type(entities, "PHONE_NUMBER")] == ["+91 98765 43210"]
+
+
+def test_custom_recognizer_wins_overlaps_so_no_fragment_leaks(analyzer):
+    # spaCy tags "+91" as a place and "12345" as a date; the full number must still win.
+    entities = analyzer.analyze("Hello, mera number +91 98450 12345 hai.")
+    assert [(e.entity_type, e.value) for e in entities] == [("PHONE_NUMBER", "+91 98450 12345")]
+
+
+def test_bare_grouped_aadhaar_is_low_confidence(analyzer):
+    ids = by_type(analyzer.analyze("The reference is 2345 6789 0123 for the file."), "GOVERNMENT_ID")
+    assert ids and ids[0].low_confidence
+
+
+def test_date_of_birth_and_health_terms(analyzer):
+    entities = analyzer.analyze("My date of birth is 14/03/1986 and I have diabetes, my sugar ki bimari is worse.")
+    assert [e.value for e in by_type(entities, "DATE_OF_BIRTH")] == ["14/03/1986"]
+    assert {e.value.lower() for e in by_type(entities, "HEALTH_TERM")} == {"diabetes", "sugar ki bimari"}
 
 
 def test_results_are_non_overlapping_and_sorted(analyzer):
@@ -77,6 +105,8 @@ def test_repeated_values_are_propagated(analyzer):
 
 def test_scan_ignores_placeholders(analyzer):
     assert analyzer.scan("My name is [PERSON] and my patient ID is [PATIENT_ID].") == []
+    assert analyzer.scan("My name is [PERSON_1] and my patient ID is [PATIENT_ID_1].") == []
+    assert analyzer.scan("PERSON_1 called about PATIENT_ID_1.") == []
 
 
 def test_unloaded_analyzer_raises(analyzer):

@@ -66,6 +66,29 @@ SAMPLES: list[SampleTranscript] = [
         description="No sensitive entities; the baseline policy allows cloud handoff.",
         profile="standard",
         channel="chat",
-        transcript="Hi, what are your support hours on Saturday, and can I book a callback for next week?",
+        transcript="Hi, what are your support hours, and can I book a callback with the billing team?",
+    ),
+    SampleTranscript(
+        id="hinglish-triage",
+        title="Hinglish triage call (healthcare)",
+        description="Hinglish call with a name, date of birth, Indian mobile number and health terms.",
+        profile="standard",
+        channel="voice",
+        transcript=(
+            "Hello, main Priya Sharma bol rahi hoon. Meri date of birth 14/03/1986 hai aur patient ID P9048213 hai. "
+            "Mujhe diabetes hai aur kal se chest pain ho raha hai. Please mujhe Thursday ka appointment chahiye, "
+            "mera number +91 98450 12345 hai."
+        ),
+    ),
+    SampleTranscript(
+        id="reschedule-dob",
+        title="Reschedule with date of birth",
+        description="Name, date of birth and patient ID are tokenized; the summary is re-hydrated for the agent.",
+        profile="standard",
+        channel="voice",
+        transcript=(
+            "Hi, this is Daniel Okafor, date of birth March 2, 1979, patient ID 77120. I need to move my dialysis "
+            "appointment from Monday to Wednesday afternoon. Daniel Okafor again, thanks."
+        ),
     ),
 ]

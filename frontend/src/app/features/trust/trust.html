@@ -1,0 +1,223 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-header__text">
+      <h1>Trust &amp; Controls</h1>
+      <p>Emergency stop for the cloud path, the privacy-utility dial, and the signed, hash-chained receipt log that proves what happened to every call.</p>
+    </div>
+  </header>
+
+  <app-error-alert [error]="controlsError()" title="The control was not changed" />
+
+  <div class="grid grid-2">
+    <section class="card kill" [class.kill--on]="controls()?.kill_switch">
+      <div class="card-header">
+        <h2><svg class="icon" lucideIcon="power" aria-hidden="true"></svg>Kill switch</h2>
+        @if (controls()?.kill_switch_updated_at; as at) { <span class="card-header__meta">Changed {{ at | date: 'MMM d, HH:mm:ss' }}</span> }
+      </div>
+      <div class="card-body stack">
+        @if (controls(); as c) {
+          <div class="cloud-path" role="status" aria-live="polite">
+            <svg class="icon" [lucideIcon]="c.kill_switch ? 'cloud-off' : 'cloud'" aria-hidden="true"></svg>
+            <div>
+              <span class="cloud-path__label">Cloud path</span>
+              <strong class="cloud-path__state">{{ c.cloud_path }}</strong>
+            </div>
+          </div>
+          <p class="text-sm">
+            @if (c.kill_switch) {
+              Nothing can leave the firewall. Calls are still tokenized and summarized by the local model, and every call still gets a signed receipt.
+            } @else {
+              Tokenized text may reach the cloud stand-in when policy, the dial and detection confidence all allow it.
+            }
+          </p>
+          <button type="button" class="btn kill__btn" [class.btn-danger]="!c.kill_switch" [class.btn-primary]="c.kill_switch"
+                  [disabled]="saving()" (click)="toggleKillSwitch()">
+            @if (saving()) { <span class="spinner" aria-hidden="true"></span> }
+            <svg class="icon" lucideIcon="power" aria-hidden="true"></svg>
+            {{ c.kill_switch ? 'Restore cloud path' : 'Block cloud path now' }}
+          </button>
+        } @else {
+          <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Loading controls</span></div>
+        }
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2><svg class="icon" lucideIcon="sliders-horizontal" aria-hidden="true"></svg>Privacy-utility dial</h2>
+        @if (controls()?.dial_updated_at; as at) { <span class="card-header__meta">Changed {{ at | date: 'MMM d, HH:mm:ss' }}</span> }
+      </div>
+      <div class="card-body stack">
+        @if (controls(); as c) {
+          <div class="dial" role="radiogroup" aria-label="Privacy-utility dial">
+            @for (p of c.dial_positions; track p.id) {
+              <button type="button" role="radio" class="dial__option" [class.is-active]="c.dial === p.id"
+                      [attr.aria-checked]="c.dial === p.id" [disabled]="saving()" (click)="setDial(p.id)">
+                <span class="dial__label">{{ p.label }}</span>
+                <span class="text-xs muted">{{ p.description }}</span>
+              </button>
+            }
+          </div>
+          <p class="text-xs muted">
+            The dial only adds protection on top of policy; it never weakens a policy rule. Quality score per position: not measured yet.
+          </p>
+        }
+      </div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="card-header">
+      <h2><svg class="icon" lucideIcon="fingerprint" aria-hidden="true"></svg>Signed receipts</h2>
+      @if (receipts(); as list) {
+        <div class="row wrap">
+          <app-status-badge [value]="list.signing.status" [label]="list.signing.status === 'CONFIGURED' ? 'Ed25519 signing on' : null" />
+          @if (list.signing.key_id) { <span class="text-xs mono muted">key {{ list.signing.key_id }}</span> }
+        </div>
+      }
+    </div>
+    <div class="card-body stack">
+      @if (receipts()?.signing?.status !== 'CONFIGURED' && receipts()) {
+        <div class="alert alert-warning"><svg class="icon" lucideIcon="key-round" aria-hidden="true"></svg><span>{{ receipts()?.signing?.message }}</span></div>
+      }
+      <p class="text-sm">
+        Each receipt lists categories, counts, the route and whether any protected value left the firewall. It never holds transcript text or values.
+        Every receipt is signed and includes the hash of the previous one, so editing, removing or reordering any receipt is detectable.
+      </p>
+      <div class="row wrap">
+        <button type="button" class="btn btn-primary" [disabled]="verifying() !== null" (click)="verify(false)">
+          @if (verifying() === 'chain') { <span class="spinner" aria-hidden="true"></span> }
+          <svg class="icon" lucideIcon="link" aria-hidden="true"></svg>Verify chain (offline script)
+        </button>
+        <button type="button" class="btn btn-secondary" [disabled]="verifying() !== null" (click)="verify(true)">
+          @if (verifying() === 'tamper') { <span class="spinner" aria-hidden="true"></span> }
+          <svg class="icon" lucideIcon="bug" aria-hidden="true"></svg>Tamper demo (edits a copy)
+        </button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-ghost" (click)="loadReceipts()" [disabled]="loading()">
+          <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>Refresh
+        </button>
+      </div>
+
+      <app-error-alert [error]="verifyError()" title="Verification could not run" />
+      @if (verifyResult(); as v) {
+        <div class="verify" [class.verify--ok]="v.ok" [class.verify--bad]="!v.ok">
+          <div class="row wrap">
+            <app-status-badge [value]="v.ok ? 'CHAIN_OK' : 'TAMPERED'" [strong]="true"
+                              [label]="v.tamper_demo ? (v.ok ? 'Tampering NOT detected' : 'Tampering detected') : null" />
+            <span class="text-xs muted">{{ v.verifier === 'offline-script' ? 'scripts/verify_chain.py, run as a separate process with only the DB file and public key' : 'In-process check' }}</span>
+          </div>
+          <pre class="code-block">{{ v.output }}</pre>
+          @if (v.tamper_demo) {
+            <p class="text-xs muted">The demo edits a temporary copy of the database. The original chain is untouched{{ v.in_process_ok ? ' and still verifies.' : '.' }}</p>
+          }
+        </div>
+      }
+    </div>
+
+    <app-error-alert [error]="receiptsError()" title="Receipts could not be loaded" [retryable]="true" (retry)="loadReceipts()" />
+    <div class="card-body card-body--flush table-wrap">
+      @if (receipts()?.items?.length) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col" class="num">#</th>
+              <th scope="col">Time</th>
+              <th scope="col">Decision</th>
+              <th scope="col">Route</th>
+              <th scope="col">Entities</th>
+              <th scope="col" class="num">Tokens</th>
+              <th scope="col">Left firewall</th>
+              <th scope="col">Hash</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of receipts()!.items; track r.seq) {
+              <tr class="is-clickable" tabindex="0" (click)="open(r)" (keydown.enter)="open(r)" [attr.aria-label]="'Open receipt ' + r.seq">
+                <td class="num mono">{{ r.seq }}</td>
+                <td class="nowrap">{{ r.created_at | date: 'MMM d, HH:mm:ss' }}</td>
+                <td><app-status-badge [value]="r.body.decision" /></td>
+                <td>
+                  <app-status-badge [value]="r.body.route" />
+                  <span class="text-xs muted route-reason">{{ r.body.route_reason | humanize }}</span>
+                </td>
+                <td class="cell-wrap text-xs mono">{{ entitySummary(r.body.entity_counts) }}</td>
+                <td class="num">{{ r.body.tokens_created }}</td>
+                <td>
+                  @if (r.body.protected_values_left) {
+                    <app-status-badge value="FAIL" label="Protected value left" />
+                  } @else if (r.body.cloud_sent) {
+                    <span class="text-sm">Tokens only</span>
+                  } @else {
+                    <span class="text-sm muted">Nothing</span>
+                  }
+                </td>
+                <td class="mono text-xs">
+                  {{ r.hash.slice(0, 10) }}
+                  <app-status-badge [value]="r.signed ? 'SIGNED' : 'UNSIGNED'" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else if (loading()) {
+        <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Loading receipts</span></div>
+      } @else if (!receiptsError()) {
+        <div class="empty-state">
+          <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
+          <span class="empty-state__title">No receipts yet</span>
+          <span>Process a transcript in the Inspector; every call writes one signed receipt.</span>
+        </div>
+      }
+    </div>
+    @if (receipts(); as list) {
+      @if (list.total > list.page_size) {
+        <div class="row pager">
+          <span class="text-xs muted">{{ list.total }} receipts</span>
+          <span class="spacer"></span>
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() <= 1" (click)="goTo(page() - 1)">
+            <svg class="icon" lucideIcon="chevron-left" aria-hidden="true"></svg>Newer
+          </button>
+          <span class="text-xs">Page {{ page() }} of {{ pageCount() }}</span>
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() >= pageCount()" (click)="goTo(page() + 1)">
+            Older<svg class="icon" lucideIcon="chevron-right" aria-hidden="true"></svg>
+          </button>
+        </div>
+      }
+    }
+  </section>
+</div>
+
+@if (selected(); as r) {
+  <div class="overlay" (click)="closeReceipt()"></div>
+  <aside class="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="rcp-title">
+    <div class="drawer__header">
+      <div class="stack" style="gap: 2px">
+        <h2 id="rcp-title">Receipt #{{ r.seq }}</h2>
+        <span class="text-xs mono muted">{{ r.receipt_id }}</span>
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" aria-label="Close receipt" (click)="closeReceipt()">
+        <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+      </button>
+    </div>
+    <div class="drawer__body">
+      <div class="row wrap">
+        <app-status-badge [value]="r.body.decision" [strong]="true" />
+        <app-status-badge [value]="r.body.route" [strong]="true" />
+        <app-status-badge [value]="r.signed ? 'SIGNED' : 'UNSIGNED'" [strong]="true" />
+      </div>
+      <dl class="kv">
+        <dt>Request ID</dt><dd class="mono">{{ r.request_id }}</dd>
+        <dt>Route reason</dt><dd>{{ r.body.route_reason | humanize }}</dd>
+        <dt>Dial / kill switch</dt><dd>{{ r.body.dial | humanize }} / {{ r.body.kill_switch ? 'on' : 'off' }}</dd>
+        <dt>Models</dt><dd>Local: {{ r.body.local_model ?? '-' }}; cloud stand-in: {{ r.body.cloud_model ?? '-' }}</dd>
+        <dt>Protected value left</dt><dd>{{ r.body.protected_values_left ? 'YES' : 'No' }}</dd>
+        <dt>Allowed categories sent</dt><dd class="mono">{{ r.body.allowed_categories_sent.length ? r.body.allowed_categories_sent.join(', ') : 'None' }}</dd>
+        <dt>Hash</dt><dd class="mono break">{{ r.hash }}</dd>
+        <dt>Previous hash</dt><dd class="mono break">{{ r.prev_hash }}</dd>
+      </dl>
+      <span class="section-title">Exact signed body</span>
+      <pre class="code-block">{{ r.body | json }}</pre>
+    </div>
+  </aside>
+}

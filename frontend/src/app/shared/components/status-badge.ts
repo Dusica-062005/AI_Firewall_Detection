@@ -55,6 +55,21 @@ const STYLES: Record<string, BadgeStyle> = {
   INVALID_OUTPUT: { variant: 'warning', icon: 'triangle-alert' },
   ENABLED: { variant: 'success', icon: 'circle-check' },
   DISABLED: { variant: 'neutral', icon: 'circle-minus' },
+  // Router, kill switch and round trip
+  KILL_SWITCH: { variant: 'error', icon: 'power' },
+  HELD_LOCAL: { variant: 'local', icon: 'hard-drive' },
+  ACTIVE: { variant: 'success', icon: 'cloud' },
+  REHYDRATED: { variant: 'success', icon: 'key-round' },
+  TOKENS_ONLY: { variant: 'warning', icon: 'key-round' },
+  NO_SUMMARY: { variant: 'neutral', icon: 'circle-minus' },
+  // Trust-layer keys and receipts
+  CONFIGURED: { variant: 'success', icon: 'key-round' },
+  NOT_CONFIGURED: { variant: 'warning', icon: 'key-round' },
+  INVALID: { variant: 'error', icon: 'key-round' },
+  SIGNED: { variant: 'success', icon: 'fingerprint' },
+  UNSIGNED: { variant: 'warning', icon: 'fingerprint' },
+  CHAIN_OK: { variant: 'success', icon: 'link' },
+  TAMPERED: { variant: 'error', icon: 'shield-alert' },
   // Compliance controls
   PASS: { variant: 'success', icon: 'circle-check' },
   PARTIAL: { variant: 'warning', icon: 'triangle-alert' },
@@ -92,6 +107,12 @@ const LABELS: Record<string, string> = {
   NOT_AUTHORIZED: 'Not authorized',
   SKIPPED_BY_MODE: 'Skipped by mode',
   MODEL_MISSING: 'Model missing',
+  KILL_SWITCH: 'Kill switch',
+  HELD_LOCAL: 'Held local',
+  TOKENS_ONLY: 'Tokens only',
+  NO_SUMMARY: 'No summary',
+  NOT_CONFIGURED: 'Not configured',
+  CHAIN_OK: 'Chain OK',
 };
 
 @Component({

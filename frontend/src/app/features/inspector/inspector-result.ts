@@ -15,7 +15,7 @@ type Tab = 'summary' | 'cloud' | 'policy' | 'audit';
 
 const DECISION_TEXT: Record<string, string> = {
   ALLOWED: 'No protected data required changes. Processing was permitted by policy.',
-  REDACTED: 'Sensitive values were replaced with placeholders before any AI processing.',
+  REDACTED: 'Sensitive values were replaced with reversible tokens before any AI processing.',
   LOCAL_ONLY: 'Processing is restricted to the local model. Cloud transmission is prohibited.',
   BLOCKED: 'Policy prohibits AI processing of this communication. No model or cloud call was made.',
   PROCESSING_FAILED: 'Enforcement could not be completed. The firewall failed closed and nothing was sent.',
@@ -42,6 +42,29 @@ export class InspectorResult {
   protected readonly auditError = signal<ApiError | null>(null);
   protected readonly decisionText = computed(() => DECISION_TEXT[this.result().decision] ?? '');
   protected readonly failedChecks = computed(() => this.result().outbound.validation.filter((c) => !c.passed).length);
+
+  protected readonly routeLabel = computed(() => {
+    const route = this.result().routing?.route;
+    return route === 'CLOUD' ? 'Routed to cloud stand-in' : route === 'LOCAL' ? 'Kept local' : 'Not processed';
+  });
+
+  /** Left side of the round trip: exactly what left the firewall, or what the local model read. */
+  protected readonly machineTitle = computed(() => {
+    const r = this.result();
+    if (r.outbound.reached_receiver) {
+      return 'What the cloud saw (exact payload sent to mock CloudLink)';
+    }
+    return r.summary.status === 'GENERATED' ? 'What the local model saw (nothing left the firewall)' : 'Protected text (nothing left the firewall)';
+  });
+
+  protected readonly machineText = computed<string | null>(() => {
+    const r = this.result();
+    const sent = r.outbound.payload?.['sanitized_transcript'];
+    if (r.outbound.reached_receiver && typeof sent === 'string') {
+      return sent;
+    }
+    return r.decision === 'BLOCKED' ? null : r.redacted_transcript;
+  });
 
   constructor() {
     effect(() => {

@@ -28,6 +28,10 @@ from app.security.redactor import Redactor
 from app.services.firewall_service import FirewallService
 from app.services.policy_service import PolicyService
 from app.services.processing_service import ProcessingService
+from app.trust.controls import ControlsService
+from app.trust.keys import load_fernet, load_signing_key
+from app.trust.receipts import ReceiptService
+from app.trust.vault import TokenVault
 
 
 @dataclass
@@ -47,6 +51,9 @@ class Container:
     firewall: FirewallService
     processing: ProcessingService
     policy_status: dict
+    controls: ControlsService
+    vault: TokenVault
+    receipts: ReceiptService
 
 
 def build_analyzer(settings: Settings) -> SensitiveDataAnalyzer:
@@ -97,6 +104,14 @@ def build_container(
         cloudlink_transport,
     )
 
+    controls = ControlsService(sessions, settings.default_dial)
+    fernet, vault_status = load_fernet(settings.vault_key.get_secret_value())
+    vault = TokenVault(sessions, fernet, vault_status)
+    vault.purge_older_than(settings.audit_retention_days)
+    signing_key, signing_status = load_signing_key(settings.receipt_signing_key.get_secret_value())
+    receipts = ReceiptService(sessions, signing_key, signing_status)
+    _publish_public_key(settings, receipts)
+
     firewall = FirewallService(
         analyzer=analyzer,
         engine=PolicyEngine(unmatched_entity_action=Action(settings.unmatched_entity_action)),
@@ -110,6 +125,10 @@ def build_container(
         cloudlink=cloudlink,
         audit=audit_service,
         expose_detected_values=settings.expose_detected_values,
+        controls=controls,
+        vault=vault,
+        receipts=receipts,
+        low_confidence_stays_local=settings.route_low_confidence_local,
     )
     return Container(
         settings=settings,
@@ -127,4 +146,19 @@ def build_container(
         firewall=firewall,
         processing=processing,
         policy_status=policy_status,
+        controls=controls,
+        vault=vault,
+        receipts=receipts,
     )
+
+
+def _publish_public_key(settings: Settings, receipts: ReceiptService) -> None:
+    """Write the receipt public key next to the data so the offline verifier can use it."""
+    pem = receipts.public_key_pem
+    if not pem:
+        return
+    try:
+        settings.keys_dir.mkdir(parents=True, exist_ok=True)
+        (settings.keys_dir / "receipt_public_key.pem").write_text(pem, encoding="ascii")
+    except OSError:
+        pass  # the key is also served by GET /api/receipts/public-key

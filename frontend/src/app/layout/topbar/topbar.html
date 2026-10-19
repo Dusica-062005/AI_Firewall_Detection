@@ -6,6 +6,13 @@
 
 <div class="actions">
   <span class="simulated-label" title="All demo transcripts are synthetic. CloudLink is a mock integration.">Synthetic data</span>
+  @if (status.controls(); as c) {
+    <a class="status" [class.status--error]="c.kill_switch" [class.status--neutral]="!c.kill_switch" routerLink="/trust"
+       [title]="c.kill_switch ? 'Kill switch is on: nothing can leave the firewall' : 'Cloud path is open for tokenized text when policy allows'">
+      <svg class="icon" [lucideIcon]="c.kill_switch ? 'power' : 'cloud'" aria-hidden="true"></svg>
+      <span>{{ c.kill_switch ? 'Cloud path BLOCKED' : 'Cloud path active' }}</span>
+    </a>
+  }
   <a class="status status--{{ connection().tone }}" routerLink="/settings" title="View dependency health">
     <svg class="icon" [lucideIcon]="connection().icon" aria-hidden="true"></svg>
     <span>{{ connection().label }}</span>

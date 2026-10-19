@@ -30,7 +30,7 @@ def test_permitted_sanitized_request_reaches_mock_cloudlink(harness):
     assert len(sent) == 1
     wire = json.loads(sent[0].content)
     assert wire["sanitized_transcript"] == (
-        "My name is [PERSON], my patient ID is [PATIENT_ID], and I need help with my appointment."
+        "My name is [PERSON_1], my patient ID is [PATIENT_ID_1], and I need help with my appointment."
     )
     assert wire["sanitized_summary"] == "Customer requested assistance with an appointment."
     assert "John Smith" not in sent[0].content.decode()

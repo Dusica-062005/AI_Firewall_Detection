@@ -38,6 +38,7 @@ async def integrations_status(container: Container = Depends(get_container)) -> 
             status=cloud["status"],
             simulated=True,
             receipts_count=cloud.get("receipts_count"),
+            cloud_model=cloud.get("cloud_model"),
             latency_ms=cloud.get("latency_ms"),
             message=cloud["message"],
         ),
@@ -87,6 +88,16 @@ def app_config(container: Container = Depends(get_container)) -> AppConfig:
         },
         audit=container.audit_service.storage_info(),
         admin_auth_enabled=bool(s.admin_api_key.get_secret_value()),
+        trust={
+            "vault": {"status": container.vault.key_status.status, "message": container.vault.key_status.message},
+            "receipt_signing": {
+                "status": container.receipts.key_status.status,
+                "message": container.receipts.key_status.message,
+                "key_id": container.receipts.key_id,
+            },
+            "low_confidence_stays_local": s.route_low_confidence_local,
+            "cloud_stand_in_model": s.mock_cloud_model or None,
+        },
     )
 
 

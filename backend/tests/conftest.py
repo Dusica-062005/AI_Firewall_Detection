@@ -9,11 +9,17 @@ are required.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import base64
+
 import httpx
 import pytest
+from cryptography.fernet import Fernet
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi.testclient import TestClient
 
 from app.config import Settings
@@ -23,6 +29,12 @@ from app.main import create_app
 
 DEMO_TRANSCRIPT = "My name is John Smith, my patient ID is 48291, and I need help with my appointment."
 TEST_KEY = "test-cloudlink-key"
+VAULT_KEY = Fernet.generate_key().decode("ascii")
+SIGNING_KEY = base64.b64encode(
+    Ed25519PrivateKey.generate().private_bytes(
+        serialization.Encoding.Raw, serialization.PrivateFormat.Raw, serialization.NoEncryption()
+    )
+).decode("ascii")
 
 
 @pytest.fixture(scope="session")
@@ -56,6 +68,10 @@ class OllamaStub:
                 return httpx.Response(404, json={"error": "model 'llama3.2:3b' not found"})
             if self.mode == "empty":
                 return httpx.Response(200, json={"response": "   "})
+            if self.mode == "echo_tokens":
+                # Echo every token from the prompt, like a model that keeps the tokens.
+                tokens = sorted(set(re.findall(r"\[[A-Z][A-Z_]*_\d+\]", prompt.split("Transcript:", 1)[-1])))
+                return httpx.Response(200, json={"response": "- Caller " + " ".join(tokens) + " needs help.", "done": True})
             return httpx.Response(200, json={"response": self.fixed_text, "done": True})
         return httpx.Response(404)
 
@@ -99,6 +115,11 @@ def make_settings(tmp_path: Path, **overrides) -> Settings:
         "ollama_base_url": "http://mock-ollama",
         "ollama_model": "llama3.2:3b",
         "admin_api_key": "",
+        "vault_key": VAULT_KEY,
+        "receipt_signing_key": SIGNING_KEY,
+        "keys_dir": tmp_path / "keys",
+        "received_log_file": tmp_path / "received.log",
+        "mock_cloud_model": "",
     }
     values.update(overrides)
     return Settings(**values)
@@ -111,7 +132,7 @@ def harness_factory(tmp_path, analyzer):
     def factory(ollama_mode: str = "ok", receiver_down: bool = False, **overrides) -> Harness:
         settings = make_settings(tmp_path, **overrides)
         stub = OllamaStub(mode=ollama_mode)
-        receiver_app = create_mock_cloudlink_app(settings)
+        receiver_app = create_mock_cloudlink_app(settings, ollama_transport=httpx.MockTransport(stub.handler))
         transport = CountingTransport(receiver_app, fail=receiver_down)
         container = build_container(
             settings,

@@ -46,8 +46,25 @@ class Settings(BaseSettings):
     ollama_timeout_seconds: float = Field(default=45.0, gt=0, le=600)
 
     cloudlink_base_url: str = "http://localhost:8100"
-    cloudlink_timeout_seconds: float = Field(default=5.0, gt=0, le=60)
+    cloudlink_timeout_seconds: float = Field(default=5.0, gt=0, le=600)
     cloudlink_api_key: SecretStr = SecretStr("")
+
+    # "Cloud" stand-in: the mock CloudLink receiver summarizes the tokenized transcript with a
+    # larger local model. Empty disables cloud summaries (the receiver only acknowledges).
+    mock_cloud_model: str = ""
+    mock_cloud_timeout_seconds: float = Field(default=120.0, gt=0, le=600)
+    # Every payload the mock receiver accepts is appended here (JSON lines). Leak canaries
+    # measure real leaks against this file, i.e. at the receiving end.
+    received_log_file: Path = BACKEND_ROOT / "data" / "received.log"
+
+    # Trust layer secrets. Generate both with: python scripts/generate_keys.py
+    vault_key: SecretStr = SecretStr("")  # Fernet key for the token vault
+    receipt_signing_key: SecretStr = SecretStr("")  # base64 Ed25519 private key (32 bytes)
+    keys_dir: Path = BACKEND_ROOT / "data" / "keys"
+
+    # Router: any low-confidence entity keeps the request local (fail closed).
+    route_low_confidence_local: bool = True
+    default_dial: Literal["max_privacy", "balanced", "max_quality"] = "balanced"
 
     admin_api_key: SecretStr = SecretStr("")
 

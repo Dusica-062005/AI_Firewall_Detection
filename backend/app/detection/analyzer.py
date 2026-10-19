@@ -13,8 +13,18 @@ from app.detection.recognizers import ContextualPatternRecognizer, DetectionConf
 
 logger = logging.getLogger(__name__)
 
-PLACEHOLDER_PATTERN = regex.compile(r"\[[A-Z][A-Z0-9_]{1,39}\]")
+# Firewall tokens: "[PERSON_1]", and the bare "PERSON_1" form a model may write back.
+PLACEHOLDER_PATTERN = regex.compile(
+    r"\[[A-Z][A-Z0-9_]{1,39}\]|(?<![A-Za-z0-9_])[A-Z][A-Z_]{1,30}_\d{1,4}(?![A-Za-z0-9_])"
+)
 REPEAT_RECOGNIZER = "firewall-repeated-value"
+# spaCy labels words such as "hours" or "today" as DATE/TIME. Keep a statistical date only
+# when it contains a digit or a weekday or month name.
+_CONCRETE_DATE = regex.compile(
+    r"\d|\b(?:mon|tues?|wed(?:nes)?|thu(?:rs)?|fri|sat(?:ur)?|sun)(?:day)?\b"
+    r"|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b",
+    regex.IGNORECASE,
+)
 
 
 class DetectionError(Exception):
@@ -85,8 +95,12 @@ class SensitiveDataAnalyzer:
                 )
                 logger.error("detection engine failed to load", extra={"error_type": type(exc).__name__})
 
-    def analyze(self, text: str) -> list[DetectedEntity]:
-        """Detect entities in ``text``. Raises DetectionError on any failure."""
+    def analyze(self, text: str, resolve_overlaps: bool = True) -> list[DetectedEntity]:
+        """Detect entities in ``text``. Raises DetectionError on any failure.
+
+        ``resolve_overlaps=False`` returns every raw detection; outbound checks use it so an
+        overlap decision can never hide a restricted value.
+        """
         if self._engine is None:
             raise DetectionError("Detection engine is not available.")
         try:
@@ -107,6 +121,8 @@ class SensitiveDataAnalyzer:
             if category not in self.config.categories:
                 continue
             recognizer = (r.recognition_metadata or {}).get("recognizer_name", "presidio")
+            if category == "DATE_TIME" and recognizer == "SpacyRecognizer" and not _CONCRETE_DATE.search(text[r.start : r.end]):
+                continue
             mapped.append(
                 DetectedEntity(
                     entity_type=category,
@@ -118,28 +134,33 @@ class SensitiveDataAnalyzer:
                     low_confidence=float(r.score) < self.low_confidence_threshold,
                 )
             )
+        if not resolve_overlaps:
+            return sorted(mapped, key=lambda e: (e.start, e.end))
         resolved = self._resolve_overlaps(mapped)
         return self._propagate_repeated_values(text, resolved)
 
-    def scan(self, text: str) -> list[DetectedEntity]:
-        """Detect entities while ignoring firewall placeholder tokens such as [PERSON]."""
+    def scan(self, text: str, resolve_overlaps: bool = True) -> list[DetectedEntity]:
+        """Detect entities while ignoring firewall tokens such as [PERSON_1]."""
         placeholders = [m.span() for m in PLACEHOLDER_PATTERN.finditer(text)]
         return [
             e
-            for e in self.analyze(text)
+            for e in self.analyze(text, resolve_overlaps=resolve_overlaps)
             if not any(e.start < p_end and p_start < e.end for p_start, p_end in placeholders)
         ]
 
     def _resolve_overlaps(self, entities: list[DetectedEntity]) -> list[DetectedEntity]:
         """Keep a deterministic, non-overlapping set of spans.
 
-        Preference: higher score, then longer span, then custom recognizers, then
-        category name. The same input always produces the same output.
+        Preference: custom (deterministic, context-aware) recognizers first, then higher
+        score, then longer span, then category name. Custom recognizers win so that a
+        statistical fragment (spaCy tagging "+91" as a place) can never knock out a full
+        identifier and leave the rest of it in clear text. The same input always produces
+        the same output.
         """
         custom = self._custom_names
 
         def preference(e: DetectedEntity) -> tuple:
-            return (-e.score, -e.length, 0 if e.recognizer in custom else 1, e.entity_type, e.start)
+            return (0 if e.recognizer in custom else 1, -e.score, -e.length, e.entity_type, e.start)
 
         accepted: list[DetectedEntity] = []
         for candidate in sorted(entities, key=preference):

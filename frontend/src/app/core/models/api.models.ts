@@ -51,6 +51,7 @@ export interface CloudLinkStatus {
   base_url: string;
   simulated: boolean;
   receipts_count: number | null;
+  cloud_model: string | null;
   latency_ms: number | null;
   message: string;
 }
@@ -120,6 +121,42 @@ export interface OutboundInfo {
   message: string;
 }
 
+export type Route = 'LOCAL' | 'CLOUD' | 'NONE';
+export type DialPosition = 'max_privacy' | 'balanced' | 'max_quality';
+
+export interface TokenResult {
+  token: string;
+  entity_type: string;
+  value: string | null;
+}
+
+export interface RoutingInfo {
+  route: Route;
+  reason: string;
+  message: string;
+  kill_switch: boolean;
+  dial: DialPosition;
+  cloud_model: string | null;
+  cloud_summary_status: string | null;
+  cloud_summary: string | null;
+  cloud_latency_ms: number | null;
+}
+
+export interface AgentView {
+  status: 'REHYDRATED' | 'TOKENS_ONLY' | 'NO_SUMMARY';
+  source: 'CLOUD' | 'LOCAL' | 'NONE';
+  summary: string | null;
+  tokenized_summary: string | null;
+  message: string;
+}
+
+export interface ReceiptRef {
+  receipt_id: string;
+  seq: number;
+  hash: string;
+  signed: boolean;
+}
+
 export interface LatencyBreakdown {
   detection_ms: number | null;
   policy_ms: number | null;
@@ -151,8 +188,12 @@ export interface FirewallResult {
   entity_counts: Record<string, number>;
   matched_policies: MatchedPolicyResult[];
   redacted_transcript: string | null;
+  tokens: TokenResult[];
   summary: SummaryInfo;
   outbound: OutboundInfo;
+  routing: RoutingInfo | null;
+  agent_view: AgentView | null;
+  receipt: ReceiptRef | null;
   steps: ProcessingStep[];
   latency: LatencyBreakdown;
   created_at: string;
@@ -344,6 +385,85 @@ export interface AppConfig {
     stores_entity_values: boolean;
   };
   admin_auth_enabled: boolean;
+  trust?: {
+    vault: { status: string; message: string };
+    receipt_signing: { status: string; message: string; key_id: string | null };
+    low_confidence_stays_local: boolean;
+    cloud_stand_in_model: string | null;
+  };
+}
+
+// ---- Trust layer: controls and signed receipts ----
+
+export interface DialPositionInfo {
+  id: DialPosition;
+  label: string;
+  description: string;
+}
+
+export interface Controls {
+  kill_switch: boolean;
+  cloud_path: 'ACTIVE' | 'BLOCKED';
+  dial: DialPosition;
+  kill_switch_updated_at: string | null;
+  dial_updated_at: string | null;
+  dial_positions: DialPositionInfo[];
+}
+
+export interface ReceiptBody {
+  schema: string;
+  receipt_id: string;
+  seq: number;
+  timestamp: string;
+  prev_hash: string;
+  request_id: string;
+  event_id: string | null;
+  operation: string;
+  decision: FinalDecision;
+  policy_version: string;
+  entity_counts: Record<string, number>;
+  tokens_created: number;
+  route: Route;
+  route_reason: string;
+  local_model: string | null;
+  cloud_model: string | null;
+  cloud_sent: boolean;
+  protected_values_left: boolean;
+  allowed_categories_sent: string[];
+  kill_switch: boolean;
+  dial: DialPosition;
+  normalize_on: boolean;
+}
+
+export interface Receipt {
+  seq: number;
+  receipt_id: string;
+  request_id: string;
+  created_at: string;
+  hash: string;
+  prev_hash: string;
+  signed: boolean;
+  key_id: string | null;
+  body: ReceiptBody;
+}
+
+export interface ReceiptListResponse {
+  items: Receipt[];
+  total: number;
+  page: number;
+  page_size: number;
+  signing: { status: string; message: string; key_id: string | null };
+}
+
+export interface VerifyResult {
+  ok: boolean;
+  verifier: 'offline-script' | 'in-process';
+  tamper_demo: boolean;
+  exit_code: number | null;
+  output: string;
+  in_process_ok: boolean;
+  in_process_reason: string;
+  count: number;
 }
 
 // ---- Compliance & incident center ----

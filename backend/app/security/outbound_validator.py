@@ -110,7 +110,11 @@ class OutboundValidator:
             try:
                 findings: list[str] = []
                 for text in payload.text_fields():
-                    findings.extend(e.entity_type for e in self._analyzer.scan(text) if e.entity_type in restricted_categories)
+                    findings.extend(
+                        e.entity_type
+                        for e in self._analyzer.scan(text, resolve_overlaps=False)
+                        if e.entity_type in restricted_categories
+                    )
                 add(
                     "rescan",
                     not findings,

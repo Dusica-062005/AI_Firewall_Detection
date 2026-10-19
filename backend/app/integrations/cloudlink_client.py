@@ -51,7 +51,7 @@ class CloudLinkClient:
     def _headers(self) -> dict[str, str]:
         return {"X-CloudLink-Key": self._api_key} if self._api_key else {}
 
-    async def send(self, validated: ValidatedPayload) -> HandoffResult:
+    async def send(self, validated: ValidatedPayload, skip_cloud_summary: bool = False) -> HandoffResult:
         if not isinstance(validated, ValidatedPayload):
             raise CloudLinkRefused("Only validated payloads can be sent.")
         payload = validated.payload
@@ -66,11 +66,10 @@ class CloudLinkClient:
         try:
             async with self._client() as client:
                 self.requests_sent += 1
-                response = await client.post(
-                    HANDOFF_PATH,
-                    content=payload.model_dump_json(),
-                    headers={**self._headers(), "Content-Type": "application/json"},
-                )
+                headers = {**self._headers(), "Content-Type": "application/json"}
+                if skip_cloud_summary:
+                    headers["X-Skip-Cloud-Summary"] = "1"
+                response = await client.post(HANDOFF_PATH, content=payload.model_dump_json(), headers=headers)
         except httpx.TimeoutException:
             return HandoffResult("UNAVAILABLE", _ms(started), None, None, "CloudLink receiver timed out. No retry was attempted.")
         except httpx.HTTPError:
@@ -96,6 +95,7 @@ class CloudLinkClient:
                     "latency_ms": _ms(started),
                     "simulated": bool(body.get("simulated", True)),
                     "receipts_count": body.get("receipts_count"),
+                    "cloud_model": body.get("cloud_model"),
                     "message": "Mock CloudLink receiver is reachable.",
                 }
             return {"status": "ERROR", "latency_ms": _ms(started), "simulated": True, "receipts_count": None,

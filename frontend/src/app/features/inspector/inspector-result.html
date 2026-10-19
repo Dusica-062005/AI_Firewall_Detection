@@ -23,6 +23,76 @@
   </div>
 }
 
+@if (r.routing; as route) {
+  <section class="card round-trip">
+    <div class="card-header">
+      <h2><svg class="icon" lucideIcon="columns-2" aria-hidden="true"></svg>Round trip</h2>
+      <div class="row wrap route-facts">
+        <app-status-badge [value]="route.route" [label]="routeLabel()" />
+        <span class="text-sm muted">{{ route.reason | humanize }}</span>
+        <span class="tag">Dial: {{ route.dial | humanize }}</span>
+        @if (route.kill_switch) { <app-status-badge value="KILL_SWITCH" /> }
+      </div>
+    </div>
+    <div class="card-body split">
+      <div class="split__col split__col--machine">
+        <span class="section-title">{{ machineTitle() }}</span>
+        @if (machineText(); as seen) {
+          <app-highlighted-text [text]="seen" mode="placeholders" />
+        } @else {
+          <div class="text-block muted">No model or outbound call was made for this request.</div>
+        }
+        @if (route.cloud_summary) {
+          <span class="section-title">Answer returned by the cloud stand-in ({{ route.cloud_model }})</span>
+          <app-highlighted-text [text]="route.cloud_summary" mode="placeholders" />
+        } @else if (r.agent_view?.tokenized_summary; as tokenized) {
+          <span class="section-title">Answer returned by the local model ({{ r.summary.model }})</span>
+          <app-highlighted-text [text]="tokenized" mode="placeholders" />
+        }
+        <p class="text-xs muted">{{ route.message }}</p>
+      </div>
+
+      <div class="split__arrow" aria-hidden="true"><svg class="icon" lucideIcon="key-round"></svg></div>
+
+      <div class="split__col split__col--agent">
+        <span class="section-title">What the agent sees</span>
+        @if (r.agent_view; as view) {
+          <div class="row wrap">
+            <app-status-badge [value]="view.status" />
+            @if (view.source !== 'NONE') { <app-status-badge [value]="view.source" [label]="view.source === 'CLOUD' ? 'Cloud stand-in' : 'Local model'" /> }
+          </div>
+          @if (view.summary) {
+            <div class="text-block agent-summary">{{ view.summary }}</div>
+          }
+          <p class="text-xs muted">{{ view.message }}</p>
+        }
+        @if (r.tokens.length) {
+          <span class="section-title">Tokens restored locally from the encrypted vault</span>
+          <div class="table-wrap bordered">
+            <table class="data-table">
+              <thead><tr><th scope="col">Token</th><th scope="col">Real value (stays local)</th></tr></thead>
+              <tbody>
+                @for (t of r.tokens; track t.token) {
+                  <tr>
+                    <td class="mono"><span class="placeholder-token">{{ t.token }}</span></td>
+                    <td>@if (t.value !== null) { <span class="mono">{{ t.value }}</span> } @else { <span class="muted">Hidden by configuration</span> }</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+        @if (r.receipt; as rc) {
+          <a class="receipt-link text-xs" routerLink="/trust" [queryParams]="{ receipt: rc.receipt_id }">
+            <svg class="icon" lucideIcon="fingerprint" aria-hidden="true"></svg>
+            Receipt #{{ rc.seq }} {{ rc.signed ? 'signed' : 'UNSIGNED' }} &middot; <span class="mono">{{ rc.hash.slice(0, 12) }}</span>
+          </a>
+        }
+      </div>
+    </div>
+  </section>
+}
+
 <section class="card">
   <div class="card-header">
     <h2><svg class="icon" lucideIcon="activity" aria-hidden="true"></svg>Processing sequence</h2>
@@ -115,7 +185,7 @@
 <section class="card">
   <div class="tabs" role="tablist" aria-label="Processing details" (keydown)="onTabKey($event)">
     <button type="button" role="tab" id="tab-summary" [attr.aria-selected]="tab() === 'summary'" [attr.tabindex]="tab() === 'summary' ? 0 : -1" aria-controls="panel-details" (click)="select('summary')">
-      <svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>Local AI summary
+      <svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>AI summaries
     </button>
     <button type="button" role="tab" id="tab-cloud" [attr.aria-selected]="tab() === 'cloud'" [attr.tabindex]="tab() === 'cloud' ? 0 : -1" aria-controls="panel-details" (click)="select('cloud')">
       <svg class="icon" lucideIcon="cloud" aria-hidden="true"></svg>Cloud handoff
@@ -137,11 +207,25 @@
             @if (r.summary.model) { <span class="text-sm muted">Model {{ r.summary.model }}</span> }
             @if (r.summary.latency_ms !== null) { <span class="text-sm muted">&middot; {{ r.summary.latency_ms | duration }}</span> }
           </div>
+          <span class="section-title">Local model</span>
           @if (r.summary.text) {
             <div class="text-block">{{ r.summary.text }}</div>
             <p class="text-xs muted">Model output is untrusted. It is re-validated before it can be included in any outbound payload.</p>
           } @else {
             <p class="text-sm muted">{{ r.summary.message }}</p>
+          }
+          @if (r.routing?.cloud_summary_status; as cloudStatus) {
+            <span class="section-title">Cloud stand-in (mock CloudLink)</span>
+            <div class="row">
+              <app-status-badge [value]="cloudStatus" />
+              @if (r.routing?.cloud_model) { <span class="text-sm muted">Model {{ r.routing?.cloud_model }}</span> }
+              @if (r.routing?.cloud_latency_ms != null) { <span class="text-sm muted">&middot; {{ r.routing?.cloud_latency_ms | duration }}</span> }
+            </div>
+            @if (r.routing?.cloud_summary) {
+              <div class="text-block">{{ r.routing?.cloud_summary }}</div>
+            } @else if (cloudStatus === 'DISABLED') {
+              <p class="text-sm muted">No cloud stand-in model is configured. Set MOCK_CLOUD_MODEL (for example llama3.1:8b) to enable it.</p>
+            }
           }
         </div>
       }

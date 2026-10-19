@@ -57,6 +57,26 @@ policies:
     destination: CLOUD
     conditions: {profiles: [], channels: [], min_confidence: 0.0}
 
+  - policy_id: redact-date-of-birth
+    name: Redact dates of birth
+    description: Replaces dates of birth with tokens before any AI processing.
+    enabled: true
+    priority: 160
+    entity_categories: [DATE_OF_BIRTH]
+    action: REDACT
+    destination: CLOUD
+    conditions: {profiles: [], channels: [], min_confidence: 0.0}
+
+  - policy_id: allow-call-context
+    name: Allow scheduling and clinical context
+    description: Appointment dates and general health terms may stay in the text so summaries remain useful. The privacy-utility dial can still tokenize them.
+    enabled: true
+    priority: 800
+    entity_categories: [DATE_TIME, HEALTH_TERM]
+    action: ALLOW
+    destination: CLOUD
+    conditions: {profiles: [], channels: [], min_confidence: 0.0}
+
   - policy_id: financial-local-only
     name: Financial identifiers stay local
     description: Account numbers may only be processed by the local model after redaction.
@@ -79,10 +99,10 @@ policies:
 
   - policy_id: healthcare-phi-local-only
     name: Healthcare PHI local-only
-    description: In the healthcare profile, patient identifiers restrict processing to the local model.
+    description: In the healthcare profile, patient identifiers, dates of birth and health terms restrict processing to the local model.
     enabled: true
     priority: 100
-    entity_categories: [PATIENT_ID]
+    entity_categories: [PATIENT_ID, DATE_OF_BIRTH, HEALTH_TERM]
     action: LOCAL_ONLY
     destination: LOCAL
     conditions: {profiles: [healthcare], channels: [], min_confidence: 0.0}

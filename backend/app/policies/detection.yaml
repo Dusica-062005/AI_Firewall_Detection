@@ -28,8 +28,17 @@ categories:
     description: Payment card numbers validated with the Luhn checksum.
     limitations: Numbers that fail the Luhn check are not detected.
   GOVERNMENT_ID:
-    description: US Social Security numbers and Canadian Social Insurance numbers.
-    limitations: US SSN uses Presidio validation, which rejects known invalid ranges. SIN requires the words "SIN" or "social insurance number" nearby.
+    description: US Social Security numbers, Canadian Social Insurance numbers and Indian Aadhaar numbers.
+    limitations: US SSN uses Presidio validation, which rejects known invalid ranges. SIN requires the words "SIN" or "social insurance number" nearby. An Aadhaar number without the word "Aadhaar" nearby is detected only in the 4-4-4 grouped form and with low confidence.
+  DATE_OF_BIRTH:
+    description: Dates of birth introduced by "date of birth", "DOB" or "born on" (custom recognizer).
+    limitations: Only numeric dates and dates with an English month name are recognized. A birth date without one of the cue words is detected as a generic DATE_TIME instead.
+  DATE_TIME:
+    description: Generic dates and times, such as appointment slots, from the Presidio date recognizer.
+    limitations: Statistical and pattern based. Relative expressions ("next Tuesday") are detected inconsistently.
+  HEALTH_TERM:
+    description: Conditions and treatments from a fixed deny-list, including common Hinglish terms (custom recognizer).
+    limitations: Deny-list only. Conditions not on the list, misspellings and native-script terms are not detected.
 
 # Presidio built-in entity -> firewall category.
 presidio_entities:
@@ -40,6 +49,7 @@ presidio_entities:
   CREDIT_CARD: CREDIT_CARD
   IBAN_CODE: ACCOUNT_NUMBER
   US_SSN: GOVERNMENT_ID
+  DATE_TIME: DATE_TIME
 
 # Custom deterministic recognizers. "group" selects the capture group that holds the
 # sensitive value so that context words are not redacted.
@@ -69,3 +79,28 @@ custom_recognizers:
     pattern: '\b(?:SSN|social\s+security\s+number)\s*(?:is|:|=)?\s*(\d{3}-\d{2}-\d{4})\b'
     group: 1
     score: 0.9
+  - name: aadhaar-contextual
+    entity: GOVERNMENT_ID
+    pattern: '\b(?:aadhaar|aadhar|uidai)\s*(?:card\s*)?(?:number|no\.?|#)?\s*(?:is|:|=|hai)?\s*([2-9]\d{3}[\s-]?\d{4}[\s-]?\d{4})\b'
+    group: 1
+    score: 0.9
+  - name: aadhaar-grouped
+    entity: GOVERNMENT_ID
+    pattern: '(?<![\d-])([2-9]\d{3}[\s-]\d{4}[\s-]\d{4})(?![\d-])'
+    group: 1
+    score: 0.5
+  - name: india-mobile
+    entity: PHONE_NUMBER
+    pattern: '(?<![\d+])((?:\+91[\s-]?|0)?[6-9]\d{4}[\s-]?\d{5})(?!\d)'
+    group: 1
+    score: 0.75
+  - name: date-of-birth-contextual
+    entity: DATE_OF_BIRTH
+    pattern: '\b(?:date\s+of\s+birth|d\.?o\.?b\.?|born\s+on|birth\s+date|janam\s+tithi)\s*(?:is|:|=|hai)?\s*(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?,?\s+\d{4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})\b'
+    group: 1
+    score: 0.9
+  - name: health-term-denylist
+    entity: HEALTH_TERM
+    pattern: '\b(diabetes|diabetic|chemo(?:therapy)?|dialysis|HIV|pregnan(?:t|cy)|cardiac|heart\s+attack|cancer|tumou?r|asthma|hypertension|high\s+blood\s+pressure|insulin|depression|epilepsy|tuberculosis|hepatitis|stroke|kidney\s+failure|thyroid|sugar\s+ki\s+bimari|dil\s+ki\s+bimari)\b'
+    group: 1
+    score: 0.85

@@ -15,7 +15,7 @@ NEW_POLICY = {
 
 
 def test_normal_transcript_is_accepted_and_allowed(harness):
-    body = harness.process("Hi, what are your support hours on Saturday?").json()
+    body = harness.process("Hi, what are your support hours?").json()
     assert body["decision"] == "ALLOWED"
     assert body["entities"] == []
     assert body["outbound"]["status"] == "SENT"
@@ -26,8 +26,10 @@ def test_normal_transcript_is_accepted_and_allowed(harness):
 def test_demo_result_shape(harness):
     body = harness.process().json()
     assert body["redacted_transcript"] == (
-        "My name is [PERSON], my patient ID is [PATIENT_ID], and I need help with my appointment."
+        "My name is [PERSON_1], my patient ID is [PATIENT_ID_1], and I need help with my appointment."
     )
+    assert [t["token"] for t in body["tokens"]] == ["[PERSON_1]", "[PATIENT_ID_1]"]
+    assert body["routing"]["route"] == "CLOUD" and body["receipt"]["signed"] is True
     assert {e["entity_type"]: e["value"] for e in body["entities"]} == {"PERSON": "John Smith", "PATIENT_ID": "48291"}
     assert body["decisive_policy_id"] == "redact-patient-id"
     assert body["event_id"].startswith("evt-")
@@ -74,7 +76,7 @@ def test_oversized_body_is_rejected(harness_factory):
 def test_policy_crud_and_validation(harness):
     client = harness.client
     listing = client.get("/api/policies").json()
-    assert listing["total"] == 7
+    assert listing["total"] == 9
 
     created = client.post("/api/policies", json=NEW_POLICY)
     assert created.status_code == 201, created.text
@@ -100,7 +102,7 @@ def test_invalid_policies_are_rejected_by_api(harness):
     assert check["valid"] is False and check["errors"]
     ok = client.post("/api/policies/validate", json=NEW_POLICY).json()
     assert ok["valid"] is True
-    assert client.get("/api/policies").json()["total"] == 7  # nothing was saved
+    assert client.get("/api/policies").json()["total"] == 9  # nothing was saved
 
 
 def test_policy_change_affects_backend_behaviour(harness):
@@ -115,7 +117,7 @@ def test_disabling_the_baseline_rule_denies_cloud(harness):
     baseline = harness.client.get("/api/policies/baseline-sanitized-cloud").json()
     payload = {k: baseline[k] for k in ("name", "description", "priority", "entity_categories", "action", "destination", "conditions")}
     harness.client.put("/api/policies/baseline-sanitized-cloud", json={**payload, "enabled": False})
-    body = harness.process("Hi, what are your support hours on Saturday?").json()
+    body = harness.process("Hi, what are your support hours?").json()
     assert body["decision"] == "BLOCKED"
     assert harness.receiver_transport.requests == []
 
@@ -136,7 +138,7 @@ def test_policy_changes_persist_across_restarts(harness_factory):
 def test_reset_to_defaults(harness):
     harness.client.post("/api/policies", json=NEW_POLICY)
     reset = harness.client.post("/api/policies/reset").json()
-    assert reset["total"] == 7
+    assert reset["total"] == 9
 
 
 def test_admin_key_protects_policy_mutations(harness_factory):

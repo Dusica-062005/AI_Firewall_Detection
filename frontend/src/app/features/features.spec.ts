@@ -16,7 +16,8 @@ function blockedResult(): FirewallResult {
     decision: 'BLOCKED', status: 'COMPLETED', authorized_destination: 'NONE', policy_version: 'ps-1',
     decisive_policy_id: 'restricted-block-phi', error_category: null, reasons: ['Blocked by policy.'], warnings: [],
     transcript_chars: TRANSCRIPT.length, entities: [], entity_counts: {}, matched_policies: [],
-    redacted_transcript: 'My name is [PERSON], my patient ID is [PATIENT_ID], and I need help with my appointment.',
+    redacted_transcript: 'My name is [PERSON_1], my patient ID is [PATIENT_ID_1], and I need help with my appointment.',
+    tokens: [], routing: null, agent_view: null, receipt: null,
     summary: { status: 'NOT_AUTHORIZED', text: null, model: null, latency_ms: null, message: 'Not run.' },
     outbound: {
       status: 'NOT_AUTHORIZED', reached_receiver: false, simulated: true, target: null, payload: null,
@@ -100,7 +101,7 @@ describe('Inspector', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(text(el)).toContain('BLOCKED');
     expect(text(el)).toContain('No model or cloud call was made');
-    expect(el.querySelector('.placeholder-token')?.textContent).toBe('[PERSON]');
+    expect(el.querySelector('.placeholder-token')?.textContent).toBe('[PERSON_1]');
   });
 });
 

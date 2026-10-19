@@ -49,6 +49,7 @@ class CloudLinkStatus(BaseModel):
     base_url: str
     simulated: bool = True
     receipts_count: int | None
+    cloud_model: str | None = None
     latency_ms: float | None
     message: str
 
@@ -118,6 +119,43 @@ class OutboundInfo(BaseModel):
     message: str
 
 
+class TokenResult(BaseModel):
+    token: str
+    entity_type: str
+    value: str | None = Field(default=None, description="Present only when EXPOSE_DETECTED_VALUES is enabled.")
+
+
+class RoutingInfo(BaseModel):
+    """Sensitivity-based router outcome (FR-13)."""
+
+    route: Literal["LOCAL", "CLOUD", "NONE"]
+    reason: str  # machine-readable code, e.g. kill_switch, low_confidence_entity
+    message: str
+    kill_switch: bool
+    dial: str
+    cloud_model: str | None = None
+    cloud_summary_status: str | None = None
+    cloud_summary: str | None = Field(default=None, description="Tokenized summary returned by the cloud stand-in.")
+    cloud_latency_ms: float | None = None
+
+
+class AgentView(BaseModel):
+    """What the agent sees: the summary with tokens restored locally from the vault."""
+
+    status: Literal["REHYDRATED", "TOKENS_ONLY", "NO_SUMMARY"]
+    source: Literal["CLOUD", "LOCAL", "NONE"]
+    summary: str | None
+    tokenized_summary: str | None
+    message: str
+
+
+class ReceiptRef(BaseModel):
+    receipt_id: str
+    seq: int
+    hash: str
+    signed: bool
+
+
 class LatencyBreakdown(BaseModel):
     detection_ms: float | None = None
     policy_ms: float | None = None
@@ -149,8 +187,12 @@ class FirewallResult(BaseModel):
     entity_counts: dict[str, int]
     matched_policies: list[MatchedPolicyResult]
     redacted_transcript: str | None
+    tokens: list[TokenResult] = Field(default_factory=list)
     summary: SummaryInfo
     outbound: OutboundInfo
+    routing: RoutingInfo | None = None
+    agent_view: AgentView | None = None
+    receipt: ReceiptRef | None = None
     steps: list[ProcessingStep]
     latency: LatencyBreakdown
     created_at: datetime
@@ -213,6 +255,7 @@ class AppConfig(BaseModel):
     cloudlink: dict
     audit: dict
     admin_auth_enabled: bool
+    trust: dict = Field(default_factory=dict)
 
 
 class SampleTranscript(BaseModel):

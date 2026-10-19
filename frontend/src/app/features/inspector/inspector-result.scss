@@ -102,6 +102,80 @@
   min-width: 0;
 }
 
+// Round trip: what the model/cloud saw (tokens) next to what the agent sees (re-hydrated).
+.round-trip {
+  border-top: 3px solid var(--c-blue);
+}
+
+.route-facts {
+  gap: var(--s-2);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: var(--s-4);
+  align-items: start;
+
+  @media (max-width: 900px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.split__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  min-width: 0;
+  padding: var(--s-3);
+  border-radius: var(--r-md);
+  border: 1px solid var(--c-border);
+}
+
+.split__col--machine {
+  background: var(--c-surface-muted);
+}
+
+.split__col--agent {
+  border-color: #bfe3d3;
+  background: var(--c-success-bg);
+}
+
+.split__arrow {
+  padding-top: 40px;
+  color: var(--c-text-2);
+
+  @media (max-width: 900px) {
+    display: none;
+  }
+}
+
+.agent-summary {
+  white-space: pre-line;
+  background: var(--c-surface);
+}
+
+.placeholder-token {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--c-info-bg, #e8f0fb);
+  color: var(--c-blue);
+  font-weight: 600;
+}
+
+.receipt-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  color: var(--c-text-2);
+
+  .icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
 .low-conf {
   margin-left: 4px;
   height: 18px;
