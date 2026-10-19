@@ -1,0 +1,270 @@
+@let r = result();
+
+<section class="card decision decision--{{ r.decision.toLowerCase() }}" aria-live="polite">
+  <div class="decision__main">
+    <div class="decision__label">
+      <span class="section-title">Final decision</span>
+      <app-status-badge [value]="r.decision" [uppercase]="true" [strong]="true" />
+    </div>
+    <p class="decision__text">{{ decisionText() }}</p>
+  </div>
+  <dl class="decision__facts">
+    <div><dt>Authorized destination</dt><dd><app-status-badge [value]="r.authorized_destination" /></dd></div>
+    <div><dt>Processing status</dt><dd><app-status-badge [value]="r.status" /></dd></div>
+    <div><dt>Total duration</dt><dd class="mono">{{ r.latency.total_ms | duration }}</dd></div>
+    <div><dt>Request ID</dt><dd class="mono" [title]="r.request_id">{{ r.request_id.slice(0, 8) }}</dd></div>
+  </dl>
+</section>
+
+@for (w of r.warnings; track $index) {
+  <div class="alert alert-warning" role="status">
+    <svg class="icon" lucideIcon="triangle-alert" aria-hidden="true"></svg>
+    <span>{{ w }}</span>
+  </div>
+}
+
+<section class="card">
+  <div class="card-header">
+    <h2><svg class="icon" lucideIcon="activity" aria-hidden="true"></svg>Processing sequence</h2>
+    <span class="card-header__meta">{{ r.operation === 'INSPECT' ? 'Inspection only' : 'Mode: ' + (r.mode | humanize) }}</span>
+  </div>
+  <div class="card-body">
+    <app-processing-steps [steps]="r.steps" />
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <h2><svg class="icon" lucideIcon="eye-off" aria-hidden="true"></svg>Before and after</h2>
+    <span class="card-header__meta">{{ r.transcript_chars | number }} characters, synthetic input</span>
+  </div>
+  <div class="card-body compare">
+    <div class="stack compare__col">
+      <span class="section-title">Original synthetic input</span>
+      <app-highlighted-text [text]="original()" [entities]="r.entities" mode="entities" />
+    </div>
+    <div class="compare__arrow" aria-hidden="true"><svg class="icon" lucideIcon="arrow-right"></svg></div>
+    <div class="stack compare__col">
+      <span class="section-title">Protected text used for AI processing</span>
+      @if (r.redacted_transcript !== null) {
+        <app-highlighted-text [text]="r.redacted_transcript" mode="placeholders" />
+        @if (r.decision === 'BLOCKED') {
+          <span class="text-xs muted">Preview only. Blocked content is not passed to any model.</span>
+        }
+      } @else {
+        <div class="text-block muted">Not produced: enforcement failed before protection completed.</div>
+      }
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <h2>
+      <svg class="icon" lucideIcon="scan-search" aria-hidden="true"></svg>Detected sensitive entities
+      <span class="pill-count">{{ r.entities.length }}</span>
+    </h2>
+    <span class="card-header__meta">Categories are audited; values are shown here only for synthetic data</span>
+  </div>
+  <div class="card-body card-body--flush table-wrap">
+    @if (r.entities.length) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Detected value</th>
+            <th scope="col" class="num">Position</th>
+            <th scope="col" class="num">Confidence</th>
+            <th scope="col">Policy decision</th>
+            <th scope="col">Rule</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of r.entities; track $index) {
+            <tr>
+              <td><span class="tag">{{ e.entity_type }}</span></td>
+              <td>
+                @if (e.value !== null) { <span class="mono">{{ e.value }}</span> } @else { <span class="muted">Hidden by configuration</span> }
+              </td>
+              <td class="num mono">{{ e.start }}-{{ e.end }}</td>
+              <td class="num">
+                {{ e.score | number: '1.2-2' }}
+                @if (e.low_confidence) { <span class="badge badge-warning low-conf" title="Below the low-confidence threshold; handled conservatively">Low</span> }
+              </td>
+              <td><app-status-badge [value]="e.action" /></td>
+              <td>
+                <div class="rule-cell">
+                  <span class="mono">{{ e.policy_id }}</span>
+                  <span class="text-xs muted">{{ e.recognizer }}</span>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <div class="empty-state">
+        <svg class="icon" lucideIcon="shield-check" aria-hidden="true"></svg>
+        <span class="empty-state__title">No sensitive entities detected</span>
+        <span>Detection is probabilistic; the configured policy still governs processing.</span>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="card">
+  <div class="tabs" role="tablist" aria-label="Processing details" (keydown)="onTabKey($event)">
+    <button type="button" role="tab" id="tab-summary" [attr.aria-selected]="tab() === 'summary'" [attr.tabindex]="tab() === 'summary' ? 0 : -1" aria-controls="panel-details" (click)="select('summary')">
+      <svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>Local AI summary
+    </button>
+    <button type="button" role="tab" id="tab-cloud" [attr.aria-selected]="tab() === 'cloud'" [attr.tabindex]="tab() === 'cloud' ? 0 : -1" aria-controls="panel-details" (click)="select('cloud')">
+      <svg class="icon" lucideIcon="cloud" aria-hidden="true"></svg>Cloud handoff
+    </button>
+    <button type="button" role="tab" id="tab-policy" [attr.aria-selected]="tab() === 'policy'" [attr.tabindex]="tab() === 'policy' ? 0 : -1" aria-controls="panel-details" (click)="select('policy')">
+      <svg class="icon" lucideIcon="list-checks" aria-hidden="true"></svg>Policy evaluation
+    </button>
+    <button type="button" role="tab" id="tab-audit" [attr.aria-selected]="tab() === 'audit'" [attr.tabindex]="tab() === 'audit' ? 0 : -1" aria-controls="panel-details" (click)="select('audit')">
+      <svg class="icon" lucideIcon="file-text" aria-hidden="true"></svg>Audit record
+    </button>
+  </div>
+
+  <div class="card-body" id="panel-details" role="tabpanel" [attr.aria-labelledby]="'tab-' + tab()">
+    @switch (tab()) {
+      @case ('summary') {
+        <div class="stack">
+          <div class="row">
+            <app-status-badge [value]="r.summary.status" />
+            @if (r.summary.model) { <span class="text-sm muted">Model {{ r.summary.model }}</span> }
+            @if (r.summary.latency_ms !== null) { <span class="text-sm muted">&middot; {{ r.summary.latency_ms | duration }}</span> }
+          </div>
+          @if (r.summary.text) {
+            <div class="text-block">{{ r.summary.text }}</div>
+            <p class="text-xs muted">Model output is untrusted. It is re-validated before it can be included in any outbound payload.</p>
+          } @else {
+            <p class="text-sm muted">{{ r.summary.message }}</p>
+          }
+        </div>
+      }
+      @case ('cloud') {
+        <div class="stack">
+          <div class="row wrap">
+            <app-status-badge [value]="r.outbound.status" />
+            <span class="simulated-label">Mock CloudLink</span>
+            @if (r.outbound.latency_ms !== null) { <span class="text-sm muted">{{ r.outbound.latency_ms | duration }}</span> }
+          </div>
+          <p class="text-sm">{{ r.outbound.message }}</p>
+          @if (!r.outbound.reached_receiver) {
+            <div class="alert alert-info">
+              <svg class="icon" lucideIcon="lock" aria-hidden="true"></svg>
+              <span>No data reached the CloudLink receiver for this request.</span>
+            </div>
+          }
+
+          @if (r.outbound.validation.length) {
+            <span class="section-title">Outbound validation checks</span>
+            <ul class="checks">
+              @for (c of r.outbound.validation; track c.name) {
+                <li class="check" [class.check--fail]="!c.passed">
+                  <svg class="icon" [lucideIcon]="c.passed ? 'circle-check' : 'circle-x'" aria-hidden="true"></svg>
+                  <span class="check__name">{{ c.name | humanize }}</span>
+                  <span class="text-sm muted">{{ c.detail }}</span>
+                </li>
+              }
+            </ul>
+          }
+
+          @if (r.outbound.payload) {
+            <span class="section-title">Final approved outbound payload</span>
+            @if (r.outbound.target) { <span class="text-xs mono muted">POST {{ r.outbound.target }}</span> }
+            <pre class="code-block">{{ r.outbound.payload | json }}</pre>
+          }
+          @if (r.outbound.receiver_response) {
+            <span class="section-title">Mock receiver response (HTTP {{ r.outbound.http_status }})</span>
+            <pre class="code-block">{{ r.outbound.receiver_response | json }}</pre>
+          }
+        </div>
+      }
+      @case ('policy') {
+        <div class="stack">
+          <dl class="kv">
+            <dt>Decisive rule</dt><dd class="mono">{{ r.decisive_policy_id ?? '-' }}</dd>
+            <dt>Profile / channel</dt><dd>{{ r.profile }} / {{ r.channel }}</dd>
+            <dt>Policy set version</dt><dd class="mono">{{ r.policy_version ?? '-' }}</dd>
+            @if (r.error_category) { <dt>Error category</dt><dd class="mono">{{ r.error_category }}</dd> }
+          </dl>
+
+          <span class="section-title">Decision explanation</span>
+          <ul class="reasons">
+            @for (reason of r.reasons; track $index) { <li>{{ reason }}</li> }
+          </ul>
+
+          @if (r.matched_policies.length) {
+            <span class="section-title">Matched policies (evaluation order)</span>
+            <div class="table-wrap bordered">
+              <table class="data-table">
+                <thead>
+                  <tr><th scope="col">Policy</th><th scope="col">Action</th><th scope="col">Destination</th><th scope="col" class="num">Priority</th><th scope="col">Matched</th></tr>
+                </thead>
+                <tbody>
+                  @for (p of r.matched_policies; track p.policy_id) {
+                    <tr>
+                      <td><span class="policy-name">{{ p.name }}</span><span class="text-xs mono muted">{{ p.policy_id }}</span></td>
+                      <td><app-status-badge [value]="p.action" /></td>
+                      <td><app-status-badge [value]="p.destination" /></td>
+                      <td class="num">{{ p.priority }}</td>
+                      <td><div class="tag-list">@for (c of p.matched_categories; track c) { <span class="tag">{{ c }}</span> }</div></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <span class="section-title">Measured stage latency</span>
+          <div class="table-wrap bordered">
+            <table class="data-table">
+              <tbody>
+                @for (row of latencyRows(); track row.label) {
+                  <tr><td>{{ row.label }}</td><td class="num">{{ row.value | duration }}</td></tr>
+                }
+                <tr class="total-row"><td>Total (excluding audit write)</td><td class="num">{{ r.latency.total_ms | duration }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+      @case ('audit') {
+        <div class="stack">
+          <app-error-alert [error]="auditError()" title="Audit record could not be loaded" />
+          @if (auditEvent(); as ev) {
+            <div class="alert alert-success">
+              <svg class="icon" lucideIcon="lock" aria-hidden="true"></svg>
+              <span>Stored record contains entity categories and counts only. No transcript text or detected values are persisted.</span>
+            </div>
+            <dl class="kv">
+              <dt>Event ID</dt><dd class="mono">{{ ev.event_id }}</dd>
+              <dt>Decision</dt><dd><app-status-badge [value]="ev.decision" /></dd>
+              <dt>Destination</dt><dd><app-status-badge [value]="ev.destination" /></dd>
+              <dt>Entity categories</dt>
+              <dd>
+                <div class="tag-list">
+                  @for (k of objectKeys(ev.entity_counts); track k) { <span class="tag">{{ k }} x{{ ev.entity_counts[k] }}</span> } @empty { <span class="muted">None</span> }
+                </div>
+              </dd>
+              <dt>Local AI / cloud</dt><dd>{{ ev.local_ai_status | humanize }} / {{ ev.cloud_status | humanize }}</dd>
+              <dt>Transcript length</dt><dd>{{ ev.transcript_chars }} characters (content not stored)</dd>
+            </dl>
+            <a class="btn btn-secondary btn-sm align-start" routerLink="/audit" [queryParams]="{ event: ev.event_id }">
+              Open in audit trail
+              <svg class="icon" lucideIcon="arrow-right" aria-hidden="true"></svg>
+            </a>
+          } @else if (!r.event_id) {
+            <p class="text-sm muted">No audit event was recorded for this request.</p>
+          } @else if (!auditError()) {
+            <p class="text-sm muted">Loading audit record</p>
+          }
+        </div>
+      }
+    }
+  </div>
+</section>

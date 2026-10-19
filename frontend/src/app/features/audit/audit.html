@@ -1,0 +1,216 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-header__text">
+      <h1>Audit Trail</h1>
+      <p>Privacy-safe record of every firewall decision. Entries hold entity categories and counts, never transcript text or detected values.</p>
+    </div>
+    <div class="toolbar">
+      <button type="button" class="btn btn-secondary" (click)="load(page())" [disabled]="loading()">
+        <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <form class="card filters" [formGroup]="filters" (ngSubmit)="apply()">
+    <div class="filters__grid">
+      <div class="field">
+        <label for="f-from">From</label>
+        <input id="f-from" class="input" type="datetime-local" formControlName="date_from" />
+      </div>
+      <div class="field">
+        <label for="f-to">To</label>
+        <input id="f-to" class="input" type="datetime-local" formControlName="date_to" />
+      </div>
+      <div class="field">
+        <label for="f-decision">Decision</label>
+        <select id="f-decision" class="select" formControlName="decision">
+          <option value="">All decisions</option>
+          @for (d of decisions; track d) { <option [value]="d">{{ d | humanize }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-policy">Policy applied</label>
+        <select id="f-policy" class="select" formControlName="policy_id">
+          <option value="">All policies</option>
+          @for (p of policies(); track p.policy_id) { <option [value]="p.policy_id">{{ p.name }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-status">Processing status</label>
+        <select id="f-status" class="select" formControlName="status">
+          <option value="">All statuses</option>
+          @for (s of statuses; track s) { <option [value]="s">{{ s | humanize }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-dest">Destination</label>
+        <select id="f-dest" class="select" formControlName="destination">
+          <option value="">All destinations</option>
+          @for (d of destinations; track d) { <option [value]="d">{{ d | humanize }}</option> }
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-req">Request ID</label>
+        <input id="f-req" class="input mono" formControlName="request_id" placeholder="Contains" autocomplete="off" />
+      </div>
+      <div class="filters__actions">
+        <button type="button" class="btn btn-secondary" (click)="reset()">Reset</button>
+        <button type="submit" class="btn btn-primary">
+          <svg class="icon" lucideIcon="funnel" aria-hidden="true"></svg>
+          Apply filters
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <app-error-alert [error]="error()" title="Audit events could not be loaded" [retryable]="true" (retry)="load(page())" />
+
+  <section class="card">
+    <div class="card-header">
+      <h2><svg class="icon" lucideIcon="file-text" aria-hidden="true"></svg>Events</h2>
+      <span class="card-header__meta">{{ rangeText() }}</span>
+    </div>
+    <div class="card-body card-body--flush table-wrap">
+      @if (items().length) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Event ID</th>
+              <th scope="col">Timestamp</th>
+              <th scope="col">Request ID</th>
+              <th scope="col">Policy applied</th>
+              <th scope="col">Entity categories</th>
+              <th scope="col">Decision</th>
+              <th scope="col">Status</th>
+              <th scope="col">Destination</th>
+              <th scope="col" class="num">Latency</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ev of items(); track ev.event_id) {
+              <tr class="is-clickable" tabindex="0" (click)="open(ev)" (keydown.enter)="open(ev)"
+                  [attr.aria-label]="'Open audit event ' + ev.event_id">
+                <td class="mono nowrap">{{ ev.event_id }}</td>
+                <td class="nowrap">{{ ev.created_at | date: 'MMM d, y, HH:mm:ss' }}</td>
+                <td class="mono" [title]="ev.request_id">{{ ev.request_id.slice(0, 8) }}</td>
+                <td class="mono">{{ ev.decisive_policy_id }}</td>
+                <td>
+                  <div class="tag-list">
+                    @for (c of categories(ev); track c) { <span class="tag">{{ c }}</span> } @empty { <span class="muted">None</span> }
+                  </div>
+                </td>
+                <td><app-status-badge [value]="ev.decision" /></td>
+                <td><app-status-badge [value]="ev.status" /></td>
+                <td><app-status-badge [value]="ev.destination" /></td>
+                <td class="num">{{ ev.total_latency_ms | duration }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else if (loading()) {
+        <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Loading audit events</span></div>
+      } @else if (!error()) {
+        <div class="empty-state">
+          <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
+          <span class="empty-state__title">No audit events match</span>
+          <span>Adjust the filters or process a transcript in the Inspector.</span>
+        </div>
+      }
+    </div>
+    @if (total() > 0) {
+      <div class="pager">
+        <span class="text-sm muted">Page {{ page() }} of {{ pageCount() }}</span>
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() <= 1 || loading()" (click)="load(page() - 1)">
+          <svg class="icon" lucideIcon="chevron-left" aria-hidden="true"></svg>Previous
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() >= pageCount() || loading()" (click)="load(page() + 1)">
+          Next<svg class="icon" lucideIcon="chevron-right" aria-hidden="true"></svg>
+        </button>
+      </div>
+    }
+  </section>
+</div>
+
+@if (event()) {
+  <div class="overlay" (click)="close()"></div>
+  <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="audit-detail-title">
+    <div class="drawer__header">
+      <div class="stack" style="gap: 2px">
+        <h2 id="audit-detail-title">Audit event</h2>
+        <span class="text-xs mono muted">{{ event() }}</span>
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" aria-label="Close audit event" (click)="close()">
+        <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+      </button>
+    </div>
+    <div class="drawer__body">
+      <app-error-alert [error]="detailError()" title="Audit event could not be loaded" />
+      @if (detailLoading()) {
+        <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Loading event</span></div>
+      } @else if (selected(); as ev) {
+        <div class="row wrap">
+          <app-status-badge [value]="ev.decision" [uppercase]="true" [strong]="true" />
+          <app-status-badge [value]="ev.status" />
+          <app-status-badge [value]="ev.destination" />
+        </div>
+
+        <section class="stack">
+          <span class="section-title">Request</span>
+          <dl class="kv">
+            <dt>Timestamp</dt><dd>{{ ev.created_at | date: 'MMM d, y, HH:mm:ss.SSS' }}</dd>
+            <dt>Request ID</dt><dd class="mono">{{ ev.request_id }}</dd>
+            <dt>Operation / mode</dt><dd>{{ ev.operation | humanize }} / {{ ev.mode | humanize }}</dd>
+            <dt>Profile / channel</dt><dd>{{ ev.profile }} / {{ ev.channel }}</dd>
+            <dt>Transcript length</dt><dd>{{ ev.transcript_chars }} characters</dd>
+          </dl>
+        </section>
+
+        <section class="stack">
+          <span class="section-title">Policy</span>
+          <dl class="kv">
+            <dt>Decisive rule</dt><dd class="mono">{{ ev.decisive_policy_id }}</dd>
+            <dt>Matched policies</dt>
+            <dd><div class="tag-list">@for (p of ev.policy_ids; track p) { <span class="tag">{{ p }}</span> } @empty { <span class="muted">None</span> }</div></dd>
+            <dt>Policy set version</dt><dd class="mono">{{ ev.policy_version }}</dd>
+          </dl>
+        </section>
+
+        <section class="stack">
+          <span class="section-title">Detected entity categories</span>
+          <div class="tag-list">
+            @for (c of categories(ev); track c) { <span class="tag">{{ c }} x{{ ev.entity_counts[c] }}</span> } @empty { <span class="muted text-sm">No sensitive entities detected</span> }
+          </div>
+          <p class="text-xs muted">Categories and counts only. The detected values themselves are not stored.</p>
+        </section>
+
+        <section class="stack">
+          <span class="section-title">Processing outcome</span>
+          <dl class="kv">
+            <dt>Local AI</dt><dd><app-status-badge [value]="ev.local_ai_status" /></dd>
+            <dt>Cloud handoff</dt><dd><app-status-badge [value]="ev.cloud_status" /> <span class="simulated-label">Mock</span></dd>
+            @if (ev.cloud_receipt_id) { <dt>Receiver receipt</dt><dd class="mono">{{ ev.cloud_receipt_id }}</dd> }
+            @if (ev.error_category) { <dt>Error category</dt><dd class="mono">{{ ev.error_category }}</dd> }
+            @if (ev.warnings.length) {
+              <dt>Warnings</dt><dd><div class="tag-list">@for (w of ev.warnings; track w) { <span class="tag">{{ w }}</span> }</div></dd>
+            }
+          </dl>
+        </section>
+
+        <section class="stack">
+          <span class="section-title">Measured latency</span>
+          <div class="table-wrap bordered">
+            <table class="data-table">
+              <tbody>
+                @for (row of stageRows(ev); track row.label) {
+                  <tr><td>{{ row.label }}</td><td class="num">{{ row.value | duration }}</td></tr>
+                }
+                <tr class="total-row"><td>Total</td><td class="num">{{ ev.total_latency_ms | duration }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      }
+    </div>
+  </aside>
+}

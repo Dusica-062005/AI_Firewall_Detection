@@ -1,0 +1,31 @@
+<div class="brand">
+  <div class="brand__mark" aria-hidden="true">
+    <svg class="icon" lucideIcon="shield-check"></svg>
+  </div>
+  @if (!collapsed()) {
+    <div class="brand__text">
+      <span class="brand__name">AI Data Firewall</span>
+      <span class="brand__sub">Mitel Innovation Day prototype</span>
+    </div>
+  }
+</div>
+
+<nav class="nav" aria-label="Primary">
+  @for (item of items; track item.path) {
+    <a class="nav__item" [routerLink]="item.path" routerLinkActive="is-active"
+       #rla="routerLinkActive" [attr.aria-current]="rla.isActive ? 'page' : null"
+       [attr.title]="collapsed() ? item.label : null">
+      <svg class="icon" [lucideIcon]="item.icon" aria-hidden="true"></svg>
+      <span class="nav__label">{{ item.label }}</span>
+    </a>
+  }
+</nav>
+
+<div class="sidebar__footer">
+  <button type="button" class="collapse-btn" (click)="toggle.emit()"
+          [attr.aria-label]="collapsed() ? 'Expand navigation' : 'Collapse navigation'"
+          [attr.aria-expanded]="!collapsed()">
+    <svg class="icon" [lucideIcon]="collapsed() ? 'panel-left-open' : 'panel-left-close'" aria-hidden="true"></svg>
+    <span class="nav__label">Collapse</span>
+  </button>
+</div>

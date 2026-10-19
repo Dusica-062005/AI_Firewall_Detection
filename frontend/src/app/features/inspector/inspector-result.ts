@@ -1,0 +1,92 @@
+import { DecimalPipe, JsonPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { LucideDynamicIcon } from '@lucide/angular';
+
+import { ApiError, AuditEvent, FirewallResult } from '../../core/models/api.models';
+import { FirewallApiService } from '../../core/services/firewall-api.service';
+import { ErrorAlert } from '../../shared/components/error-alert';
+import { StatusBadge } from '../../shared/components/status-badge';
+import { DurationPipe, HumanizePipe } from '../../shared/pipes/format.pipes';
+import { HighlightedText } from './highlighted-text';
+import { ProcessingSteps } from './processing-steps';
+
+type Tab = 'summary' | 'cloud' | 'policy' | 'audit';
+
+const DECISION_TEXT: Record<string, string> = {
+  ALLOWED: 'No protected data required changes. Processing was permitted by policy.',
+  REDACTED: 'Sensitive values were replaced with placeholders before any AI processing.',
+  LOCAL_ONLY: 'Processing is restricted to the local model. Cloud transmission is prohibited.',
+  BLOCKED: 'Policy prohibits AI processing of this communication. No model or cloud call was made.',
+  PROCESSING_FAILED: 'Enforcement could not be completed. The firewall failed closed and nothing was sent.',
+};
+
+@Component({
+  selector: 'app-inspector-result',
+  imports: [
+    RouterLink, LucideDynamicIcon, DecimalPipe, JsonPipe, StatusBadge, ErrorAlert, DurationPipe, HumanizePipe,
+    HighlightedText, ProcessingSteps,
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './inspector-result.html',
+  styleUrl: './inspector-result.scss',
+})
+export class InspectorResult {
+  private readonly api = inject(FirewallApiService);
+
+  readonly result = input.required<FirewallResult>();
+  readonly original = input.required<string>();
+
+  protected readonly tab = signal<Tab>('summary');
+  protected readonly auditEvent = signal<AuditEvent | null>(null);
+  protected readonly auditError = signal<ApiError | null>(null);
+  protected readonly decisionText = computed(() => DECISION_TEXT[this.result().decision] ?? '');
+  protected readonly failedChecks = computed(() => this.result().outbound.validation.filter((c) => !c.passed).length);
+
+  constructor() {
+    effect(() => {
+      const r = this.result();
+      this.auditEvent.set(null);
+      this.auditError.set(null);
+      this.tab.set(r.operation === 'INSPECT' ? 'policy' : 'summary');
+      if (r.event_id) {
+        this.api.auditEvent(r.event_id).subscribe({
+          next: (event) => this.auditEvent.set(event),
+          error: (err: ApiError) => this.auditError.set(err),
+        });
+      }
+    });
+  }
+
+  protected select(tab: Tab): void {
+    this.tab.set(tab);
+  }
+
+  protected onTabKey(event: KeyboardEvent): void {
+    const order: Tab[] = ['summary', 'cloud', 'policy', 'audit'];
+    const index = order.indexOf(this.tab());
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      const next = order[(index + (event.key === 'ArrowRight' ? 1 : order.length - 1)) % order.length];
+      this.tab.set(next);
+      (document.getElementById(`tab-${next}`) as HTMLElement | null)?.focus();
+    }
+  }
+
+  protected latencyRows(): { label: string; value: number | null }[] {
+    const l = this.result().latency;
+    return [
+      { label: 'Detection', value: l.detection_ms },
+      { label: 'Policy evaluation', value: l.policy_ms },
+      { label: 'Protection (redaction)', value: l.protection_ms },
+      { label: 'Local AI inference', value: l.local_ai_ms },
+      { label: 'Outbound validation', value: l.validation_ms },
+      { label: 'Cloud handoff', value: l.cloud_ms },
+      { label: 'Audit write', value: l.audit_ms },
+    ];
+  }
+
+  protected objectKeys(record: Record<string, unknown>): string[] {
+    return Object.keys(record);
+  }
+}

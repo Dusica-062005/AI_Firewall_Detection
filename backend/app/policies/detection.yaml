@@ -1,0 +1,71 @@
+# Detection configuration for the Mitel AI Data Firewall.
+#
+# Firewall categories are the entity names used by policies. Each category is fed by
+# Presidio built-in recognizers (mapped below) and/or custom deterministic recognizers.
+# Editing this file requires a backend restart. Custom regular expressions are trusted
+# administrator configuration: keep them simple and anchored to avoid slow matching.
+
+categories:
+  PERSON:
+    description: Personal names detected by the spaCy named-entity model.
+    limitations: Statistical model. Misses uncommon or lowercase names and can mislabel organisations or places.
+  PHONE_NUMBER:
+    description: Phone numbers validated with the phonenumbers library.
+    limitations: Base confidence is low (0.4) unless context words such as "call" or "phone" are nearby.
+  EMAIL_ADDRESS:
+    description: RFC-style email addresses.
+    limitations: Does not detect obfuscated addresses such as "name at example dot com".
+  LOCATION:
+    description: Cities, regions and countries from the spaCy named-entity model.
+    limitations: Statistical model. Street addresses are not reliably detected.
+  PATIENT_ID:
+    description: Patient and medical record identifiers (custom recognizer).
+    limitations: Only detected when introduced by context words such as "patient ID" or "MRN". A bare number is not treated as a patient ID.
+  ACCOUNT_NUMBER:
+    description: Bank and customer account numbers (custom recognizer plus Presidio IBAN).
+    limitations: Only detected when introduced by "account" or "acct", or when formatted as a valid IBAN.
+  CREDIT_CARD:
+    description: Payment card numbers validated with the Luhn checksum.
+    limitations: Numbers that fail the Luhn check are not detected.
+  GOVERNMENT_ID:
+    description: US Social Security numbers and Canadian Social Insurance numbers.
+    limitations: US SSN uses Presidio validation, which rejects known invalid ranges. SIN requires the words "SIN" or "social insurance number" nearby.
+
+# Presidio built-in entity -> firewall category.
+presidio_entities:
+  PERSON: PERSON
+  PHONE_NUMBER: PHONE_NUMBER
+  EMAIL_ADDRESS: EMAIL_ADDRESS
+  LOCATION: LOCATION
+  CREDIT_CARD: CREDIT_CARD
+  IBAN_CODE: ACCOUNT_NUMBER
+  US_SSN: GOVERNMENT_ID
+
+# Custom deterministic recognizers. "group" selects the capture group that holds the
+# sensitive value so that context words are not redacted.
+custom_recognizers:
+  - name: patient-id-contextual
+    entity: PATIENT_ID
+    pattern: '\b(?:patient|medical\s+record|mrn|chart)\s*(?:id|number|no\.?|#)?\s*(?:is|:|=)?\s*#?\s*([A-Z]{0,3}-?\d{4,10})\b'
+    group: 1
+    score: 0.9
+  - name: patient-id-mrn-prefix
+    entity: PATIENT_ID
+    pattern: '\bMRN-?\d{5,10}\b'
+    group: 0
+    score: 0.9
+  - name: account-number-contextual
+    entity: ACCOUNT_NUMBER
+    pattern: '\b(?:account|acct)\s*(?:number|no\.?|#)?\s*(?:is|:|=)?\s*#?\s*(\d{4}[-\s]\d{4}[-\s]\d{2,8}|\d{6,17})\b'
+    group: 1
+    score: 0.9
+  - name: canadian-sin-contextual
+    entity: GOVERNMENT_ID
+    pattern: '\b(?:SIN|social\s+insurance\s+number)\s*(?:is|:|=)?\s*(\d{3}[-\s]?\d{3}[-\s]?\d{3})\b'
+    group: 1
+    score: 0.9
+  - name: us-ssn-contextual
+    entity: GOVERNMENT_ID
+    pattern: '\b(?:SSN|social\s+security\s+number)\s*(?:is|:|=)?\s*(\d{3}-\d{2}-\d{4})\b'
+    group: 1
+    score: 0.9

@@ -1,0 +1,146 @@
+<div class="row wrap no-print">
+  <div class="segmented" role="radiogroup" aria-label="Framework">
+    @for (f of frameworks; track f.id) {
+      <label>
+        <input type="radio" name="framework" [value]="f.id" [checked]="framework() === f.id" (change)="setFramework(f.id)" />
+        {{ f.label }}
+      </label>
+    }
+  </div>
+  <span class="spacer"></span>
+  <div class="toolbar">
+    <button type="button" class="btn btn-secondary" (click)="downloadMarkdown()" [disabled]="!pack()">
+      <svg class="icon" lucideIcon="download" aria-hidden="true"></svg>Markdown
+    </button>
+    <button type="button" class="btn btn-secondary" (click)="downloadJson()" [disabled]="!pack()">
+      <svg class="icon" lucideIcon="download" aria-hidden="true"></svg>JSON
+    </button>
+    <button type="button" class="btn btn-primary" (click)="print()" [disabled]="!pack()">
+      <svg class="icon" lucideIcon="printer" aria-hidden="true"></svg>Print / save as PDF
+    </button>
+  </div>
+</div>
+
+<app-error-alert [error]="error()" title="The evidence pack could not be generated" [retryable]="true" (retry)="load()" />
+
+@if (pack(); as p) {
+  <section class="card">
+    <div class="report-head">
+      <div class="stack" style="gap: var(--s-2); min-width: 160px">
+        <span class="text-xs muted">Compliance score</span>
+        <span class="score">{{ p.score }}<small>%</small></span>
+        <div class="meter meter--{{ tone(p.score) }}" role="img" [attr.aria-label]="'Score ' + p.score + ' percent'">
+          <div class="meter__fill" [style.width.%]="p.score"></div>
+        </div>
+      </div>
+      <div class="stack" style="gap: var(--s-1)">
+        <h2>{{ p.framework_name }} evidence pack</h2>
+        <span class="text-sm muted">Generated {{ p.generated_at | date: 'MMM d, y, HH:mm' }} from the live configuration</span>
+        <p class="text-xs muted">{{ p.disclaimer }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2><svg class="icon" lucideIcon="list-checks" aria-hidden="true"></svg>Controls</h2>
+      <span class="card-header__meta">{{ p.controls.length }} controls</span>
+    </div>
+    <div class="card-body card-body--flush table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Status</th>
+            <th scope="col">Control</th>
+            <th scope="col">Reference</th>
+            <th scope="col">Evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of p.controls; track c.control_id) {
+            <tr>
+              <td><app-status-badge [value]="c.status" /></td>
+              <td class="cell-wrap"><strong>{{ c.title }}</strong><br /><span class="text-xs muted">{{ c.description }}</span></td>
+              <td class="cell-wrap">{{ c.reference }}</td>
+              <td class="cell-wrap">
+                {{ c.evidence }}
+                @if (c.remediation) { <br /><span class="text-xs muted">To fix: {{ c.remediation }}</span> }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2><svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>AI system inventory</h2>
+      <span class="card-header__meta">{{ p.ai_systems.length }} systems</span>
+    </div>
+    <div class="card-body card-body--flush table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">System</th>
+            <th scope="col">Owner</th>
+            <th scope="col">Hosting</th>
+            <th scope="col">Status</th>
+            <th scope="col">Last reviewed</th>
+            <th scope="col">Next review</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of p.ai_systems; track s.system_id) {
+            <tr>
+              <td class="cell-wrap">{{ s.name }}</td>
+              <td>{{ s.owner }}</td>
+              <td><app-status-badge [value]="s.hosting" /></td>
+              <td><app-status-badge [value]="s.status" /></td>
+              <td class="nowrap">{{ s.last_reviewed_at | date: 'MMM d, y' }}</td>
+              <td class="nowrap">
+                {{ s.next_review_due | date: 'MMM d, y' }}
+                @if (s.review_overdue) { <app-status-badge value="BREACHED" label="Overdue" /> }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2><svg class="icon" lucideIcon="file-search" aria-hidden="true"></svg>Supporting figures</h2>
+    </div>
+    <div class="report-stats">
+      <div>
+        <h3>Policies</h3>
+        <dl class="kv">
+          <dt>Policy set</dt><dd class="mono">{{ p.policies.policy_version }}</dd>
+          <dt>Rules enabled</dt><dd>{{ p.policies.enabled }} of {{ p.policies.total }}</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Audit trail</h3>
+        <dl class="kv">
+          <dt>Events retained</dt><dd>{{ p.audit.event_count }}</dd>
+          <dt>Retention</dt><dd>{{ p.audit.retention_days }} days</dd>
+          <dt>Stores transcripts</dt><dd>{{ p.audit.stores_raw_transcripts ? 'Yes' : 'No' }}</dd>
+          <dt>Stores detected values</dt><dd>{{ p.audit.stores_entity_values ? 'Yes' : 'No' }}</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Incidents and requests</h3>
+        <dl class="kv">
+          <dt>Incidents</dt><dd>{{ p.incidents.open }} open, {{ p.incidents.closed }} closed</dd>
+          <dt>Contained in SLA</dt><dd>{{ p.incidents.contained_within_sla }} (missed {{ p.incidents.sla_missed }})</dd>
+          <dt>Data requests</dt><dd>{{ p.data_requests.open }} open, {{ p.data_requests.completed }} completed</dd>
+          <dt>Completed on time</dt><dd>{{ p.data_requests.completed_on_time }} (late {{ p.data_requests.completed_late }})</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+} @else if (loading()) {
+  <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Generating evidence pack</span></div>
+}

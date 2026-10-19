@@ -1,0 +1,17 @@
+<div class="context">
+  <span class="context__root">AI Data Firewall</span>
+  <svg class="icon context__sep" lucideIcon="chevron-right" aria-hidden="true"></svg>
+  <span class="context__page">{{ pageTitle() }}</span>
+</div>
+
+<div class="actions">
+  <span class="simulated-label" title="All demo transcripts are synthetic. CloudLink is a mock integration.">Synthetic data</span>
+  <a class="status status--{{ connection().tone }}" routerLink="/settings" title="View dependency health">
+    <svg class="icon" [lucideIcon]="connection().icon" aria-hidden="true"></svg>
+    <span>{{ connection().label }}</span>
+  </a>
+  <button type="button" class="btn btn-ghost btn-icon btn-sm" (click)="status.refresh()"
+          [disabled]="status.loading()" aria-label="Refresh backend status">
+    <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>
+  </button>
+</div>

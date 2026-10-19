@@ -1,0 +1,213 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-header__text">
+      <h1>Settings</h1>
+      <p>Configuration is read from the backend environment. Change it in backend/.env and restart the backend to apply.</p>
+    </div>
+    <div class="toolbar">
+      <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
+        <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <app-error-alert [error]="error()" title="Configuration could not be loaded" [retryable]="true" (retry)="load()" />
+
+  <section class="card">
+    <div class="card-header">
+      <h2><svg class="icon" lucideIcon="activity" aria-hidden="true"></svg>Backend and dependency health</h2>
+      @if (health(); as h) { <span class="card-header__meta">Checked {{ h.time | date: 'HH:mm:ss' }} &middot; version {{ h.version }}</span> }
+    </div>
+    <div class="card-body card-body--flush table-wrap">
+      @if (health(); as h) {
+        <table class="data-table">
+          <thead><tr><th scope="col">Component</th><th scope="col">Status</th><th scope="col">Details</th></tr></thead>
+          <tbody>
+            @for (key of componentKeys(h); track key) {
+              <tr>
+                <td class="nowrap">{{ componentLabels[key] ?? key }}</td>
+                <td><app-status-badge [value]="h.components[key].status" /></td>
+                <td class="text-sm">{{ h.components[key].message }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else if (healthLoading()) {
+        <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Checking dependencies</span></div>
+      } @else if (healthError()) {
+        <div class="empty-state">
+          <svg class="icon" lucideIcon="cloud-off" aria-hidden="true"></svg>
+          <span class="empty-state__title">Backend health unavailable</span>
+          <span>The firewall API at <span class="mono">{{ runtime.apiBaseUrl }}</span> did not respond.</span>
+        </div>
+      }
+    </div>
+  </section>
+
+  @if (config(); as c) {
+    <div class="grid grid-2">
+      <section class="card">
+        <div class="card-header"><h2><svg class="icon" lucideIcon="shield" aria-hidden="true"></svg>Firewall configuration</h2></div>
+        <div class="card-body">
+          <dl class="kv">
+            <dt>Environment</dt><dd>{{ c.environment }}</dd>
+            <dt>API endpoint</dt><dd class="mono">{{ runtime.apiBaseUrl }}</dd>
+            <dt>Allowed origins (CORS)</dt><dd class="mono">{{ c.cors_origins.join(', ') }}</dd>
+            <dt>Transcript limit</dt><dd>{{ c.max_transcript_chars }} characters</dd>
+            <dt>Request body limit</dt><dd>{{ c.max_request_bytes }} bytes</dd>
+            <dt>Uncovered entities</dt><dd><app-status-badge [value]="c.detection.unmatched_entity_action" /></dd>
+            <dt>Outbound default</dt><dd>Deny unless policy authorizes and validation passes</dd>
+            <dt>Policy admin key</dt><dd>{{ c.admin_auth_enabled ? 'Required for policy changes' : 'Not required (trusted local environment)' }}</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2><svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>Local AI (Ollama)</h2>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="testIntegrations()" [disabled]="testing()">
+            @if (testing()) { <span class="spinner" aria-hidden="true"></span> } @else { <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg> }
+            Test connection
+          </button>
+        </div>
+        <div class="card-body stack">
+          @if (integrations(); as i) {
+            @if (i.ollama.status !== 'CONNECTED') {
+              <div class="alert alert-warning">
+                <svg class="icon" lucideIcon="triangle-alert" aria-hidden="true"></svg>
+                <span>{{ i.ollama.message }} Detection and policy enforcement continue; summaries are reported as unavailable. There is no cloud-model fallback.</span>
+              </div>
+            }
+          }
+          <dl class="kv">
+            <dt>Status</dt><dd>@if (integrations(); as i) { <app-status-badge [value]="i.ollama.status" /> } @else { <span class="muted">Not checked</span> }</dd>
+            <dt>Endpoint</dt><dd class="mono">{{ c.ollama.base_url }}</dd>
+            <dt>Configured model</dt><dd class="mono">{{ c.ollama.model }}</dd>
+            <dt>Request timeout</dt><dd>{{ c.ollama.timeout_seconds }} seconds</dd>
+            <dt>Cloud fallback</dt><dd>{{ c.ollama.cloud_fallback ? 'Enabled' : 'Disabled' }}</dd>
+            @if (integrations(); as i) {
+              <dt>Response time</dt><dd>{{ i.ollama.latency_ms | duration }}</dd>
+              <dt>Installed models</dt>
+              <dd><div class="tag-list">@for (m of i.ollama.available_models; track m) { <span class="tag">{{ m }}</span> } @empty { <span class="muted">None reported</span> }</div></dd>
+            }
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2><svg class="icon" lucideIcon="cloud" aria-hidden="true"></svg>CloudLink endpoint <span class="simulated-label">Mock integration</span></h2>
+        </div>
+        <div class="card-body stack">
+          <div class="alert alert-info">
+            <svg class="icon" lucideIcon="info" aria-hidden="true"></svg>
+            <span>This prototype hands off to a local mock receiver. It does not connect to Mitel CloudLink services.</span>
+          </div>
+          <dl class="kv">
+            <dt>Status</dt><dd>@if (integrations(); as i) { <app-status-badge [value]="i.cloudlink.status" /> } @else { <span class="muted">Not checked</span> }</dd>
+            <dt>Endpoint</dt><dd class="mono">{{ c.cloudlink.base_url }}</dd>
+            <dt>Integration key</dt><dd>{{ c.cloudlink.api_key.display }}</dd>
+            <dt>Timeout</dt><dd>{{ c.cloudlink.timeout_seconds }} seconds</dd>
+            <dt>Automatic retries</dt><dd>{{ c.cloudlink.retries }} (no retry without a new policy decision)</dd>
+            @if (integrations(); as i) {
+              <dt>Accepted handoffs</dt><dd>{{ i.cloudlink.receipts_count ?? '-' }} since receiver start</dd>
+              <dt>Details</dt><dd class="text-sm">{{ i.cloudlink.message }}</dd>
+            }
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2><svg class="icon" lucideIcon="list-checks" aria-hidden="true"></svg>Policy configuration</h2></div>
+        <div class="card-body">
+          <dl class="kv">
+            <dt>Status</dt><dd><app-status-badge [value]="c.policy.status" /></dd>
+            <dt>Policies stored</dt><dd>{{ c.policy.policy_count }}</dd>
+            <dt>Active set version</dt><dd class="mono">{{ c.policy.policy_version ?? '-' }}</dd>
+            <dt>Seed file</dt><dd class="mono">{{ c.policy.seed_file }}</dd>
+            <dt>Precedence</dt><dd class="text-sm">{{ c.policy.precedence }}</dd>
+          </dl>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2><svg class="icon" lucideIcon="database" aria-hidden="true"></svg>Audit retention</h2></div>
+        <div class="card-body stack">
+          <dl class="kv">
+            <dt>Retention period</dt><dd>{{ c.audit.retention_days }} days</dd>
+            <dt>Stored events</dt><dd>{{ c.audit.event_count }}</dd>
+            <dt>Oldest event</dt><dd>{{ c.audit.oldest_event_at ? (c.audit.oldest_event_at | date: 'medium') : '-' }}</dd>
+            <dt>Raw transcripts stored</dt><dd>{{ c.audit.stores_raw_transcripts ? 'Yes' : 'No' }}</dd>
+            <dt>Entity values stored</dt><dd>{{ c.audit.stores_entity_values ? 'Yes' : 'No' }}</dd>
+          </dl>
+          <button type="button" class="btn btn-secondary btn-sm align-start" (click)="confirmPurge.set(true)">
+            <svg class="icon" lucideIcon="trash" aria-hidden="true"></svg>
+            Apply retention now
+          </button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header"><h2><svg class="icon" lucideIcon="lock" aria-hidden="true"></svg>Administrator access</h2></div>
+        <div class="card-body stack">
+          <p class="text-sm muted">
+            When the backend sets ADMIN_API_KEY, policy changes require it. The key is kept in this browser tab only and is never displayed.
+          </p>
+          <form class="row" (ngSubmit)="saveAdminKey()">
+            <label class="sr-only" for="admin-key">Administrator key</label>
+            <input id="admin-key" name="adminKey" class="input" type="password" autocomplete="off"
+                   placeholder="{{ admin.hasKey() ? 'Key stored for this session' : 'Enter administrator key' }}"
+                   [(ngModel)]="adminKeyInput" />
+            <button type="submit" class="btn btn-primary" [disabled]="!adminKeyInput.trim()">Store</button>
+            @if (admin.hasKey()) {
+              <button type="button" class="btn btn-secondary" (click)="clearAdminKey()">Clear</button>
+            }
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <div class="card-header">
+        <h2><svg class="icon" lucideIcon="scan-search" aria-hidden="true"></svg>Detection configuration</h2>
+        <span class="card-header__meta">{{ c.detection.engine }} with spaCy {{ c.detection.spacy_model }}</span>
+      </div>
+      <div class="card-body stack">
+        <dl class="kv kv--inline">
+          <dt>Engine status</dt><dd><app-status-badge [value]="c.detection.status" /> <span class="text-sm muted">{{ c.detection.message }}</span></dd>
+          <dt>Score threshold</dt><dd>{{ c.detection.score_threshold }} (lower scores are ignored)</dd>
+          <dt>Low-confidence flag</dt><dd>Below {{ c.detection.low_confidence_threshold }}, still protected</dd>
+          <dt>Values shown in Inspector</dt><dd>{{ c.detection.expose_detected_values ? 'Yes, synthetic demo only; never stored' : 'No' }}</dd>
+        </dl>
+        <div class="alert alert-info">
+          <svg class="icon" lucideIcon="info" aria-hidden="true"></svg>
+          <span>Detection is probabilistic and does not guarantee that every identifier is found. The limitations below are enforced conservatively by policy.</span>
+        </div>
+      </div>
+      <div class="card-body card-body--flush table-wrap">
+        <table class="data-table">
+          <thead><tr><th scope="col">Category</th><th scope="col">Recognizers</th><th scope="col">Description</th><th scope="col">Known limitations</th></tr></thead>
+          <tbody>
+            @for (r of c.recognizers; track r.category) {
+              <tr>
+                <td><span class="tag">{{ r.category }}</span></td>
+                <td><div class="stack sources">@for (s of r.sources; track s) { <span class="text-xs mono">{{ s }}</span> }</div></td>
+                <td class="text-sm">{{ r.description }}</td>
+                <td class="text-sm muted">{{ r.limitations }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  } @else if (loading()) {
+    <div class="card"><div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Loading configuration</span></div></div>
+  }
+</div>
+
+@if (confirmPurge()) {
+  <app-confirm-dialog title="Apply audit retention" confirmLabel="Apply retention" [danger]="true" [busy]="purging()"
+                      [message]="'Delete audit events older than ' + (config()?.audit?.retention_days ?? '') + ' days? This cannot be undone.'"
+                      (confirm)="purge()" (cancel)="confirmPurge.set(false)" />
+}

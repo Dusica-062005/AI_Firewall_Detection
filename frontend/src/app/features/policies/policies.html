@@ -1,0 +1,143 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-header__text">
+      <h1>Policy Management</h1>
+      <p>Rules the backend evaluates for every request. Changes take effect immediately and persist across restarts.</p>
+    </div>
+    <div class="toolbar">
+      <button type="button" class="btn btn-secondary" (click)="confirm.set({ kind: 'reset' })">
+        <svg class="icon" lucideIcon="rotate-ccw" aria-hidden="true"></svg>
+        Reset to defaults
+      </button>
+      <button type="button" class="btn btn-primary" (click)="editing.set(null)">
+        <svg class="icon" lucideIcon="plus" aria-hidden="true"></svg>
+        Create policy
+      </button>
+    </div>
+  </header>
+
+  <section class="card precedence" aria-labelledby="precedence-title">
+    <div class="card-header">
+      <h2 id="precedence-title"><svg class="icon" lucideIcon="info" aria-hidden="true"></svg>How precedence works</h2>
+      @if (policyVersion()) {
+        <span class="card-header__meta mono">Active set {{ policyVersion() }}</span>
+      }
+    </div>
+    <ol class="precedence__list">
+      <li><strong>Most restrictive wins.</strong> BLOCK, then LOCAL_ONLY, then REDACT, then ALLOW. A broad allow never overrides a restriction.</li>
+      <li><strong>Priority breaks ties only.</strong> Among rules with the same action, the lower number is reported as decisive.</li>
+      <li><strong>Destinations narrow.</strong> The request uses the most restrictive destination of every matching rule: NONE, LOCAL, CLOUD.</li>
+      <li><strong>Deny by default.</strong> Uncovered entities are kept local; no applicable policy or any failure blocks cloud transmission.</li>
+    </ol>
+  </section>
+
+  <app-error-alert [error]="error()" title="Policies could not be loaded" [retryable]="true" (retry)="load()" />
+
+  <section class="card">
+    <div class="card-header">
+      <h2>
+        <svg class="icon" lucideIcon="list-checks" aria-hidden="true"></svg>Policies
+        <span class="pill-count">{{ enabledCount() }} / {{ policies().length }} enabled</span>
+      </h2>
+      <div class="toolbar filters">
+        <label class="sr-only" for="policy-search">Search policies</label>
+        <div class="search">
+          <svg class="icon" lucideIcon="search" aria-hidden="true"></svg>
+          <input id="policy-search" class="input" type="search" placeholder="Search name, ID or category"
+                 [ngModel]="search()" (ngModelChange)="search.set($event)" />
+        </div>
+        <label class="sr-only" for="action-filter">Filter by action</label>
+        <select id="action-filter" class="select" [ngModel]="actionFilter()" (ngModelChange)="actionFilter.set($event)">
+          <option value="">All actions</option>
+          @for (a of actions; track a) { <option [value]="a">{{ a }}</option> }
+        </select>
+        <label class="sr-only" for="profile-filter">Filter by profile</label>
+        <select id="profile-filter" class="select" [ngModel]="profileFilter()" (ngModelChange)="profileFilter.set($event)">
+          <option value="">All profiles</option>
+          @for (p of profiles(); track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+        </select>
+      </div>
+    </div>
+
+    <div class="card-body card-body--flush table-wrap">
+      @if (loading() && !policies().length) {
+        <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Loading policies</span></div>
+      } @else if (filtered().length) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Enabled</th>
+              <th scope="col">Policy</th>
+              <th scope="col">Entity categories</th>
+              <th scope="col">Action</th>
+              <th scope="col">Destination</th>
+              <th scope="col" class="num">Priority</th>
+              <th scope="col">Conditions</th>
+              <th scope="col">Updated</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of filtered(); track p.policy_id) {
+              <tr [class.is-disabled]="!p.enabled">
+                <td>
+                  <label class="switch">
+                    <input type="checkbox" [checked]="p.enabled" [disabled]="busyId() === p.policy_id"
+                           (change)="toggleEnabled(p, $any($event.target))"
+                           [attr.aria-label]="(p.enabled ? 'Disable ' : 'Enable ') + p.name" />
+                  </label>
+                </td>
+                <td><div class="policy-cell">
+                  <span class="policy-cell__name">{{ p.name }}</span>
+                  <span class="text-xs mono muted">{{ p.policy_id }} &middot; v{{ p.version }}</span>
+                  @if (p.description) { <span class="text-xs muted policy-cell__desc">{{ p.description }}</span> }
+                </div></td>
+                <td><div class="tag-list">@for (c of p.entity_categories; track c) { <span class="tag">{{ c }}</span> }</div></td>
+                <td><app-status-badge [value]="p.action" /></td>
+                <td><app-status-badge [value]="p.destination" /></td>
+                <td class="num">{{ p.priority }}</td>
+                <td class="text-sm">{{ conditionsText(p) }}</td>
+                <td class="nowrap text-sm muted" [title]="'Created ' + (p.created_at | date: 'medium')">{{ p.updated_at | date: 'MMM d, HH:mm' }}</td>
+                <td class="nowrap row-actions">
+                  <button type="button" class="btn btn-ghost btn-icon btn-sm" [attr.aria-label]="'Edit ' + p.name" (click)="editing.set(p)">
+                    <svg class="icon" lucideIcon="pencil" aria-hidden="true"></svg>
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-icon btn-sm danger" [attr.aria-label]="'Delete ' + p.name" (click)="confirm.set({ kind: 'delete', policy: p })">
+                    <svg class="icon" lucideIcon="trash" aria-hidden="true"></svg>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else if (!error()) {
+        <div class="empty-state">
+          <svg class="icon" lucideIcon="funnel" aria-hidden="true"></svg>
+          <span class="empty-state__title">{{ policies().length ? 'No policies match the filters' : 'No policies configured' }}</span>
+          @if (policies().length) {
+            <button type="button" class="btn btn-secondary btn-sm" (click)="clearFilters()">Clear filters</button>
+          } @else {
+            <span>All requests are blocked until a policy applies.</span>
+          }
+        </div>
+      }
+    </div>
+  </section>
+</div>
+
+@if (editing() !== undefined) {
+  <app-policy-editor [policy]="editing() ?? null" [categories]="categories()" [profiles]="profiles()"
+                     (saved)="onSaved($event)" (closed)="editing.set(undefined)" />
+}
+
+@if (confirm(); as c) {
+  @if (c.kind === 'delete') {
+    <app-confirm-dialog title="Delete policy" [danger]="true" confirmLabel="Delete policy" [busy]="confirmBusy()"
+                        [message]="'Delete ' + c.policy.name + ' (' + c.policy.policy_id + ')? Requests will be evaluated without it immediately. This cannot be undone.'"
+                        (confirm)="runConfirm()" (cancel)="confirm.set(null)" />
+  } @else {
+    <app-confirm-dialog title="Reset to defaults" [danger]="true" confirmLabel="Reset policies" [busy]="confirmBusy()"
+                        message="Replace every policy with the default seed configuration? Custom policies and edits will be removed."
+                        (confirm)="runConfirm()" (cancel)="confirm.set(null)" />
+  }
+}

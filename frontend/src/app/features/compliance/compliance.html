@@ -1,0 +1,27 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-header__text">
+      <h1>Compliance &amp; Incident Center</h1>
+      <p>Proof that AI use is governed: live compliance scores, audit-ready evidence packs, incident response and data-subject requests.</p>
+    </div>
+  </header>
+
+  <div class="tabs tabs--page" role="tablist" aria-label="Compliance sections" (keydown)="onTabKey($event)">
+    @for (t of tabs; track t.id) {
+      <button type="button" role="tab" [id]="'ctab-' + t.id" [attr.aria-selected]="current() === t.id"
+              [attr.tabindex]="current() === t.id ? 0 : -1" aria-controls="compliance-panel" (click)="select(t.id)">
+        {{ t.label }}
+      </button>
+    }
+  </div>
+
+  <div id="compliance-panel" class="stack panel" role="tabpanel" [attr.aria-labelledby]="'ctab-' + current()">
+    @switch (current()) {
+      @case ('overview') { <app-compliance-overview (evidence)="openEvidence($event)" (openTab)="select($event)" /> }
+      @case ('evidence') { <app-evidence-pack [(framework)]="framework" /> }
+      @case ('incidents') { <app-incidents /> }
+      @case ('requests') { <app-data-requests /> }
+      @case ('systems') { <app-ai-systems /> }
+    }
+  </div>
+</div>

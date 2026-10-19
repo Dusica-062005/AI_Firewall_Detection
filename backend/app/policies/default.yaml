@@ -1,0 +1,98 @@
+# Default (seed) policy configuration for the Mitel AI Data Firewall.
+#
+# Loaded into the database on first start and whenever an administrator selects
+# "Reset to defaults". After seeding, policies are edited through the API or UI.
+#
+# Precedence (enforced by app/policy/engine.py):
+#   1. Only enabled policies whose conditions match the request apply.
+#   2. For every detected entity, the most restrictive applicable action wins:
+#      BLOCK > LOCAL_ONLY > REDACT > ALLOW. Priority (lower number first) only breaks
+#      ties between policies with the same action. It never lets a less restrictive
+#      rule override a more restrictive one.
+#   3. The request decision is the most restrictive action across all entities and
+#      all matching "ANY" rules. The authorized destination is the most restrictive
+#      destination (NONE < LOCAL < CLOUD).
+#   4. Detected entities that no policy covers receive UNMATCHED_ENTITY_ACTION.
+#   5. If no policy applies at all, the request is blocked (deny by default).
+
+profiles:
+  - id: standard
+    name: Standard customer service
+    description: Redacts personal identifiers and permits sanitized cloud handoff.
+  - id: healthcare
+    name: Healthcare PHI local-only
+    description: Keeps protected health information on local infrastructure.
+  - id: restricted
+    name: Restricted lockdown
+    description: Blocks AI processing of patient data and personal names.
+
+policies:
+  - policy_id: baseline-sanitized-cloud
+    name: Baseline sanitized cloud handoff
+    description: Permits sanitized summaries and transcripts to reach CloudLink once every other applicable rule is satisfied.
+    enabled: true
+    priority: 900
+    entity_categories: [ANY]
+    action: ALLOW
+    destination: CLOUD
+    conditions: {profiles: [], channels: [], min_confidence: 0.0}
+
+  - policy_id: redact-contact-identifiers
+    name: Redact contact identifiers
+    description: Replaces names, phone numbers, email addresses and locations with placeholders before any AI processing.
+    enabled: true
+    priority: 200
+    entity_categories: [PERSON, PHONE_NUMBER, EMAIL_ADDRESS, LOCATION]
+    action: REDACT
+    destination: CLOUD
+    conditions: {profiles: [], channels: [], min_confidence: 0.0}
+
+  - policy_id: redact-patient-id
+    name: Redact patient identifiers
+    description: Replaces patient and medical record identifiers with placeholders.
+    enabled: true
+    priority: 150
+    entity_categories: [PATIENT_ID]
+    action: REDACT
+    destination: CLOUD
+    conditions: {profiles: [], channels: [], min_confidence: 0.0}
+
+  - policy_id: financial-local-only
+    name: Financial identifiers stay local
+    description: Account numbers may only be processed by the local model after redaction.
+    enabled: true
+    priority: 120
+    entity_categories: [ACCOUNT_NUMBER]
+    action: LOCAL_ONLY
+    destination: LOCAL
+    conditions: {profiles: [], channels: [], min_confidence: 0.0}
+
+  - policy_id: block-government-and-card
+    name: Block government IDs and card numbers
+    description: Communications containing government identifiers or payment card numbers are not sent to any AI service.
+    enabled: true
+    priority: 50
+    entity_categories: [GOVERNMENT_ID, CREDIT_CARD]
+    action: BLOCK
+    destination: NONE
+    conditions: {profiles: [], channels: [], min_confidence: 0.0}
+
+  - policy_id: healthcare-phi-local-only
+    name: Healthcare PHI local-only
+    description: In the healthcare profile, patient identifiers restrict processing to the local model.
+    enabled: true
+    priority: 100
+    entity_categories: [PATIENT_ID]
+    action: LOCAL_ONLY
+    destination: LOCAL
+    conditions: {profiles: [healthcare], channels: [], min_confidence: 0.0}
+
+  - policy_id: restricted-block-phi
+    name: Restricted profile blocks PHI
+    description: In the restricted profile, patient identifiers and names block all AI processing.
+    enabled: true
+    priority: 10
+    entity_categories: [PATIENT_ID, PERSON]
+    action: BLOCK
+    destination: NONE
+    conditions: {profiles: [restricted], channels: [], min_confidence: 0.0}

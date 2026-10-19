@@ -1,0 +1,27 @@
+# Secrets and local configuration
+.env
+*.env.local
+backend/.env
+
+# Databases containing demo activity
+backend/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node / Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

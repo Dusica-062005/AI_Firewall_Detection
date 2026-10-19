@@ -1,0 +1,253 @@
+<div class="row wrap toolbar--filters">
+  <div class="field">
+    <label for="i-status" class="sr-only">Status</label>
+    <select id="i-status" class="select" (change)="setStatus($any($event.target).value)">
+      <option value="">All statuses</option>
+      @for (s of statuses; track s) { <option [value]="s">{{ s | humanize }}</option> }
+    </select>
+  </div>
+  <div class="field">
+    <label for="i-severity" class="sr-only">Severity</label>
+    <select id="i-severity" class="select" (change)="setSeverity($any($event.target).value)">
+      <option value="">All severities</option>
+      @for (s of severities; track s) { <option [value]="s">{{ s | humanize }}</option> }
+    </select>
+  </div>
+  <span class="spacer"></span>
+  <div class="toolbar">
+    <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
+      <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>Refresh
+    </button>
+    <button type="button" class="btn btn-primary" (click)="openCreate()">
+      <svg class="icon" lucideIcon="plus" aria-hidden="true"></svg>Report incident
+    </button>
+  </div>
+</div>
+
+<app-error-alert [error]="error()" title="Incidents could not be loaded" [retryable]="true" (retry)="load()" />
+
+<section class="card">
+  <div class="card-header">
+    <h2><svg class="icon" lucideIcon="flag" aria-hidden="true"></svg>AI incidents</h2>
+    <span class="card-header__meta">{{ items().length }} {{ items().length === 1 ? 'incident' : 'incidents' }}</span>
+  </div>
+  <div class="card-body card-body--flush table-wrap">
+    @if (items().length) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Incident</th>
+            <th scope="col">Severity</th>
+            <th scope="col">Stage</th>
+            <th scope="col">Owner</th>
+            <th scope="col">Containment SLA</th>
+            <th scope="col">Reported</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (i of items(); track i.incident_id) {
+            <tr class="is-clickable" tabindex="0" (click)="open(i)" (keydown.enter)="open(i)" [attr.aria-label]="'Open incident ' + i.title">
+              <td class="cell-wrap">
+                <strong>{{ i.title }}</strong><br />
+                <span class="text-xs muted mono">{{ i.incident_id }}</span>
+                <span class="text-xs muted"> &middot; {{ i.incident_type | humanize }}</span>
+              </td>
+              <td><app-status-badge [value]="i.severity" /></td>
+              <td><app-status-badge [value]="i.status" /></td>
+              <td>{{ i.owner || 'Unassigned' }}</td>
+              <td class="nowrap">
+                <app-status-badge [value]="i.sla_state" />
+                @if (slaLabel(i); as label) { <span class="text-xs muted"> {{ label }}</span> }
+              </td>
+              <td class="nowrap">{{ i.created_at | date: 'MMM d, HH:mm' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else if (loading()) {
+      <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Loading incidents</span></div>
+    } @else if (!error()) {
+      <div class="empty-state">
+        <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
+        <span class="empty-state__title">No incidents</span>
+        <span>Report an incident when an AI system gives a wrong answer, exposes data or shows bias.</span>
+      </div>
+    }
+  </div>
+  <p class="pager-hint text-xs muted">
+    Containment deadlines: Critical 4 hours, High 24 hours, Medium 72 hours, Low 7 days. Do not put personal data in incident text.
+  </p>
+</section>
+
+@if (creating()) {
+  <div class="overlay" (click)="closeAll()"></div>
+  <aside class="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="inc-create-title">
+    <div class="drawer__header">
+      <h2 id="inc-create-title">Report an incident</h2>
+      <button type="button" class="btn btn-ghost btn-icon" aria-label="Close" (click)="closeAll()">
+        <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+      </button>
+    </div>
+    <form class="drawer__body" [formGroup]="createForm" (ngSubmit)="submitCreate()" novalidate>
+      <app-error-alert [error]="formError()" title="The incident was not saved" />
+      <div class="form-grid">
+        <div class="field span-2">
+          <label for="ic-title">Title</label>
+          <input id="ic-title" class="input" formControlName="title" autocomplete="off" />
+          @if (createForm.controls.title.touched && createForm.controls.title.invalid) {
+            <span class="field__error">Enter a title between 3 and 120 characters.</span>
+          }
+        </div>
+        <div class="field">
+          <label for="ic-type">Type</label>
+          <select id="ic-type" class="select" formControlName="incident_type">
+            @for (t of types; track t) { <option [value]="t">{{ t | humanize }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="ic-sev">Severity</label>
+          <select id="ic-sev" class="select" formControlName="severity">
+            @for (s of severities; track s) { <option [value]="s">{{ s | humanize }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="ic-owner">Owner</label>
+          <input id="ic-owner" class="input" formControlName="owner" placeholder="Optional" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="ic-system">AI system</label>
+          <select id="ic-system" class="select" formControlName="ai_system_id">
+            <option value="">Not specified</option>
+            @for (s of systems(); track s.system_id) { <option [value]="s.system_id">{{ s.name }}</option> }
+          </select>
+        </div>
+        <div class="field span-2">
+          <label for="ic-event">Related audit event</label>
+          <input id="ic-event" class="input mono" formControlName="related_event_id" placeholder="evt-0123456789abcdef (optional)" autocomplete="off" />
+          @if (createForm.controls.related_event_id.invalid) {
+            <span class="field__error">Use the event ID format evt- followed by 16 hex characters.</span>
+          } @else {
+            <span class="field__hint">Links the incident to a firewall decision in the audit trail.</span>
+          }
+        </div>
+        <div class="field span-2">
+          <label for="ic-desc">What happened</label>
+          <textarea id="ic-desc" class="textarea" rows="4" formControlName="description"></textarea>
+          <span class="field__hint">Do not include names, contact details or transcript text.</span>
+        </div>
+      </div>
+      <div class="row">
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-secondary" (click)="closeAll()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner" aria-hidden="true"></span> }
+          Report incident
+        </button>
+      </div>
+    </form>
+  </aside>
+}
+
+@if (selected(); as inc) {
+  <div class="overlay" (click)="closeAll()"></div>
+  <aside class="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="inc-title">
+    <div class="drawer__header">
+      <div class="stack" style="gap: 2px">
+        <h2 id="inc-title">{{ inc.title }}</h2>
+        <span class="text-xs mono muted">{{ inc.incident_id }}</span>
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" aria-label="Close incident" (click)="closeAll()">
+        <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+      </button>
+    </div>
+    <div class="drawer__body">
+      <app-error-alert [error]="formError()" title="The change was not saved" />
+
+      <div class="row wrap">
+        <app-status-badge [value]="inc.severity" [strong]="true" />
+        <app-status-badge [value]="inc.status" [strong]="true" />
+        <app-status-badge [value]="inc.sla_state" [strong]="true" />
+        @if (slaLabel(inc); as label) { <span class="text-sm muted">{{ label }}</span> }
+      </div>
+
+      <section class="stack">
+        <span class="section-title">Details</span>
+        <dl class="kv">
+          <dt>Type</dt><dd>{{ inc.incident_type | humanize }}</dd>
+          <dt>AI system</dt><dd>{{ systemName(inc.ai_system_id) }}</dd>
+          <dt>Owner</dt><dd>{{ inc.owner || 'Unassigned' }}</dd>
+          <dt>Reported</dt><dd>{{ inc.created_at | date: 'MMM d, y, HH:mm' }}</dd>
+          <dt>Containment due</dt><dd>{{ inc.sla_due_at | date: 'MMM d, y, HH:mm' }}</dd>
+          @if (inc.related_event_id) { <dt>Audit event</dt><dd class="mono">{{ inc.related_event_id }}</dd> }
+        </dl>
+        @if (inc.description) { <p class="text-sm">{{ inc.description }}</p> }
+        @if (inc.root_cause) { <p class="text-sm"><strong>Root cause:</strong> {{ inc.root_cause }}</p> }
+        @if (inc.resolution) { <p class="text-sm"><strong>Resolution:</strong> {{ inc.resolution }}</p> }
+      </section>
+
+      @if (nextStage(inc); as stage) {
+        <section class="stack">
+          <span class="section-title">Next step: {{ stage | humanize }}</span>
+          <form class="stack" [formGroup]="stepForm" (ngSubmit)="advance(inc)" novalidate>
+            @if (stage === 'ROOT_CAUSE_IDENTIFIED' || stage === 'CLOSED') {
+              <div class="field">
+                <label for="st-text">{{ stage === 'CLOSED' ? 'Resolution' : 'Root cause' }}</label>
+                <textarea id="st-text" class="textarea" rows="3" formControlName="text"></textarea>
+                @if (stepForm.controls.text.touched && !stepForm.controls.text.value.trim()) {
+                  <span class="field__error">{{ stage === 'CLOSED' ? 'Describe the resolution to close the incident.' : 'Describe the root cause to continue.' }}</span>
+                }
+              </div>
+            }
+            <div class="field">
+              <label for="st-note">Note (optional)</label>
+              <input id="st-note" class="input" formControlName="note" autocomplete="off" />
+            </div>
+            <div class="row">
+              <button type="submit" class="btn btn-primary" [disabled]="saving()">
+                @if (saving()) { <span class="spinner" aria-hidden="true"></span> }
+                {{ stepLabel(stage) }}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="stack">
+          <span class="section-title">Owner and severity</span>
+          <form class="form-grid" [formGroup]="assignForm" (ngSubmit)="saveAssignment(inc)" novalidate>
+            <div class="field">
+              <label for="as-owner">Owner</label>
+              <input id="as-owner" class="input" formControlName="owner" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="as-sev">Severity</label>
+              <select id="as-sev" class="select" formControlName="severity">
+                @for (s of severities; track s) { <option [value]="s">{{ s | humanize }}</option> }
+              </select>
+            </div>
+            <div class="span-2 row">
+              <button type="submit" class="btn btn-secondary" [disabled]="saving()">Save</button>
+            </div>
+          </form>
+        </section>
+      } @else {
+        <div class="alert alert-success">
+          <svg class="icon" lucideIcon="circle-check" aria-hidden="true"></svg>
+          <span>This incident is closed. Closed incidents cannot be changed.</span>
+        </div>
+      }
+
+      <section class="stack">
+        <span class="section-title">Timeline</span>
+        <ol class="timeline">
+          @for (e of inc.timeline; track $index) {
+            <li>
+              <strong>{{ e.action }}</strong>
+              <span class="text-xs muted">{{ e.at | date: 'MMM d, y, HH:mm' }}</span>
+              @if (e.note) { <span class="text-sm">{{ e.note }}</span> }
+            </li>
+          }
+        </ol>
+      </section>
+    </div>
+  </aside>
+}

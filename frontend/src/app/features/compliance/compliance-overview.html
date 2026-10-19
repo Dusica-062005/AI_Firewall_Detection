@@ -1,0 +1,96 @@
+<app-error-alert [error]="error()" title="Compliance scores could not be loaded" [retryable]="true" (retry)="load()" />
+
+@if (data(); as d) {
+  <section class="grid grid-kpi" aria-label="Compliance summary">
+    <div class="card kpi">
+      <span class="kpi__label"><svg class="icon" lucideIcon="clipboard-check" aria-hidden="true"></svg>Overall score</span>
+      <span class="kpi__value">{{ d.overall_score }}%</span>
+      <span class="kpi__meta">Average across {{ d.frameworks.length }} frameworks</span>
+    </div>
+    <button type="button" class="card kpi kpi--link" (click)="openTab.emit('incidents')">
+      <span class="kpi__label"><svg class="icon icon--warning" lucideIcon="flag" aria-hidden="true"></svg>Open incidents</span>
+      <span class="kpi__value">{{ d.kpis.open_incidents }}</span>
+      <span class="kpi__meta">{{ d.kpis.sla_breached }} past containment deadline</span>
+    </button>
+    <button type="button" class="card kpi kpi--link" (click)="openTab.emit('requests')">
+      <span class="kpi__label"><svg class="icon icon--info" lucideIcon="eraser" aria-hidden="true"></svg>Open data requests</span>
+      <span class="kpi__value">{{ d.kpis.open_data_requests }}</span>
+      <span class="kpi__meta">{{ d.kpis.overdue_data_requests }} past the 30-day deadline</span>
+    </button>
+    <button type="button" class="card kpi kpi--link" (click)="openTab.emit('systems')">
+      <span class="kpi__label"><svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>AI systems</span>
+      <span class="kpi__value">{{ d.kpis.ai_systems }}</span>
+      <span class="kpi__meta">{{ d.kpis.reviews_overdue }} with an overdue review</span>
+    </button>
+  </section>
+
+  <section class="grid grid-2" aria-label="Compliance score by framework">
+    @for (f of d.frameworks; track f.framework) {
+      <div class="card score-card">
+        <div class="row">
+          <h2>{{ f.name }}</h2>
+          <span class="spacer"></span>
+          <span class="score">{{ f.score }}<small>%</small></span>
+        </div>
+        <div class="meter meter--{{ tone(f.score) }}" role="img" [attr.aria-label]="f.name + ' score ' + f.score + ' percent'">
+          <div class="meter__fill" [style.width.%]="f.score"></div>
+        </div>
+        <div class="row wrap">
+          <app-status-badge value="PASS" [label]="f.pass_count + ' pass'" />
+          <app-status-badge value="PARTIAL" [label]="f.partial_count + ' partial'" />
+          <app-status-badge value="FAIL" [label]="f.fail_count + ' fail'" />
+          <span class="spacer"></span>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="evidence.emit(f.framework)">
+            <svg class="icon" lucideIcon="file-text" aria-hidden="true"></svg>
+            Evidence pack
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2><svg class="icon" lucideIcon="triangle-alert" aria-hidden="true"></svg>Gaps to fix</h2>
+      <span class="card-header__meta">{{ gaps().length }} {{ gaps().length === 1 ? 'control needs' : 'controls need' }} attention</span>
+    </div>
+    <div class="card-body card-body--flush table-wrap">
+      @if (gaps().length) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Status</th>
+              <th scope="col">Control</th>
+              <th scope="col">Affects</th>
+              <th scope="col">What was found</th>
+              <th scope="col">How to fix</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of gaps(); track g.control.control_id) {
+              <tr>
+                <td><app-status-badge [value]="g.control.status" /></td>
+                <td class="cell-wrap"><strong>{{ g.control.title }}</strong></td>
+                <td class="cell-wrap"><div class="tag-list">@for (n of g.frameworks; track n) { <span class="tag">{{ n }}</span> }</div></td>
+                <td class="cell-wrap">{{ g.control.evidence }}</td>
+                <td class="cell-wrap">{{ g.control.remediation }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <div class="empty-state">
+          <svg class="icon" lucideIcon="circle-check" aria-hidden="true"></svg>
+          <span class="empty-state__title">No gaps found</span>
+          <span>Every control passes in every framework.</span>
+        </div>
+      }
+    </div>
+    <p class="pager-hint text-xs muted">
+      Scores are evaluated live from the current policies, audit settings, AI inventory, incidents and requests. Pass counts 1, partial 0.5, fail 0.
+      Framework references are an indicative mapping for demonstration, not a certification.
+    </p>
+  </section>
+} @else if (loading()) {
+  <div class="empty-state"><span class="spinner" aria-hidden="true"></span><span>Evaluating controls</span></div>
+}

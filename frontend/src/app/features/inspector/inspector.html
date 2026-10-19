@@ -1,0 +1,130 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-header__text">
+      <h1>Transcript Inspector</h1>
+      <p>Send a synthetic transcript through the firewall and see what AI is allowed to see, process and send.</p>
+    </div>
+  </header>
+
+  <app-error-alert [error]="loadError()" title="Reference data could not be loaded" [retryable]="true" (retry)="loadReferenceData()" />
+
+  <div class="layout">
+    <form class="card input-panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="card-header">
+        <h2><svg class="icon" lucideIcon="file-text" aria-hidden="true"></svg>Input</h2>
+        <span class="simulated-label">Synthetic data only</span>
+      </div>
+
+      <div class="card-body stack input-body">
+        <div class="field">
+          <label for="sample">Sample transcript</label>
+          <div class="row">
+            <select id="sample" class="select" formControlName="sampleId">
+              <option value="">Select a sample</option>
+              @for (s of samples(); track s.id) {
+                <option [value]="s.id">{{ s.title }}</option>
+              }
+            </select>
+            <button type="button" class="btn btn-secondary" (click)="loadSample()" [disabled]="!form.controls.sampleId.value">
+              Load sample
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="transcript">Transcript</label>
+          <textarea id="transcript" class="textarea" formControlName="transcript" rows="9"
+                    placeholder="Paste or type a synthetic communication transcript"
+                    [attr.aria-invalid]="form.controls.transcript.invalid && form.controls.transcript.touched"
+                    aria-describedby="transcript-help"></textarea>
+          <div class="row" id="transcript-help">
+            @if (form.controls.transcript.touched && form.controls.transcript.hasError('required')) {
+              <span class="field__error">Enter a transcript to analyze.</span>
+            } @else if (form.controls.transcript.hasError('maxlength')) {
+              <span class="field__error">Transcript exceeds the {{ maxChars() | number }}-character limit.</span>
+            } @else {
+              <span class="field__hint">Do not paste real customer data.</span>
+            }
+            <span class="spacer"></span>
+            <span class="field__hint" [class.field__error]="charCount() > maxChars()">{{ charCount() | number }} / {{ maxChars() | number }}</span>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="profile">Policy profile</label>
+            <select id="profile" class="select" formControlName="profile">
+              @for (p of profiles(); track p.id) {
+                <option [value]="p.id">{{ p.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="channel">Channel</label>
+            <select id="channel" class="select" formControlName="channel">
+              @for (c of channels; track c) {
+                <option [value]="c">{{ c.charAt(0).toUpperCase() + c.slice(1) }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        @if (selectedProfile(); as p) {
+          <p class="text-xs muted profile-note">{{ p.description }} {{ p.applicable_policies }} enabled policies apply.</p>
+        }
+
+        <fieldset class="field mode-field">
+          <legend class="field__label">Processing mode</legend>
+          <div class="segmented" role="radiogroup" aria-label="Processing mode">
+            @for (m of modes; track m.value) {
+              <label>
+                <input type="radio" formControlName="mode" [value]="m.value" />
+                {{ m.label }}
+              </label>
+            }
+          </div>
+          <span class="field__hint">{{ modeHint() }} The mode can only narrow what policy allows.</span>
+        </fieldset>
+      </div>
+
+      <div class="input-footer">
+        <button type="button" class="btn btn-secondary" (click)="clear()" [disabled]="submitting()">
+          <svg class="icon" lucideIcon="eraser" aria-hidden="true"></svg>
+          Clear
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+          @if (submitting()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Processing
+          } @else {
+            <svg class="icon" lucideIcon="play" aria-hidden="true"></svg>
+            {{ form.controls.mode.value === 'inspect' ? 'Analyze' : 'Process' }}
+          }
+        </button>
+      </div>
+    </form>
+
+    <div class="results">
+      <app-error-alert [error]="submitError()" title="The request was not processed" />
+
+      @if (result(); as r) {
+        <app-inspector-result [result]="r" [original]="submitted()" [class.is-stale]="submitting()" />
+      } @else if (submitting()) {
+        <div class="card">
+          <div class="empty-state">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="empty-state__title">Processing through the firewall</span>
+            <span>Detection, policy evaluation and enforcement are running on the backend.</span>
+          </div>
+        </div>
+      } @else {
+        <div class="card">
+          <div class="empty-state">
+            <svg class="icon" lucideIcon="scan-search" aria-hidden="true"></svg>
+            <span class="empty-state__title">No result yet</span>
+            <span>Load a sample or enter a synthetic transcript, then select Process.</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

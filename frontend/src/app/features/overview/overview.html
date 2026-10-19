@@ -1,0 +1,213 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-header__text">
+      <h1>Overview</h1>
+      <p>Current state of the governance boundary between communication workloads and AI services.</p>
+    </div>
+    <div class="toolbar">
+      <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
+        <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>
+        Refresh
+      </button>
+      <a class="btn btn-primary" routerLink="/inspector">
+        <svg class="icon" lucideIcon="scan-search" aria-hidden="true"></svg>
+        Inspect Transcript
+      </a>
+    </div>
+  </header>
+
+  <app-error-alert [error]="error()" title="Metrics are unavailable" [retryable]="true" (retry)="load()" />
+
+  <section class="grid grid-kpi" aria-label="Key metrics">
+    <div class="card kpi">
+      <span class="kpi__label"><svg class="icon" lucideIcon="activity" aria-hidden="true"></svg>Processed requests</span>
+      <span class="kpi__value">{{ metrics() ? (metrics()!.total_requests | number) : '-' }}</span>
+      <span class="kpi__meta">
+        @if (metrics(); as m) {
+          {{ m.status_counts['FAILED'] ?? 0 }} failed, {{ m.cloud_handoffs_sent }} cloud handoffs
+        } @else {
+          {{ loading() ? 'Loading' : 'Unavailable' }}
+        }
+      </span>
+    </div>
+    <div class="card kpi">
+      <span class="kpi__label"><svg class="icon icon--success" lucideIcon="circle-check" aria-hidden="true"></svg>Allowed</span>
+      <span class="kpi__value">{{ metrics() ? (metrics()!.decision_counts.ALLOWED | number) : '-' }}</span>
+      <span class="kpi__meta">No sensitive data required protection</span>
+    </div>
+    <div class="card kpi">
+      <span class="kpi__label"><svg class="icon icon--info" lucideIcon="eye-off" aria-hidden="true"></svg>Redacted</span>
+      <span class="kpi__value">{{ metrics() ? (metrics()!.decision_counts.REDACTED | number) : '-' }}</span>
+      <span class="kpi__meta">
+        @if (metrics(); as m) { {{ m.decision_counts.LOCAL_ONLY }} restricted to local processing } @else { Sanitized before AI }
+      </span>
+    </div>
+    <div class="card kpi">
+      <span class="kpi__label"><svg class="icon icon--error" lucideIcon="shield-ban" aria-hidden="true"></svg>Blocked</span>
+      <span class="kpi__value">{{ metrics() ? (metrics()!.decision_counts.BLOCKED | number) : '-' }}</span>
+      <span class="kpi__meta">
+        @if (metrics(); as m) { {{ m.decision_counts.PROCESSING_FAILED }} technical failures (failed closed) } @else { No AI processing permitted }
+      </span>
+    </div>
+    <div class="card kpi">
+      <span class="kpi__label"><svg class="icon" lucideIcon="scan-search" aria-hidden="true"></svg>Sensitive entities</span>
+      <span class="kpi__value">{{ metrics() ? (metrics()!.total_entities | number) : '-' }}</span>
+      <span class="kpi__meta">
+        @for (c of topCategories(); track c[0]; let last = $last) {
+          {{ c[0] | humanize }} {{ c[1] }}{{ last ? '' : ', ' }}
+        } @empty {
+          Categories only, values are never stored
+        }
+      </span>
+    </div>
+  </section>
+
+  <section class="grid grid-main-side">
+    <div class="card">
+      <div class="card-header">
+        <h2><svg class="icon" lucideIcon="activity" aria-hidden="true"></svg>Processing decisions, last 24 hours</h2>
+        @if (metrics(); as m) {
+          <span class="card-header__meta">Live data, updated {{ m.generated_at | date: 'HH:mm:ss' }}</span>
+        }
+      </div>
+      <div class="card-body">
+        @if (metrics(); as m) {
+          @if (hasActivity()) {
+            <app-decision-chart [buckets]="m.timeline" />
+          } @else {
+            <div class="empty-state">
+              <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
+              <span class="empty-state__title">No requests processed yet</span>
+              <span>Run a synthetic transcript through the Inspector to populate this view.</span>
+            </div>
+          }
+        } @else if (loading()) {
+          <div class="skeleton chart-skeleton"></div>
+        } @else {
+          <div class="empty-state">
+            <svg class="icon" lucideIcon="cloud-off" aria-hidden="true"></svg>
+            <span class="empty-state__title">Chart unavailable</span>
+            <span>Metrics could not be loaded from the backend.</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2><svg class="icon" lucideIcon="server" aria-hidden="true"></svg>System status</h2>
+        <a class="btn btn-ghost btn-sm" routerLink="/settings">Details</a>
+      </div>
+      <div class="card-body stack">
+        <div class="status-row">
+          <span class="status-row__label"><svg class="icon" lucideIcon="shield" aria-hidden="true"></svg>Firewall backend</span>
+          @if (system.error()) {
+            <app-status-badge value="UNREACHABLE" />
+          } @else if (system.health(); as h) {
+            <app-status-badge [value]="h.components['detection'].status === 'READY' && h.components['policies'].status === 'READY' ? 'READY' : 'DEGRADED'"
+                              [label]="h.components['detection'].status === 'READY' && h.components['policies'].status === 'READY' ? 'Enforcing' : 'Degraded'" />
+          } @else {
+            <app-status-badge value="PENDING" label="Checking" />
+          }
+        </div>
+        <div class="status-row">
+          <span class="status-row__label"><svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>Local model (Ollama)</span>
+          @if (integrations(); as i) {
+            <app-status-badge [value]="i.ollama.status" />
+          } @else {
+            <app-status-badge [value]="integrationsError() ? 'UNREACHABLE' : 'PENDING'" [label]="integrationsError() ? 'Unknown' : 'Checking'" />
+          }
+        </div>
+        @if (integrations(); as i) {
+          <p class="text-xs muted status-note">{{ i.ollama.model }}. {{ i.ollama.message }}</p>
+        }
+        <div class="status-row">
+          <span class="status-row__label">
+            <svg class="icon" lucideIcon="cloud" aria-hidden="true"></svg>CloudLink endpoint
+            <span class="simulated-label">Mock</span>
+          </span>
+          @if (integrations(); as i) {
+            <app-status-badge [value]="i.cloudlink.status" />
+          } @else {
+            <app-status-badge [value]="integrationsError() ? 'UNREACHABLE' : 'PENDING'" [label]="integrationsError() ? 'Unknown' : 'Checking'" />
+          }
+        </div>
+
+        <div class="latency">
+          <span class="section-title">Measured latency</span>
+          @if (metrics(); as m) {
+            <table class="data-table latency-table">
+              <thead>
+                <tr><th scope="col">Stage</th><th scope="col" class="num">Avg</th><th scope="col" class="num">p95</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Total</td><td class="num">{{ m.latency.total.avg_ms | duration }}</td><td class="num">{{ m.latency.total.p95_ms | duration }}</td></tr>
+                <tr><td>Detection</td><td class="num">{{ m.latency.detection.avg_ms | duration }}</td><td class="num">{{ m.latency.detection.p95_ms | duration }}</td></tr>
+                <tr><td>Local AI</td><td class="num">{{ m.latency.local_ai.avg_ms | duration }}</td><td class="num">{{ m.latency.local_ai.p95_ms | duration }}</td></tr>
+                <tr><td>Cloud handoff</td><td class="num">{{ m.latency.cloud.avg_ms | duration }}</td><td class="num">{{ m.latency.cloud.p95_ms | duration }}</td></tr>
+              </tbody>
+            </table>
+          } @else {
+            <p class="text-sm muted">Unavailable</p>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2><svg class="icon" lucideIcon="file-text" aria-hidden="true"></svg>Recent activity and policy decisions</h2>
+      <a class="btn btn-ghost btn-sm" routerLink="/audit">
+        View audit trail
+        <svg class="icon" lucideIcon="arrow-right" aria-hidden="true"></svg>
+      </a>
+    </div>
+    <div class="card-body card-body--flush table-wrap">
+      @if (recent().length) {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">Request</th>
+              <th scope="col">Profile</th>
+              <th scope="col">Entity categories</th>
+              <th scope="col">Decisive policy</th>
+              <th scope="col">Decision</th>
+              <th scope="col">Destination</th>
+              <th scope="col" class="num">Latency</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (event of recent(); track event.event_id) {
+              <tr class="is-clickable" tabindex="0" (click)="openEvent(event)" (keydown.enter)="openEvent(event)">
+                <td class="nowrap">{{ event.created_at | date: 'MMM d, HH:mm:ss' }}</td>
+                <td class="mono">{{ event.request_id.slice(0, 8) }}</td>
+                <td>{{ event.profile }}</td>
+                <td>
+                  <div class="tag-list">
+                    @for (c of categories(event); track c) {
+                      <span class="tag">{{ c }}</span>
+                    } @empty {
+                      <span class="muted">None</span>
+                    }
+                  </div>
+                </td>
+                <td class="mono">{{ event.decisive_policy_id }}</td>
+                <td><app-status-badge [value]="event.decision" /></td>
+                <td><app-status-badge [value]="event.destination" /></td>
+                <td class="num">{{ event.total_latency_ms | duration }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else if (!loading()) {
+        <div class="empty-state">
+          <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
+          <span class="empty-state__title">{{ error() ? 'Activity unavailable' : 'No activity recorded' }}</span>
+          <span>{{ error() ? 'The audit trail could not be loaded.' : 'Processed requests appear here with their policy decisions.' }}</span>
+        </div>
+      }
+    </div>
+  </section>
+</div>

@@ -1,0 +1,16 @@
+.align-start {
+  align-self: flex-start;
+}
+
+.sources {
+  gap: 2px;
+}
+
+.kv--inline {
+  grid-template-columns: minmax(160px, max-content) minmax(0, 1fr);
+}
+
+.row .input {
+  flex: 1;
+  min-width: 0;
+}

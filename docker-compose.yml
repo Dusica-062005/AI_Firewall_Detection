@@ -1,0 +1,42 @@
+# Optional alternative to the local setup in README.md.
+# Ollama is expected on the host (host.docker.internal:11434); it is not containerized here.
+#   docker compose up --build
+# UI: http://localhost:4200  API: http://localhost:8000/api  Mock CloudLink: http://localhost:8100
+
+services:
+  mock-cloudlink:
+    build: ./backend
+    command: ["uvicorn", "app.integrations.mock_cloudlink:app", "--host", "0.0.0.0", "--port", "8100"]
+    environment:
+      CLOUDLINK_API_KEY: ${CLOUDLINK_API_KEY:-change-me-local-demo-key}
+    ports:
+      - "8100:8100"
+
+  backend:
+    build: ./backend
+    environment:
+      CORS_ORIGINS: http://localhost:4200
+      DATABASE_URL: sqlite:////app/data/firewall.db
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      CLOUDLINK_BASE_URL: http://mock-cloudlink:8100
+      CLOUDLINK_API_KEY: ${CLOUDLINK_API_KEY:-change-me-local-demo-key}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - firewall-data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mock-cloudlink
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  firewall-data:

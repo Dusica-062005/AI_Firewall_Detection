@@ -1,0 +1,169 @@
+<div class="overlay" (click)="closed.emit()"></div>
+<aside class="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+  <div class="drawer__header">
+    <div class="stack" style="gap: 2px">
+      <h2 id="editor-title">{{ isEdit() ? 'Edit policy' : 'Create policy' }}</h2>
+      @if (policy(); as p) {
+        <span class="text-xs muted mono">{{ p.policy_id }} &middot; version {{ p.version }}</span>
+      }
+    </div>
+    <button type="button" class="btn btn-ghost btn-icon" aria-label="Close editor" (click)="closed.emit()">
+      <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+    </button>
+  </div>
+
+  <form class="drawer__body" [formGroup]="form" (ngSubmit)="save()" novalidate id="policy-form">
+    <app-error-alert [error]="serverError()" title="The policy was not saved" />
+
+    <section class="stack">
+      <span class="section-title">General</span>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label for="p-name">Name</label>
+          <input id="p-name" class="input" formControlName="name" autocomplete="off" />
+          @if (form.controls.name.touched && form.controls.name.invalid) {
+            <span class="field__error">Enter a name between 3 and 80 characters.</span>
+          }
+        </div>
+        <div class="field span-2">
+          <label for="p-desc">Description</label>
+          <input id="p-desc" class="input" formControlName="description" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="p-id">Policy ID</label>
+          <input id="p-id" class="input mono" formControlName="policy_id" placeholder="Generated from name" autocomplete="off" />
+          @if (form.controls.policy_id.invalid) {
+            <span class="field__error">Use 3-64 lowercase letters, digits or hyphens.</span>
+          } @else {
+            <span class="field__hint">{{ isEdit() ? 'Policy IDs cannot be changed.' : 'Optional.' }}</span>
+          }
+        </div>
+        <div class="field">
+          <label for="p-priority">Priority</label>
+          <input id="p-priority" class="input" type="number" min="1" max="1000" formControlName="priority" />
+          @if (form.controls.priority.invalid) {
+            <span class="field__error">Enter a whole number from 1 to 1000.</span>
+          } @else {
+            <span class="field__hint">Lower numbers win ties between equally restrictive rules.</span>
+          }
+        </div>
+        <label class="switch span-2">
+          <input type="checkbox" formControlName="enabled" />
+          Policy enabled
+        </label>
+      </div>
+    </section>
+
+    <section class="stack">
+      <span class="section-title">Entity categories</span>
+      <div class="category-grid" role="group" aria-label="Entity categories">
+        @for (c of categories(); track c) {
+          <label class="checkbox">
+            <input type="checkbox" [checked]="hasCategory(c)" (change)="toggleCategory(c, $any($event.target).checked)" />
+            <span class="mono">{{ c }}</span>
+          </label>
+        }
+      </div>
+      @if (form.controls.entity_categories.touched && form.controls.entity_categories.invalid) {
+        <span class="field__error">Select at least one category.</span>
+      } @else {
+        <span class="field__hint">ANY applies the rule to every request, including requests with no detected entities.</span>
+      }
+    </section>
+
+    <section class="stack">
+      <span class="section-title">Enforcement</span>
+      <div class="form-grid">
+        <div class="field">
+          <label for="p-action">Action</label>
+          <select id="p-action" class="select" formControlName="action">
+            @for (a of actions; track a) {
+              <option [value]="a">{{ a }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label for="p-dest">Processing destination</label>
+          <select id="p-dest" class="select" formControlName="destination">
+            @for (d of destinations(); track d) {
+              <option [value]="d">{{ d }}</option>
+            }
+          </select>
+        </div>
+        <p class="field__hint span-2">{{ actionHelp[form.controls.action.value] }}</p>
+      </div>
+    </section>
+
+    <section class="stack">
+      <span class="section-title">Applicable conditions</span>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label for="p-profiles">Profiles</label>
+          <input id="p-profiles" class="input mono" formControlName="profiles" placeholder="All profiles" autocomplete="off" />
+          @if (form.controls.profiles.invalid) {
+            <span class="field__error">Invalid profile IDs: {{ form.controls.profiles.errors?.['profiles'] }}</span>
+          } @else {
+            <span class="field__hint">Comma-separated. Leave empty to apply to every profile.</span>
+          }
+          <div class="row wrap">
+            @for (p of profiles(); track p.id) {
+              <button type="button" class="btn btn-secondary btn-sm" (click)="addProfile(p.id)">
+                <svg class="icon" lucideIcon="plus" aria-hidden="true"></svg>{{ p.id }}
+              </button>
+            }
+          </div>
+        </div>
+        <div class="field">
+          <span class="field__label" id="channels-label">Channels</span>
+          <div class="row wrap" role="group" aria-labelledby="channels-label">
+            @for (ch of channels; track ch) {
+              <label class="checkbox">
+                <input type="checkbox" [checked]="hasChannel(ch)" (change)="toggleChannel(ch, $any($event.target).checked)" />
+                {{ ch }}
+              </label>
+            }
+          </div>
+          <span class="field__hint">None selected applies to all channels.</span>
+        </div>
+        <div class="field">
+          <label for="p-conf">Minimum confidence</label>
+          <input id="p-conf" class="input" type="number" step="0.05" min="0" max="1" formControlName="min_confidence" />
+          @if (form.controls.min_confidence.invalid) {
+            <span class="field__error">Enter a value between 0 and 1.</span>
+          } @else {
+            <span class="field__hint">Entities below this score fall back to the conservative default.</span>
+          }
+        </div>
+      </div>
+    </section>
+
+    @if (validation(); as v) {
+      <section class="stack">
+        @if (v.valid) {
+          <div class="alert alert-success" role="status">
+            <svg class="icon" lucideIcon="circle-check" aria-hidden="true"></svg>
+            <span>Configuration is valid. It has not been saved yet.</span>
+          </div>
+        }
+        @for (e of v.errors; track $index) {
+          <div class="alert alert-error"><svg class="icon" lucideIcon="circle-x" aria-hidden="true"></svg><span>{{ e }}</span></div>
+        }
+        @for (w of v.warnings; track $index) {
+          <div class="alert alert-warning"><svg class="icon" lucideIcon="triangle-alert" aria-hidden="true"></svg><span>{{ w }}</span></div>
+        }
+      </section>
+    }
+  </form>
+
+  <div class="drawer__footer">
+    <button type="button" class="btn btn-secondary" (click)="closed.emit()">Cancel</button>
+    <button type="button" class="btn btn-secondary" (click)="validate()" [disabled]="validating()">
+      @if (validating()) { <span class="spinner" aria-hidden="true"></span> } @else { <svg class="icon" lucideIcon="list-checks" aria-hidden="true"></svg> }
+      Validate
+    </button>
+    <button type="submit" form="policy-form" class="btn btn-primary" [disabled]="saving()">
+      @if (saving()) { <span class="spinner" aria-hidden="true"></span> } @else { <svg class="icon" lucideIcon="save" aria-hidden="true"></svg> }
+      Save changes
+    </button>
+  </div>
+</aside>
