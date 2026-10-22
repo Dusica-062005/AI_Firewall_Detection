@@ -93,7 +93,9 @@ custom_recognizers:
     entity: PHONE_NUMBER
     pattern: '(?<![\d+])((?:\+91[\s-]?|0)?[6-9]\d{4}[\s-]?\d{5})(?!\d)'
     group: 1
-    score: 0.75
+    # Above Presidio's PhoneRecognizer (0.75): Presidio keeps only one of two identical spans,
+    # and this one must survive so the custom-recognizer overlap rule can apply.
+    score: 0.8
   - name: date-of-birth-contextual
     entity: DATE_OF_BIRTH
     pattern: '\b(?:date\s+of\s+birth|d\.?o\.?b\.?|born\s+on|birth\s+date|janam\s+tithi)\s*(?:is|:|=|hai)?\s*(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?,?\s+\d{4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})\b'
