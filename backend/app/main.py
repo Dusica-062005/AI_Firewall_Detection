@@ -24,6 +24,7 @@ from app.api.routes import (
     policies,
     process,
     quality,
+    sizing,
     system,
     trust,
 )
@@ -63,7 +64,7 @@ def create_app(settings: Settings | None = None, container: Container | None = N
         expose_headers=["X-Request-ID"],
         allow_credentials=False,
     )
-    for module in (health, system, inspect, process, policies, audit, metrics, compliance, trust, canaries, quality, audio, benchmarks):
+    for module in (health, system, inspect, process, policies, audit, metrics, compliance, trust, canaries, quality, audio, benchmarks, sizing):
         app.include_router(module.router, prefix="/api")
     return app
 
