@@ -67,6 +67,7 @@ class Settings(BaseSettings):
     max_audio_seconds: int = Field(default=300, ge=5, le=3600)
     max_audio_bytes: int = Field(default=25 * 1024 * 1024, ge=1024, le=200 * 1024 * 1024)
     audio_temp_dir: Path | None = None  # None: the system temp folder; files are deleted after use
+    bleep_style: Literal["tone", "silence"] = "tone"  # audio bleeping (FR-16): 1 kHz tone or silence
 
     # Latency benchmark (NFR-2) and sizing (Feature 7). "Real-time capable" means the warm p95 total
     # at concurrency 1 fits LIVE_ASSIST_BUDGET_S; otherwise the honest claim is post-call wrap-up.

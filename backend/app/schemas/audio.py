@@ -37,5 +37,20 @@ class TranscriptionInfo(BaseModel):
     words: list[WordInfo]
 
 
+class BleepRange(BaseModel):
+    start_s: float
+    end_s: float
+
+
+class BleepInfo(BaseModel):
+    """The source audio with every protected word replaced (FR-16). Returned, never stored."""
+
+    style: str
+    ranges: list[BleepRange]
+    content_type: str = "audio/wav"
+    audio_base64: str
+
+
 class AudioProcessResult(FirewallResult):
     transcription: TranscriptionInfo
+    bleep: BleepInfo | None = None

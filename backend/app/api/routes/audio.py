@@ -7,22 +7,32 @@ fails, nothing is processed or sent.
 
 from __future__ import annotations
 
+import base64
 import logging
 import os
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from starlette.concurrency import run_in_threadpool
 
 from app.api.deps import get_container
 from app.api.errors import ApiError
 from app.api.routes.common import check_transcript_request
+from app.audio.bleep import BleepError, bleep_ranges, bleep_wav, check_wav
 from app.audio.transcriber import Transcript, TranscriptionError
 from app.container import Container
+from app.policy.dial import dial_protects
 from app.policy.models import PROFILE_PATTERN, Channel
-from app.schemas.audio import AudioProcessResult, TranscriptionInfo, TranscriptResponse, WordInfo
+from app.schemas.audio import (
+    AudioProcessResult,
+    BleepInfo,
+    BleepRange,
+    TranscriptionInfo,
+    TranscriptResponse,
+    WordInfo,
+)
 from app.schemas.requests import ProcessingMode, ProcessRequest
 from app.schemas.responses import ErrorResponse
 
@@ -43,8 +53,14 @@ def _format(upload: UploadFile) -> str:
     return AUDIO_FORMATS[suffix]
 
 
-async def _transcribe(upload: UploadFile, container: Container) -> tuple[Transcript, str]:
-    """Write the upload to a temp file, transcribe it and always delete the file."""
+async def _transcribe(
+    upload: UploadFile, container: Container, keep: bytearray | None = None, before=None
+) -> tuple[Transcript, str]:
+    """Write the upload to a temp file, transcribe it and always delete the file.
+
+    ``keep`` also collects the bytes in memory (for bleeping); ``before`` checks them before
+    transcription, so an unusable file fails before anything is processed.
+    """
     fmt = _format(upload)
     settings = container.settings
     temp_dir = settings.audio_temp_dir
@@ -60,8 +76,12 @@ async def _transcribe(upload: UploadFile, container: Container) -> tuple[Transcr
                 if size > settings.max_audio_bytes:
                     raise ApiError(413, "AUDIO_TOO_LARGE", f"Audio exceeds {settings.max_audio_bytes} bytes.")
                 out.write(chunk)
+                if keep is not None:
+                    keep.extend(chunk)
         if size == 0:
             raise ApiError(422, "AUDIO_EMPTY", "The uploaded audio file is empty.")
+        if before is not None:
+            before(bytes(keep))
         try:
             transcript = await run_in_threadpool(container.transcriber.transcribe, path)
         except TranscriptionError as exc:
@@ -96,10 +116,16 @@ async def process_audio(
     profile: str = Form("standard", pattern=PROFILE_PATTERN),
     channel: Channel = Form("voice"),
     mode: ProcessingMode = Form(ProcessingMode.FULL),
+    bleep: bool = Query(False, description="Also return the WAV with every protected word bleeped (FR-16)."),
     container: Container = Depends(get_container),
 ) -> AudioProcessResult:
     """Transcribe locally, then run the normal policy-controlled workflow on the transcript."""
-    transcript, fmt = await _transcribe(file, container)
+    audio_bytes: bytearray | None = None
+    if bleep:
+        if _format(file) != "wav":
+            raise ApiError(422, "BLEEP_WAV_ONLY", "Bleeping needs a 16-bit PCM .wav file.")
+        audio_bytes = bytearray()
+    transcript, fmt = await _transcribe(file, container, audio_bytes, _check_wav if bleep else None)
     request = ProcessRequest(transcript=transcript.text, profile=profile, channel=channel, mode=mode)
     request_id = check_transcript_request(request, container)
     audio = {
@@ -118,4 +144,25 @@ async def process_audio(
             transcription_ms=transcript.transcription_ms, format=fmt,
             transcript=transcript.text if expose else None, words=_words(transcript) if expose else [],
         ),
+        bleep=_bleep(bytes(audio_bytes), transcript, result, container.settings.bleep_style) if bleep else None,
     )
+
+
+def _check_wav(data: bytes) -> None:
+    try:
+        check_wav(data)
+    except BleepError as exc:
+        raise ApiError(422, "BLEEP_WAV_ONLY", str(exc)) from None
+
+
+def _bleep(data: bytes, transcript: Transcript, result, style: str) -> BleepInfo:
+    """Bleep exactly what was tokenized in the text: non-ALLOW entities plus what the dial protects."""
+    dial = result.routing.dial if result.routing else "max_quality"
+    spans = [(e.start, e.end) for e in result.entities if e.action != "ALLOW" or dial_protects(dial, e.entity_type)]
+    ranges = bleep_ranges(transcript.words, spans, transcript.duration_s)
+    try:
+        audio = bleep_wav(data, ranges, style)
+    except BleepError as exc:
+        raise ApiError(422, "BLEEP_FAILED", str(exc)) from None
+    return BleepInfo(style=style, ranges=[BleepRange(start_s=a, end_s=b) for a, b in ranges],
+                     audio_base64=base64.b64encode(audio).decode("ascii"))
