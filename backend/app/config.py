@@ -59,6 +59,15 @@ class Settings(BaseSettings):
     # measure real leaks against this file, i.e. at the receiving end.
     received_log_file: Path = BACKEND_ROOT / "data" / "received.log"
 
+    # Local transcription (FR-1): faster-whisper on CTranslate2. Audio uploads have their own size
+    # limit; every other request keeps MAX_REQUEST_BYTES.
+    whisper_model: str = "base"
+    whisper_device: str = "cpu"
+    whisper_compute_type: str = "int8"
+    max_audio_seconds: int = Field(default=300, ge=5, le=3600)
+    max_audio_bytes: int = Field(default=25 * 1024 * 1024, ge=1024, le=200 * 1024 * 1024)
+    audio_temp_dir: Path | None = None  # None: the system temp folder; files are deleted after use
+
     # Dial quality score (Feature 4): Ollama embedding model, and the model that summarizes the
     # RAW synthetic samples as the reference. Empty -> MOCK_CLOUD_MODEL if set, else OLLAMA_MODEL.
     quality_embed_model: str = "nomic-embed-text"

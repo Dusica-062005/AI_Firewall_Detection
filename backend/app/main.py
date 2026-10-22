@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.errors import install_error_handlers
 from app.api.middleware import RequestContextMiddleware, configure_logging
 from app.api.routes import (
+    audio,
     audit,
     canaries,
     compliance,
@@ -47,7 +48,11 @@ def create_app(settings: Settings | None = None, container: Container | None = N
         lifespan=lifespan,
     )
     install_error_handlers(app)
-    app.add_middleware(RequestContextMiddleware, max_request_bytes=settings.max_request_bytes)
+    app.add_middleware(
+        RequestContextMiddleware,
+        max_request_bytes=settings.max_request_bytes,
+        large_body_limits={path: settings.max_audio_bytes for path in audio.AUDIO_PATHS},
+    )
     # Added last so it is the outermost middleware and also decorates error responses.
     app.add_middleware(
         CORSMiddleware,
@@ -57,7 +62,7 @@ def create_app(settings: Settings | None = None, container: Container | None = N
         expose_headers=["X-Request-ID"],
         allow_credentials=False,
     )
-    for module in (health, system, inspect, process, policies, audit, metrics, compliance, trust, canaries, quality):
+    for module in (health, system, inspect, process, policies, audit, metrics, compliance, trust, canaries, quality, audio):
         app.include_router(module.router, prefix="/api")
     return app
 

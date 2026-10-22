@@ -87,6 +87,17 @@ def app_config(container: Container = Depends(get_container)) -> AppConfig:
             "api_key": _secret(s.cloudlink_api_key.get_secret_value()),
             "retries": 0,
         },
+        transcription={
+            "engine": "faster-whisper (local, CTranslate2)",
+            "model": s.whisper_model,
+            "device": s.whisper_device,
+            "compute_type": s.whisper_compute_type,
+            "status": container.transcriber.status,
+            "message": container.transcriber.message,
+            "max_audio_seconds": s.max_audio_seconds,
+            "max_audio_bytes": s.max_audio_bytes,
+            "stores_audio": False,
+        },
         audit=container.audit_service.storage_info(),
         admin_auth_enabled=bool(s.admin_api_key.get_secret_value()),
         trust={

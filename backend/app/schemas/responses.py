@@ -157,6 +157,7 @@ class ReceiptRef(BaseModel):
 
 
 class LatencyBreakdown(BaseModel):
+    transcription_ms: float | None = None  # audio calls only; not part of total_ms
     detection_ms: float | None = None
     policy_ms: float | None = None
     protection_ms: float | None = None
@@ -253,6 +254,7 @@ class AppConfig(BaseModel):
     policy: dict
     ollama: dict
     cloudlink: dict
+    transcription: dict = Field(default_factory=dict)
     audit: dict
     admin_auth_enabled: bool
     trust: dict = Field(default_factory=dict)

@@ -9,6 +9,7 @@ from sqlalchemy import Engine
 
 from app.ai.ollama_client import OllamaClient
 from app.ai.summarizer import Summarizer
+from app.audio.transcriber import Transcriber
 from app.audit.service import AuditService
 from app.canaries.runner import CanaryRunner, rule_version
 from app.compliance.data_requests import DataRequestService
@@ -58,6 +59,7 @@ class Container:
     receipts: ReceiptService
     canaries: CanaryRunner
     quality: QualityService
+    transcriber: Transcriber
 
 
 def build_analyzer(settings: Settings) -> SensitiveDataAnalyzer:
@@ -179,6 +181,10 @@ def build_container(
         receipts=receipts,
         canaries=canaries,
         quality=quality,
+        # Loaded lazily on the first audio request, so startup stays fast and works offline.
+        transcriber=Transcriber(
+            settings.whisper_model, settings.whisper_device, settings.whisper_compute_type, settings.max_audio_seconds
+        ),
     )
 
 

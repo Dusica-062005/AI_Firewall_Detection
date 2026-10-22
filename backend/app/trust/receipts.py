@@ -56,6 +56,8 @@ class ReceiptFacts:
     kill_switch: bool = False
     dial: str = "max_quality"
     normalize_on: bool = False
+    # Audio calls only: {"format", "duration_s", "model", "transcription_ms"}. Never audio or text.
+    audio: dict | None = None
 
 
 @dataclass(frozen=True)

@@ -24,30 +24,31 @@ def current_request_id() -> str | None:
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, max_request_bytes: int) -> None:
+    def __init__(self, app, max_request_bytes: int, large_body_limits: dict[str, int] | None = None) -> None:
         super().__init__(app)
         self.max_request_bytes = max_request_bytes
+        # Paths that accept larger bodies (audio uploads), with their own limit.
+        self.large_body_limits = large_body_limits or {}
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         supplied = request.headers.get("x-request-id", "")
         request_id = supplied if _CLIENT_ID.fullmatch(supplied) else str(uuid.uuid4())
         token = _request_id.set(request_id)
         started = time.perf_counter()
+        limit = self.large_body_limits.get(request.url.path, self.max_request_bytes)
         try:
             length = request.headers.get("content-length")
             if length is not None:
                 try:
-                    too_large = int(length) > self.max_request_bytes
+                    too_large = int(length) > limit
                 except ValueError:
                     too_large = True
                 if too_large:
-                    return self._reject(request_id, 413, "PAYLOAD_TOO_LARGE",
-                                        f"Request body exceeds {self.max_request_bytes} bytes.")
+                    return self._reject(request_id, 413, "PAYLOAD_TOO_LARGE", f"Request body exceeds {limit} bytes.")
             elif request.method in ("POST", "PUT", "PATCH"):
                 body = await request.body()
-                if len(body) > self.max_request_bytes:
-                    return self._reject(request_id, 413, "PAYLOAD_TOO_LARGE",
-                                        f"Request body exceeds {self.max_request_bytes} bytes.")
+                if len(body) > limit:
+                    return self._reject(request_id, 413, "PAYLOAD_TOO_LARGE", f"Request body exceeds {limit} bytes.")
 
             try:
                 response = await call_next(request)

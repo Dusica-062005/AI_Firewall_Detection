@@ -31,6 +31,8 @@ async def health(container: Container = Depends(get_container)) -> HealthRespons
     ollama, cloud = await asyncio.gather(container.ollama.status(), container.cloudlink.health())
     components["ollama"] = ComponentHealth(status=ollama["status"], message=ollama["message"])
     components["cloudlink"] = ComponentHealth(status=cloud["status"], message=cloud["message"] + " (simulated)")
+    # Optional: only audio requests need it. NOT_LOADED until the first audio request.
+    components["transcription"] = ComponentHealth(status=container.transcriber.status, message=container.transcriber.message)
 
     # Detection, policies and database are required for enforcement. AI services are optional.
     core_ok = all(components[k].status == "READY" for k in ("database", "detection", "policies"))

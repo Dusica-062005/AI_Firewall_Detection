@@ -53,6 +53,11 @@ _LETTER_GAP = regex.compile(r"\s+")
 _GROUP = regex.compile(r"(?<![A-Za-z0-9])([A-Za-z]{0,3})(\d+)(?![A-Za-z0-9])")
 _SENTENCE_END = regex.compile(r"[.!?।]")  # । is the Devanagari full stop
 _PAUSE = regex.compile(r"[.,;!?।]")
+# Short digit groups separated by spaces or hyphens, as transcription writes spoken digits.
+_FRAGMENTS = regex.compile(r"(?<![\w-])\d{1,3}(?:[ \t]*-[ \t]*\d{1,3}|[ \t]+\d{1,3})+(?![\w-])")
+_DIGITS = regex.compile(r"\d+")
+FRAGMENT_MIN_PARTS = 4
+FRAGMENT_MIN_DIGITS = 7
 
 
 @dataclass(frozen=True)
@@ -74,6 +79,7 @@ def normalize_numbers(text: str) -> Normalized:
     # Each piece is (char, original start, original end).
     chars = [(c, i, i + 1) for i, c in enumerate(text.translate(NATIVE_DIGITS))]
     chars = _convert_digit_words(chars)
+    chars = _join_digit_fragments(chars)
     chars = _join_split_ids(chars)
     out = "".join(c for c, _, _ in chars)
     return Normalized(
@@ -189,6 +195,31 @@ def _convert_run(
         prefix = chars[letter_index]
         return letter_index, run_end, [prefix, *digits]
     return run_start, run_end, digits
+
+
+def _join_digit_fragments(chars: list[tuple[str, int, int]]) -> list[tuple[str, int, int]]:
+    """Join "9 -8 -4 -5 -0 -123 -4 -5" (how speech-to-text writes a spoken number) into one number.
+
+    Only a run of at least FRAGMENT_MIN_PARTS short groups (1-3 digits) with at least
+    FRAGMENT_MIN_DIGITS digits in total, so "2 or 3 days" or a time like "10 - 11" is left alone.
+    """
+    text = "".join(c for c, _, _ in chars)
+    drops: list[tuple[int, int]] = []
+    for match in _FRAGMENTS.finditer(text):
+        parts = list(_DIGITS.finditer(match.group()))
+        if len(parts) < FRAGMENT_MIN_PARTS or sum(len(p.group()) for p in parts) < FRAGMENT_MIN_DIGITS:
+            continue
+        base = match.start()
+        drops += [(base + a.end(), base + b.start()) for a, b in zip(parts, parts[1:])]
+    if not drops:
+        return chars
+    result: list[tuple[str, int, int]] = []
+    cursor = 0
+    for start, end in drops:
+        result.extend(chars[cursor:start])
+        cursor = end
+    result.extend(chars[cursor:])
+    return result
 
 
 def _join_split_ids(chars: list[tuple[str, int, int]]) -> list[tuple[str, int, int]]:
