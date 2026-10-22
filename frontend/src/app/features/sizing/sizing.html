@@ -1,0 +1,107 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-header__text">
+      <h1>Hardware Fit</h1>
+      <p>How much hardware a deployment needs, calculated only from latency and throughput measured on a real machine. Nothing is extrapolated.</p>
+    </div>
+  </header>
+
+  <div class="layout">
+    <form class="card" [formGroup]="form" (ngSubmit)="estimate()" novalidate>
+      <div class="card-header"><h2><svg class="icon" lucideIcon="calculator" aria-hidden="true"></svg>Deployment</h2></div>
+      <div class="card-body stack">
+        <div class="form-grid">
+          <label class="field"><span class="field__label">Seats (agents)</span>
+            <input class="input" type="number" min="1" formControlName="seats" /></label>
+          <label class="field"><span class="field__label">Calls per hour</span>
+            <input class="input" type="number" min="1" formControlName="calls_per_hour" /></label>
+          <label class="field"><span class="field__label">Average call length (minutes)</span>
+            <input class="input" type="number" min="0.1" step="0.5" formControlName="avg_call_minutes" /></label>
+          <label class="field"><span class="field__label">Peak factor</span>
+            <input class="input" type="number" min="1" step="0.1" formControlName="peak_factor" /></label>
+        </div>
+        <fieldset class="field mode-field">
+          <legend class="field__label">Mode</legend>
+          <div class="segmented" role="radiogroup" aria-label="Mode">
+            <label><input type="radio" formControlName="mode" value="post_call" /> Post-call wrap-up</label>
+            <label><input type="radio" formControlName="mode" value="live" /> Live agent assist</label>
+          </div>
+          <span class="field__hint">Live assist needs each summary within the live budget; post-call allows a longer budget.</span>
+        </fieldset>
+        @if (form.invalid && form.touched) {
+          <span class="field__error">Enter positive numbers; the peak factor is at least 1.</span>
+        }
+      </div>
+      <div class="input-footer">
+        <button type="submit" class="btn btn-primary" [disabled]="loading()">
+          @if (loading()) { <span class="spinner" aria-hidden="true"></span> }
+          <svg class="icon" lucideIcon="calculator" aria-hidden="true"></svg>Calculate
+        </button>
+      </div>
+    </form>
+
+    <div class="stack">
+      <app-error-alert [error]="error()" title="The estimate could not be calculated" />
+      @if (result(); as r) {
+        @if (r.status === 'OK' && r.recommendation && r.formula) {
+          <section class="card result-card">
+            <div class="card-header">
+              <h2><svg class="icon" lucideIcon="server" aria-hidden="true"></svg>Recommendation</h2>
+              <app-status-badge value="OK" [label]="r.inputs.mode === 'live' ? 'Live assist' : 'Post-call'" />
+            </div>
+            <div class="card-body stack">
+              <div class="big-numbers">
+                <div><span class="kpi__label text-xs muted">Machines</span><strong class="big">{{ r.recommendation!.machines }}</strong></div>
+                <div><span class="kpi__label text-xs muted">Expected latency p50 / p95</span>
+                  <strong class="big">{{ r.recommendation!.expected_latency.p50_s }} s / {{ r.recommendation!.expected_latency.p95_s }} s</strong></div>
+                <div><span class="kpi__label text-xs muted">Headroom</span><strong class="big">{{ r.recommendation!.headroom_pct }}%</strong></div>
+              </div>
+              <p class="text-sm">{{ r.message }}</p>
+              <dl class="kv kv--inline text-sm">
+                <dt>Machine (as benchmarked)</dt>
+                <dd>{{ r.recommendation!.machine.cpu }}, {{ r.recommendation!.machine.physical_cores ?? '?' }} cores,
+                  {{ r.recommendation!.machine.ram_gb ?? '?' }} GB RAM, GPU {{ r.recommendation!.gpu }}</dd>
+                <dt>Model</dt><dd>{{ r.recommendation!.model }}</dd>
+                <dt>Benchmark run</dt><dd class="mono">{{ r.benchmark_run_id }}</dd>
+              </dl>
+            </div>
+          </section>
+          <section class="card">
+            <div class="card-header"><h2><svg class="icon" lucideIcon="list-checks" aria-hidden="true"></svg>How it was calculated</h2></div>
+            <div class="card-body">
+              <ol class="formula">
+                <li><span class="muted">Required rate:</span> <code>{{ r.formula!.required_rate }}</code></li>
+                <li><span class="muted">Per machine:</span> <code>{{ r.formula!.per_machine_rate }}</code></li>
+                <li><span class="muted">Machines:</span> <code>{{ r.formula!.machines }}</code></li>
+                <li><span class="muted">Headroom:</span> <code>{{ r.formula!.headroom }}</code></li>
+              </ol>
+            </div>
+          </section>
+        } @else {
+          <section class="card">
+            <div class="empty-state">
+              <svg class="icon" lucideIcon="calculator" aria-hidden="true"></svg>
+              <span class="empty-state__title">{{ r.status === 'NOT_MEASURED' ? 'Not measured yet' : 'No benchmarked configuration fits' }}</span>
+              <span>{{ r.message }}</span>
+              <a class="btn btn-secondary btn-sm" routerLink="/measurements" fragment="benchmark">Go to the Benchmark tab</a>
+            </div>
+          </section>
+        }
+        @if (r.caveats.length) {
+          <section class="card">
+            <div class="card-header"><h2><svg class="icon" lucideIcon="triangle-alert" aria-hidden="true"></svg>Caveats</h2></div>
+            <div class="card-body"><ul class="caveats">@for (c of r.caveats; track c) { <li>{{ c }}</li> }</ul></div>
+          </section>
+        }
+      } @else {
+        <section class="card">
+          <div class="empty-state">
+            <svg class="icon" lucideIcon="calculator" aria-hidden="true"></svg>
+            <span class="empty-state__title">Enter a deployment and select Calculate</span>
+            <span>Example: 300 seats, 1,200 calls per hour.</span>
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+</div>

@@ -66,6 +66,15 @@ of the firewall, not an API error.
 | POST | `/quality/runs` | admin | Start a dial quality measurement in the background (`202`) |
 | GET | `/quality/latest` | - | The most recent quality run (any status) and the most recent completed one |
 | GET | `/quality/runs/{run_id}` | - | One quality run with per-position and per-sample scores |
+| POST | `/transcribe` | - | Multipart audio (.wav/.mp3/.m4a): local transcript and word timings only; nothing processed or sent |
+| POST | `/process-audio?bleep=` | - | Multipart audio plus `profile`, `channel`, `mode`: transcribe locally, then the normal workflow; `bleep=true` also returns the bleeped WAV |
+| POST | `/benchmarks/runs` | admin | Start a latency benchmark in the background (`202`) |
+| GET | `/benchmarks/runs`, `/benchmarks/runs/{run_id}`, `/benchmarks/latest` | - | Benchmark runs; `latest` gives the newest run and the newest completed one |
+| POST | `/sizing/estimate` | - | Hardware Fit Calculator from a completed benchmark |
+| POST | `/breach-reports` | admin | Draft a breach report from records (`201`); nothing is sent |
+| GET | `/breach-reports`, `/breach-reports/{id}`, `/breach-reports/{id}/markdown` | - | Reports and the Markdown export |
+| GET | `/breach-reports/{id}/verify` | - | Recompute every count from the records and compare |
+| POST | `/breach-reports/{id}/review`, `/breach-reports/{id}/incident` | admin | Record the reviewer's decision; open and link a DATA_EXPOSURE incident |
 
 "admin" means `X-Admin-Key` is required when `ADMIN_API_KEY` is set. Without it the API is
 intended only for a trusted local environment.
@@ -431,6 +440,128 @@ nomic-embed-text; the run ID is illustrative; samples shortened):
 
 If the embedding model is not installed the run is `FAILED` with
 `"error": "Embedding model 'nomic-embed-text' is not installed. Run: ollama pull nomic-embed-text"`.
+
+## Audio (FR-1, FR-16)
+
+`POST /process-audio` takes `multipart/form-data`: `file` (.wav, .mp3 or .m4a, at most
+`MAX_AUDIO_BYTES` and `MAX_AUDIO_SECONDS`), `profile`, `channel`, `mode`. The audio is transcribed
+locally from a temp file that is deleted afterwards, then the transcript goes through the normal
+workflow. The response is a `FirewallResult` plus (transcript, duration, transcription time and
+bleep ranges from a real run on `appointment.wav` with the base model; the other latency values
+and the word timing are illustrative; words shortened):
+
+```json
+{
+  "redacted_transcript": "Hello, my name is [PERSON_1]. My patient ID is [PATIENT_ID_1].",
+  "latency": { "transcription_ms": 1400.45, "detection_ms": 11.2, "total_ms": 7210.4 },
+  "transcription": {
+    "model": "base", "language": "en", "duration_s": 5.65, "transcription_ms": 1400.45, "format": "wav",
+    "transcript": "Hello, my name is John Smith. My patient ID is P9482913.",
+    "words": [{ "word": "John", "start_s": 1.3, "end_s": 1.52, "char_start": 18, "char_end": 22 }]
+  },
+  "bleep": {
+    "style": "tone", "content_type": "audio/wav", "audio_base64": "UklGR...",
+    "ranges": [{ "start_s": 1.25, "end_s": 1.83 }, { "start_s": 3.71, "end_s": 5.39 }]
+  }
+}
+```
+
+`transcript` and `words` are returned only when `EXPOSE_DETECTED_VALUES` is on. `bleep` is present
+only with `?bleep=true` (16-bit PCM WAV only, else `422 BLEEP_WAV_ONLY` before anything runs).
+Errors, all with nothing processed or sent: `413 AUDIO_TOO_LARGE`, `422 UNSUPPORTED_AUDIO`,
+`AUDIO_EMPTY`, `AUDIO_TOO_LONG`, `AUDIO_UNREADABLE`, `EMPTY_TRANSCRIPT`, `TRANSCRIPTION_FAILED`,
+`503 TRANSCRIPTION_UNAVAILABLE`. The signed receipt gains
+`"audio": {"format", "duration_s", "model", "transcription_ms"}`.
+
+## Latency benchmark (NFR-2)
+
+`POST /benchmarks/runs` body (all optional):
+`{ "calls_per_level": 20, "concurrency": [1, 2, 4], "include_transcription": false, "dial": null }`.
+`GET /benchmarks/latest`, real run on this laptop (shortened):
+
+```json
+{
+  "completed": {
+    "run_id": "bench-20261022T090412Z-5b9e21",
+    "status": "COMPLETED",
+    "config": { "calls_per_level": 8, "concurrency": [1, 2], "include_transcription": false, "dial": "balanced" },
+    "machine": { "cpu": "11th Gen Intel(R) Core(TM) i7-1185G7 @ 3.00GHz", "physical_cores": 4, "logical_cores": 8, "ram_gb": 15.4 },
+    "models": { "local": "llama3.2:3b", "cloud_stand_in": null, "ollama_version": "0.40.8", "gpu": "not detected" },
+    "cold": { "stages": { "total": 16452.0 }, "failures": [] },
+    "levels": [
+      { "concurrency": 1, "n_calls": 8, "wall_s": 65.1, "calls_per_minute": 7.37, "failures": {},
+        "stages": { "detection": { "n": 8, "mean_ms": 10.6, "p50_ms": 9.93, "p95_ms": 14.2, "max_ms": 14.2 },
+                    "total": { "n": 8, "mean_ms": 8140.3, "p50_ms": 7751.19, "p95_ms": 12232.3, "max_ms": 12232.3 } } },
+      { "concurrency": 2, "n_calls": 8, "wall_s": 58.0, "calls_per_minute": 8.28, "failures": {},
+        "stages": { "total": { "n": 8, "mean_ms": 13690.2, "p50_ms": 13223.08, "p95_ms": 18824.47, "max_ms": 18824.47 } } }
+    ],
+    "budget_s": 5.0,
+    "verdict": "POST_CALL_WRAP_UP",
+    "verdict_reason": "warm p95 total 12.23 s at concurrency 1 (n=8) exceeds the 5 s live-assist budget: present this as fast post-call wrap-up, not real-time agent assist."
+  }
+}
+```
+
+The run ID and the mean, max and detection p95 values above are illustrative; the throughput,
+wall time, total p50 and p95, detection p50, machine and verdict are from the real run. A failed stage is listed in `failures` and makes the
+verdict `NOT_DETERMINED`.
+
+## Hardware Fit Calculator (Feature 7)
+
+`POST /sizing/estimate` with `{ "seats": 300, "calls_per_hour": 1200, "mode": "post_call" }`
+(`avg_call_minutes` 5 and `peak_factor` 1.5 by default), against the benchmark above:
+
+```json
+{
+  "status": "OK",
+  "required_rate_per_min": 30.0,
+  "formula": {
+    "required_rate": "1200 calls/hour x 1.5 peak factor / 60 = 30.00 calls/min",
+    "per_machine_rate": "8.28 calls/min measured at concurrency 2 (warm p95 18.82 s <= 60 s budget, n=8)",
+    "machines": "ceil(30.00 / 8.28) = 4",
+    "headroom": "(4 x 8.28 - 30.00) / (4 x 8.28) = 9.4%"
+  },
+  "recommendation": { "machines": 4, "concurrency_per_machine": 2, "expected_latency": { "p50_s": 13.22, "p95_s": 18.82, "n": 8 },
+                      "model": "llama3.2:3b", "headroom_pct": 9.4 },
+  "caveats": ["Measured on one machine: ... A Mitel Edge appliance was not benchmarked.", "..."]
+}
+```
+
+With no completed benchmark: `"status": "NOT_MEASURED"` and no numbers. In live mode with no level
+inside `LIVE_ASSIST_BUDGET_S`: `"status": "NO_FIT"`.
+
+## Breach reports (Feature 8)
+
+`POST /breach-reports` with one of:
+`{ "source": "canary_run", "ref": "<canary run ID>" }`,
+`{ "source": "incident", "ref": "<incident ID>" }`,
+`{ "source": "window", "from": "<ISO time>", "to": "<ISO time>" }`.
+Response `201` (from a test run of the canary fixture; shortened):
+
+```json
+{
+  "report_id": "brr-3c1f0a9b2e44",
+  "status": "DRAFT",
+  "source_type": "canary_run",
+  "content": {
+    "watermark": "DRAFT for compliance review. Not filed. Not legal advice.",
+    "what_happened": "Leak-canary run canary-... measured 1 synthetic test call(s) whose planted values reached the mock CloudLink receiver. Categories: PATIENT_ID x1.",
+    "affected_requests": 1,
+    "categories": { "PATIENT_ID": 1 },
+    "reasons": { "LEAK_MEASURED_AT_RECEIVER": 1 },
+    "routes": { "CLOUD": 1 },
+    "receipt_ids": ["rcp-..."],
+    "chain": { "ok": true, "count": 8, "reason": "Chain intact: 8 receipt(s) verified." },
+    "regulators": [{ "framework": "GDPR (EU)", "note": "Article 33: ... within 72 hours ..." }],
+    "synthetic_appendix": [{ "call_id": "can-0003", "type": "PATIENT_ID", "field": "sanitized_transcript", "surface": "hx-ooqz-vant" }]
+  }
+}
+```
+
+`GET /breach-reports/{id}/verify` returns `{ "ok": true, "mismatches": [], "chain": {...} }`, or the
+fields whose stored value differs from the records. Errors: `404 CANARY_RUN_NOT_FOUND`,
+`INCIDENT_NOT_FOUND`; `422 NO_LEAKS` (a canary run with nothing to report),
+`CANARY_RUN_NOT_COMPLETED`; `409 INCIDENT_ALREADY_LINKED`.
 
 ## Mock CloudLink receiver (port 8100, simulated)
 

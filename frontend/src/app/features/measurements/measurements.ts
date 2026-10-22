@@ -11,21 +11,24 @@ import {
   CanaryCompare,
   CanaryRunDetail,
   CanaryRunSummary,
+  CanarySetName,
   CanarySetSummary,
 } from '../../core/models/api.models';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { HumanizePipe } from '../../shared/pipes/format.pipes';
+import { BenchmarkTab } from './benchmark';
 import { DialQuality } from './dial-quality';
 import { delta, pct, trend } from './measurement-format';
 
-export type MeasurementTab = 'canaries' | 'languages' | 'quality';
+export type MeasurementTab = 'canaries' | 'languages' | 'quality' | 'benchmark';
 
 const TABS: { id: MeasurementTab; label: string }[] = [
   { id: 'canaries', label: 'Leak canaries' },
   { id: 'languages', label: 'Languages' },
   { id: 'quality', label: 'Dial quality' },
+  { id: 'benchmark', label: 'Benchmark' },
 ];
 const POLL_MS = 1500;
 const LANGUAGE_NAMES: Record<string, string> = {
@@ -38,7 +41,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
  */
 @Component({
   selector: 'app-measurements',
-  imports: [DatePipe, LucideDynamicIcon, ErrorAlert, HumanizePipe, DialQuality],
+  imports: [DatePipe, LucideDynamicIcon, ErrorAlert, HumanizePipe, DialQuality, BenchmarkTab],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './measurements.html',
   styleUrl: './measurements.scss',
@@ -62,6 +65,8 @@ export class Measurements implements OnInit {
   protected readonly startError = signal<ApiError | null>(null);
   protected readonly starting = signal(false);
   protected readonly normalize = signal(true);
+  /** main: the 200-call set; holdout: new templates that check detection changes for overfitting. */
+  protected readonly setName = signal<CanarySetName>('main');
 
   /** The newest run when it is not completed: shows progress (RUNNING) or the reason (FAILED). */
   protected readonly active = computed(() => {
@@ -115,7 +120,7 @@ export class Measurements implements OnInit {
   protected load(): void {
     this.loading.set(true);
     this.loadError.set(null);
-    forkJoin({ set: this.api.canarySet(), runs: this.api.canaryRuns() }).subscribe({
+    forkJoin({ set: this.api.canarySet(this.setName()), runs: this.api.canaryRuns() }).subscribe({
       next: ({ set, runs }) => {
         this.canarySet.set(set);
         this.applyRuns(runs);
@@ -152,10 +157,18 @@ export class Measurements implements OnInit {
     }
   }
 
+  protected chooseSet(name: CanarySetName): void {
+    this.setName.set(name);
+    this.api.canarySet(name).subscribe({
+      next: (set) => this.canarySet.set(set),
+      error: (err: ApiError) => this.loadError.set(err),
+    });
+  }
+
   protected run(): void {
     this.starting.set(true);
     this.startError.set(null);
-    this.api.startCanaryRun(this.normalize()).subscribe({
+    this.api.startCanaryRun(this.normalize(), this.setName()).subscribe({
       next: () => {
         this.starting.set(false);
         this.notify.success('Canary batch started. Every call goes through the real pipeline.');
@@ -211,7 +224,8 @@ export class Measurements implements OnInit {
 
   protected runLabel(run: CanaryRunSummary): string {
     const when = new Date(run.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    return `${when} - normalization ${run.normalize_on ? 'on' : 'off'}${run.kill_switch_on ? ', kill switch on' : ''} (${run.run_id.slice(-6)})`;
+    const set = run.canary_set_version.includes('holdout') ? 'held-out set' : 'main set';
+    return `${when} - ${set}, normalization ${run.normalize_on ? 'on' : 'off'}${run.kill_switch_on ? ', kill switch on' : ''} (${run.run_id.slice(-6)})`;
   }
 
   protected progress(run: CanaryRunSummary): number {

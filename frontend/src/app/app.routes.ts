@@ -45,6 +45,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/measurements/measurements').then((m) => m.Measurements),
       },
       {
+        path: 'sizing',
+        title: 'Hardware Fit - AI Data Firewall',
+        data: { title: 'Hardware Fit Calculator' },
+        loadComponent: () => import('./features/sizing/sizing').then((m) => m.Sizing),
+      },
+      {
         path: 'compliance',
         title: 'Compliance Center - AI Data Firewall',
         data: { title: 'Compliance & Incident Center' },

@@ -8,11 +8,18 @@ import {
   AppConfig,
   AuditEvent,
   AuditFilters,
+  AudioProcessResult,
   AuditListResponse,
+  BenchmarkLatest,
+  BreachReport,
+  BreachReportSource,
+  BreachReportVerify,
   CanaryCompare,
   CanaryRunDetail,
   CanaryRunSummary,
+  CanarySetName,
   CanarySetSummary,
+  Channel,
   ComplianceOverview,
   Controls,
   DataRequest,
@@ -36,11 +43,14 @@ import {
   PolicyDefinition,
   PolicyListResponse,
   PolicyValidationResponse,
+  ProcessingMode,
   ProcessRequest,
   ProfileInfo,
   QualityLatest,
   SampleTranscript,
   Severity,
+  SizingRequest,
+  SizingResponse,
   SystemStatus,
   SystemTaskStatus,
 } from '../models/api.models';
@@ -166,8 +176,8 @@ export class FirewallApiService {
   }
 
   // Measurements: leak canaries and dial quality
-  canarySet(): Observable<CanarySetSummary> {
-    return this.http.get<CanarySetSummary>(this.url('/canaries/set'));
+  canarySet(set: CanarySetName = 'main'): Observable<CanarySetSummary> {
+    return this.http.get<CanarySetSummary>(this.url('/canaries/set'), { params: new HttpParams().set('set', set) });
   }
 
   canaryRuns(): Observable<CanaryRunSummary[]> {
@@ -178,8 +188,11 @@ export class FirewallApiService {
     return this.http.get<CanaryRunDetail>(this.url(`/canaries/runs/${encodeURIComponent(runId)}`));
   }
 
-  startCanaryRun(normalizeOn: boolean): Observable<{ run_id: string; status: MeasurementStatus }> {
-    return this.http.post<{ run_id: string; status: MeasurementStatus }>(this.url('/canaries/runs'), { normalize_on: normalizeOn });
+  startCanaryRun(normalizeOn: boolean, set: CanarySetName = 'main'): Observable<{ run_id: string; status: MeasurementStatus }> {
+    return this.http.post<{ run_id: string; status: MeasurementStatus }>(this.url('/canaries/runs'), {
+      normalize_on: normalizeOn,
+      set,
+    });
   }
 
   compareCanaryRuns(a: string, b: string): Observable<CanaryCompare> {
@@ -192,6 +205,56 @@ export class FirewallApiService {
 
   startQualityRun(): Observable<{ run_id: string; status: MeasurementStatus }> {
     return this.http.post<{ run_id: string; status: MeasurementStatus }>(this.url('/quality/runs'), {});
+  }
+
+  // Audio: local transcription and bleeping. The file goes to the local backend only.
+  processAudio(file: File, profile: string, channel: Channel, mode: ProcessingMode, bleep: boolean): Observable<AudioProcessResult> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    form.append('profile', profile);
+    form.append('channel', channel);
+    form.append('mode', mode);
+    return this.http.post<AudioProcessResult>(this.url('/process-audio'), form, {
+      params: new HttpParams().set('bleep', bleep),
+    });
+  }
+
+  // Latency benchmark and Hardware Fit Calculator
+  benchmarkLatest(): Observable<BenchmarkLatest> {
+    return this.http.get<BenchmarkLatest>(this.url('/benchmarks/latest'));
+  }
+
+  startBenchmark(body: { calls_per_level: number; include_transcription: boolean }): Observable<{ run_id: string; status: MeasurementStatus }> {
+    return this.http.post<{ run_id: string; status: MeasurementStatus }>(this.url('/benchmarks/runs'), body);
+  }
+
+  sizingEstimate(body: SizingRequest): Observable<SizingResponse> {
+    return this.http.post<SizingResponse>(this.url('/sizing/estimate'), body);
+  }
+
+  // Breach Report Generator: drafts only, nothing is sent or filed
+  breachReports(): Observable<BreachReport[]> {
+    return this.http.get<BreachReport[]>(this.url('/breach-reports'));
+  }
+
+  draftBreachReport(body: { source: BreachReportSource; ref?: string; from?: string; to?: string }): Observable<BreachReport> {
+    return this.http.post<BreachReport>(this.url('/breach-reports'), body);
+  }
+
+  verifyBreachReport(reportId: string): Observable<BreachReportVerify> {
+    return this.http.get<BreachReportVerify>(this.url(`/breach-reports/${reportId}/verify`));
+  }
+
+  reviewBreachReport(reportId: string, reviewer: string, decision: 'REVIEWED' | 'WITHDRAWN', note: string): Observable<BreachReport> {
+    return this.http.post<BreachReport>(this.url(`/breach-reports/${reportId}/review`), { reviewer, decision, note });
+  }
+
+  breachReportIncident(reportId: string): Observable<BreachReport> {
+    return this.http.post<BreachReport>(this.url(`/breach-reports/${reportId}/incident`), {});
+  }
+
+  breachReportMarkdown(reportId: string): Observable<string> {
+    return this.http.get(this.url(`/breach-reports/${reportId}/markdown`), { responseType: 'text' });
   }
 
   // Compliance & incident center

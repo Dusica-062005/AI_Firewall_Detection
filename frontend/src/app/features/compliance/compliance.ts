@@ -3,24 +3,26 @@ import { Router } from '@angular/router';
 
 import { FrameworkId } from '../../core/models/api.models';
 import { AiSystems } from './ai-systems';
+import { BreachReports } from './breach-reports';
 import { ComplianceOverviewTab } from './compliance-overview';
 import { DataRequests } from './data-requests';
 import { EvidencePackTab } from './evidence-pack';
 import { Incidents } from './incidents';
 
-export type ComplianceTab = 'overview' | 'evidence' | 'incidents' | 'requests' | 'systems';
+export type ComplianceTab = 'overview' | 'evidence' | 'incidents' | 'breach' | 'requests' | 'systems';
 
 const TABS: { id: ComplianceTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'evidence', label: 'Evidence pack' },
   { id: 'incidents', label: 'Incidents' },
+  { id: 'breach', label: 'Breach reports' },
   { id: 'requests', label: 'Data requests' },
   { id: 'systems', label: 'AI systems' },
 ];
 
 @Component({
   selector: 'app-compliance',
-  imports: [ComplianceOverviewTab, EvidencePackTab, Incidents, DataRequests, AiSystems],
+  imports: [ComplianceOverviewTab, EvidencePackTab, Incidents, BreachReports, DataRequests, AiSystems],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './compliance.html',
   styleUrl: './compliance.scss',

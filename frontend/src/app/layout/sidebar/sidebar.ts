@@ -26,6 +26,7 @@ export class Sidebar {
     { path: '/policies', label: 'Policy Management', icon: 'list-checks' },
     { path: '/trust', label: 'Trust & Controls', icon: 'fingerprint' },
     { path: '/measurements', label: 'Measurements', icon: 'flask-conical' },
+    { path: '/sizing', label: 'Hardware Fit', icon: 'calculator' },
     { path: '/audit', label: 'Audit Trail', icon: 'file-text' },
     { path: '/compliance', label: 'Compliance Center', icon: 'clipboard-check' },
     { path: '/settings', label: 'Settings', icon: 'settings' },

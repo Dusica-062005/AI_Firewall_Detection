@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-import { Channel, FirewallResult, ProcessingMode } from '../../core/models/api.models';
+import { BleepInfo, Channel, FirewallResult, ProcessingMode, TranscriptionInfo } from '../../core/models/api.models';
 
 export interface InspectorDraft {
   transcript: string;
@@ -25,4 +25,6 @@ export class InspectorStateService {
   });
   readonly result = signal<FirewallResult | null>(null);
   readonly submittedTranscript = signal<string>('');
+  /** Audio input: the local transcription and, when requested, the bleeped audio. */
+  readonly audio = signal<{ transcription: TranscriptionInfo; bleep: BleepInfo | null } | null>(null);
 }

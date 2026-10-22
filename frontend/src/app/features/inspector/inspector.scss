@@ -55,3 +55,33 @@
 .is-stale {
   opacity: 0.6;
 }
+
+.file-input {
+  height: auto;
+  padding: 6px;
+}
+
+.audio-player,
+.audio-compare audio {
+  width: 100%;
+}
+
+.audio-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  @media (max-width: 720px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.transcription-card {
+  margin-bottom: var(--s-4);
+}

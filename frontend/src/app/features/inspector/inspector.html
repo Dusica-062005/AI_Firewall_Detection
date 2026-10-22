@@ -16,6 +16,30 @@
       </div>
 
       <div class="card-body stack input-body">
+        <div class="segmented" role="radiogroup" aria-label="Input type">
+          <label><input type="radio" name="inputKind" [checked]="inputKind() === 'text'" (change)="inputKind.set('text')" /> Text</label>
+          <label><input type="radio" name="inputKind" [checked]="inputKind() === 'audio'" (change)="inputKind.set('audio')" /> Audio</label>
+        </div>
+
+        @if (inputKind() === 'audio') {
+          <div class="field">
+            <label for="audio-file">Call recording</label>
+            <input id="audio-file" type="file" class="input file-input" accept=".wav,.mp3,.m4a,audio/wav,audio/mpeg,audio/mp4"
+                   (change)="onFile($event)" />
+            @if (audioError()) {
+              <span class="field__error">{{ audioError() }}</span>
+            } @else {
+              <span class="field__hint">Transcribed locally with faster-whisper; the audio is never stored or sent. Synthetic recordings only.</span>
+            }
+          </div>
+          @if (originalUrl(); as url) {
+            <audio class="audio-player" controls [src]="url" aria-label="Original recording (local file)"></audio>
+          }
+          <label class="checkbox">
+            <input type="checkbox" [checked]="bleep()" (change)="bleep.set($any($event.target).checked)" [disabled]="!isWav()" />
+            Bleep protected words in the audio (WAV only)
+          </label>
+        } @else {
         <div class="field">
           <label for="sample">Sample transcript</label>
           <div class="row">
@@ -49,6 +73,7 @@
             <span class="field__hint" [class.field__error]="charCount() > maxChars()">{{ charCount() | number }} / {{ maxChars() | number }}</span>
           </div>
         </div>
+        }
 
         <div class="form-grid">
           <div class="field">
@@ -97,7 +122,7 @@
             Processing
           } @else {
             <svg class="icon" lucideIcon="play" aria-hidden="true"></svg>
-            {{ form.controls.mode.value === 'inspect' ? 'Analyze' : 'Process' }}
+            {{ inputKind() === 'audio' ? 'Transcribe and process' : form.controls.mode.value === 'inspect' ? 'Analyze' : 'Process' }}
           }
         </button>
       </div>
@@ -106,6 +131,35 @@
     <div class="results">
       <app-error-alert [error]="submitError()" title="The request was not processed" />
 
+      @if (result() && audio(); as a) {
+        <section class="card transcription-card">
+          <div class="card-header">
+            <h2><svg class="icon" lucideIcon="mic" aria-hidden="true"></svg>Local transcription</h2>
+            <span class="card-header__meta">Audio processed locally; not stored</span>
+          </div>
+          <div class="card-body stack">
+            <dl class="kv kv--inline text-sm">
+              <dt>Model</dt><dd>faster-whisper {{ a.transcription.model }}</dd>
+              <dt>Language</dt><dd>{{ a.transcription.language }}</dd>
+              <dt>Duration</dt><dd>{{ a.transcription.duration_s }} s ({{ a.transcription.format }})</dd>
+              <dt>Transcription time</dt><dd>{{ a.transcription.transcription_ms | duration }}</dd>
+            </dl>
+            @if (a.bleep) {
+              <div class="audio-compare">
+                @if (originalUrl(); as url) {
+                  <div><span class="section-title">Original (local file)</span><audio controls [src]="url"></audio></div>
+                }
+                @if (bleepedUrl(); as url) {
+                  <div>
+                    <span class="section-title">Protected words bleeped ({{ a.bleep.ranges.length }} range(s), {{ a.bleep.style }})</span>
+                    <audio controls [src]="url"></audio>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
       @if (result(); as r) {
         <app-inspector-result [result]="r" [original]="submitted()" [class.is-stale]="submitting()" />
       } @else if (submitting()) {

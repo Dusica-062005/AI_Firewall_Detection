@@ -4,7 +4,14 @@ import { Router, RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { forkJoin } from 'rxjs';
 
-import { ApiError, AuditEvent, CanaryRunSummary, IntegrationsStatus, MetricsSummary } from '../../core/models/api.models';
+import {
+  ApiError,
+  AuditEvent,
+  BenchmarkRun,
+  CanaryRunSummary,
+  IntegrationsStatus,
+  MetricsSummary,
+} from '../../core/models/api.models';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { SystemStatusService } from '../../core/services/system-status.service';
 import { DecisionChart } from '../../shared/components/decision-chart';
@@ -42,6 +49,8 @@ export class Overview implements OnInit {
   /** Latest completed leak-canary run (Feature 5); null means not measured yet. */
   protected readonly lastCanary = signal<CanaryRunSummary | null>(null);
   protected readonly canaryError = signal<ApiError | null>(null);
+  /** NFR-2 verdict of the latest completed benchmark; null means not measured yet. */
+  protected readonly benchmark = signal<BenchmarkRun | null>(null);
   protected readonly pct = pct;
 
   ngOnInit(): void {
@@ -86,6 +95,10 @@ export class Overview implements OnInit {
         this.lastCanary.set(null);
         this.canaryError.set(err);
       },
+    });
+    this.api.benchmarkLatest().subscribe({
+      next: (latest) => this.benchmark.set(latest.completed),
+      error: () => this.benchmark.set(null),
     });
     this.system.refresh();
   }

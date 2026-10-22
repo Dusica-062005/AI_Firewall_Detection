@@ -58,6 +58,12 @@
   margin-bottom: var(--s-2);
 }
 
+.benchmark-row {
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--c-border);
+}
+
 .canary-value {
   display: block;
   font-size: 22px;

@@ -45,6 +45,14 @@
               </div>
             }
             <div class="row wrap">
+              <label class="field set-pick">
+                <span class="sr-only">Canary set</span>
+                <select class="select" [value]="setName()" (change)="chooseSet($any($event.target).value)" [disabled]="running()"
+                        aria-label="Canary set">
+                  <option value="main">Main set (200 calls)</option>
+                  <option value="holdout">Held-out set (new templates)</option>
+                </select>
+              </label>
               <label class="checkbox">
                 <input type="checkbox" [checked]="normalize()" (change)="normalize.set($any($event.target).checked)" [disabled]="running()" />
                 Normalize spoken numbers
@@ -280,6 +288,9 @@
 
       @case ('quality') {
         <app-dial-quality />
+      }
+      @case ('benchmark') {
+        <app-benchmark />
       }
     }
   </div>

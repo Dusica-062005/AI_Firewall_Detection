@@ -70,8 +70,17 @@ const STYLES: Record<string, BadgeStyle> = {
   UNSIGNED: { variant: 'warning', icon: 'fingerprint' },
   CHAIN_OK: { variant: 'success', icon: 'link' },
   TAMPERED: { variant: 'error', icon: 'shield-alert' },
-  // Measurement runs
+  // Measurement runs, benchmark verdict and sizing
   RUNNING: { variant: 'info', icon: 'timer' },
+  REAL_TIME_CAPABLE: { variant: 'success', icon: 'gauge' },
+  POST_CALL_WRAP_UP: { variant: 'warning', icon: 'clock' },
+  NOT_DETERMINED: { variant: 'neutral', icon: 'circle-dashed' },
+  NOT_MEASURED: { variant: 'neutral', icon: 'circle-dashed' },
+  NO_FIT: { variant: 'warning', icon: 'triangle-alert' },
+  // Breach reports (drafts only)
+  DRAFT: { variant: 'warning', icon: 'file-warning' },
+  REVIEWED: { variant: 'success', icon: 'circle-check' },
+  WITHDRAWN: { variant: 'neutral', icon: 'circle-minus' },
   // Compliance controls
   PASS: { variant: 'success', icon: 'circle-check' },
   PARTIAL: { variant: 'warning', icon: 'triangle-alert' },
@@ -115,6 +124,11 @@ const LABELS: Record<string, string> = {
   NO_SUMMARY: 'No summary',
   NOT_CONFIGURED: 'Not configured',
   CHAIN_OK: 'Chain OK',
+  REAL_TIME_CAPABLE: 'Real-time capable',
+  POST_CALL_WRAP_UP: 'Post-call wrap-up',
+  NOT_DETERMINED: 'Not determined',
+  NOT_MEASURED: 'Not measured yet',
+  NO_FIT: 'No fit',
 };
 
 @Component({

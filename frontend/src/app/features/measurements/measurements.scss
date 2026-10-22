@@ -41,6 +41,11 @@
   transition: width 0.3s ease;
 }
 
+.set-pick .select {
+  width: auto;
+  min-width: 230px;
+}
+
 .compare-pick {
   align-items: flex-end;
 

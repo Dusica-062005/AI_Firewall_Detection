@@ -4,10 +4,13 @@ import { TestBed } from '@angular/core/testing';
 import { testProviders } from '../../testing/test-providers';
 import { FirewallResult } from '../core/models/api.models';
 import { Inspector } from './inspector/inspector';
+import { BreachReports } from './compliance/breach-reports';
 import { InspectorStateService } from './inspector/inspector-state.service';
+import { BenchmarkTab } from './measurements/benchmark';
 import { Measurements } from './measurements/measurements';
 import { Overview } from './overview/overview';
 import { Settings } from './settings/settings';
+import { Sizing } from './sizing/sizing';
 
 const TRANSCRIPT = 'My name is John Smith, my patient ID is 48291, and I need help with my appointment.';
 
@@ -153,7 +156,9 @@ describe('Measurements', () => {
     const controller = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(Measurements);
     fixture.detectChanges();
-    controller.expectOne('/api/canaries/set').flush(SET);
+    const setRequest = controller.expectOne((r) => r.url === '/api/canaries/set');
+    expect(setRequest.request.params.get('set')).toBe('main');
+    setRequest.flush(SET);
     controller.expectOne('/api/canaries/runs').flush(runs);
     await fixture.whenStable();
     return { fixture, controller };
@@ -197,6 +202,108 @@ describe('Measurements', () => {
     expect(button?.disabled).toBe(true);
     expect(text(el)).toContain('Running: 10 / 200 calls');
     expect(el.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')).toBe('10');
+    fixture.destroy();
+  });
+});
+
+describe('Hardware Fit', () => {
+  async function estimate(response: object) {
+    TestBed.configureTestingModule({ providers: testProviders() });
+    const controller = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(Sizing);
+    fixture.detectChanges();
+    (fixture.componentInstance as unknown as { estimate(): void }).estimate();
+    const request = controller.expectOne('/api/sizing/estimate');
+    expect(request.request.body).toEqual({ seats: 300, calls_per_hour: 1200, avg_call_minutes: 5, peak_factor: 1.5, mode: 'post_call' });
+    request.flush(response);
+    await fixture.whenStable();
+    return text(fixture.nativeElement);
+  }
+
+  const base = {
+    inputs: { seats: 300, calls_per_hour: 1200, avg_call_minutes: 5, peak_factor: 1.5, mode: 'post_call' },
+    budget_s: 60, required_rate_per_min: 30, caveats: ['A Mitel Edge appliance was not benchmarked.'],
+  };
+
+  it('says "Not measured yet" when there is no benchmark', async () => {
+    const el = await estimate({
+      ...base, status: 'NOT_MEASURED', message: 'Not measured yet. Run a benchmark.', benchmark_run_id: null,
+      formula: null, recommendation: null, caveats: [],
+    });
+    expect(el).toContain('Not measured yet');
+    expect(el).toContain('Go to the Benchmark tab');
+    expect(el).not.toContain('Machines');
+  });
+
+  it('renders the formula with the measured numbers and the run ID', async () => {
+    const el = await estimate({
+      ...base, status: 'OK', message: '4 machine(s) like the benchmarked one.', benchmark_run_id: 'bench-20261022T080000Z-abc123',
+      formula: {
+        required_rate: '1200 calls/hour x 1.5 peak factor / 60 = 30.00 calls/min',
+        per_machine_rate: '8.28 calls/min measured at concurrency 2 (warm p95 18.82 s <= 60 s budget, n=8)',
+        machines: 'ceil(30.00 / 8.28) = 4',
+        headroom: '(4 x 8.28 - 30.00) / (4 x 8.28) = 9.4%',
+      },
+      recommendation: {
+        machines: 4, concurrency_per_machine: 2, per_machine_rate_per_min: 8.28, headroom_pct: 9.4,
+        expected_latency: { p50_s: 13.22, p95_s: 18.82, n: 8 }, model: 'llama3.2:3b',
+        machine: { cpu: 'Test CPU', physical_cores: 4, ram_gb: 15.4 }, gpu: 'not detected',
+      },
+    });
+    expect(el).toContain('ceil(30.00 / 8.28) = 4');
+    expect(el).toContain('bench-20261022T080000Z-abc123');
+    expect(el).toContain('13.22 s / 18.82 s');
+    expect(el).toContain('Mitel Edge appliance was not benchmarked');
+  });
+});
+
+describe('Breach reports', () => {
+  it('shows the DRAFT watermark on a report', async () => {
+    TestBed.configureTestingModule({ providers: testProviders() });
+    const controller = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(BreachReports);
+    fixture.detectChanges();
+    const watermark = 'DRAFT for compliance review. Not filed. Not legal advice.';
+    controller.expectOne('/api/breach-reports').flush([{
+      report_id: 'brr-0123456789ab', status: 'DRAFT', created_at: '2026-10-22T08:00:00Z', updated_at: '2026-10-22T08:00:00Z',
+      source_type: 'canary_run', source_ref: 'canary-20261022T063000Z-a1b2c3', query: {}, incident_id: null,
+      reviewer: null, reviewed_at: null, review_note: null,
+      content: {
+        watermark, title: 'Draft breach report: canary run', what_happened: 'One synthetic call leaked.',
+        affected_requests: 1, categories: { PATIENT_ID: 1 }, reasons: {}, routes: { CLOUD: 1 }, kill_switch: { off: 1 },
+        dials: { max_quality: 1 }, receipt_ids: ['rcp-0123456789abcdef'], window: { first: null, last: null },
+        chain: { ok: true, count: 9, reason: 'Chain intact.' }, incident: null, regulators: [], regulator_note: 'Directional only.',
+        synthetic_appendix: [], privacy: '',
+      },
+    }]);
+    controller.match('/api/canaries/runs').forEach((r) => r.flush([]));
+    controller.match('/api/compliance/incidents').forEach((r) => r.flush({ items: [], total: 0 }));
+    await fixture.whenStable();
+    fixture.nativeElement.querySelector('tbody tr').click();
+    await fixture.whenStable();
+    expect(text(fixture.nativeElement)).toContain(watermark);
+    expect(fixture.nativeElement.querySelectorAll('.watermark').length).toBe(2);
+  });
+});
+
+describe('Benchmark', () => {
+  it('disables Run while a benchmark is running', async () => {
+    TestBed.configureTestingModule({ providers: testProviders() });
+    const controller = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(BenchmarkTab);
+    fixture.detectChanges();
+    controller.expectOne('/api/benchmarks/latest').flush({
+      run: { run_id: 'bench-20261022T080000Z-abc123', status: 'RUNNING', created_at: '2026-10-22T08:00:00Z', finished_at: null,
+        config: {}, machine: {}, models: {}, cold: null, levels: [], budget_s: 5, verdict: null, verdict_reason: null,
+        duration_s: null, progress_done: 3, progress_total: 41, error: null },
+      completed: null,
+    });
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const button = Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('Run benchmark'));
+    expect(button?.disabled).toBe(true);
+    expect(text(el)).toContain('Running: 3 / 41 calls');
+    expect(text(el)).toContain('Not measured yet');
     fixture.destroy();
   });
 });

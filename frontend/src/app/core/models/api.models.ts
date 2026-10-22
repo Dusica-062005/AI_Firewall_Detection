@@ -158,6 +158,8 @@ export interface ReceiptRef {
 }
 
 export interface LatencyBreakdown {
+  /** Audio calls only; not part of total_ms. */
+  transcription_ms?: number | null;
   detection_ms: number | null;
   policy_ms: number | null;
   protection_ms: number | null;
@@ -378,6 +380,17 @@ export interface AppConfig {
     api_key: { configured: boolean; display: string };
     retries: number;
   };
+  transcription?: {
+    engine: string;
+    model: string;
+    device: string;
+    compute_type: string;
+    status: string;
+    message: string;
+    max_audio_seconds: number;
+    max_audio_bytes: number;
+    stores_audio: boolean;
+  };
   audit: {
     retention_days: number;
     event_count: number;
@@ -434,6 +447,8 @@ export interface ReceiptBody {
   kill_switch: boolean;
   dial: DialPosition;
   normalize_on: boolean;
+  /** Audio calls only: format, duration, model and transcription time. Never audio or text. */
+  audio?: { format: string; duration_s: number; model: string; transcription_ms: number } | null;
 }
 
 export interface Receipt {
@@ -470,6 +485,8 @@ export interface VerifyResult {
 // ---- Measurements: leak canaries (Feature 5) and dial quality (Feature 4) ----
 
 export type MeasurementStatus = 'RUNNING' | 'COMPLETED' | 'FAILED';
+/** main: the 200-call set; holdout: new templates that check detection changes for overfitting. */
+export type CanarySetName = 'main' | 'holdout';
 
 export interface CanarySetSummary {
   version: string;
@@ -603,6 +620,159 @@ export interface QualityRun {
 export interface QualityLatest {
   run: QualityRun | null;
   completed: QualityRun | null;
+}
+
+// ---- Audio: local transcription (FR-1) and bleeping (FR-16) ----
+
+export interface WordInfo {
+  word: string;
+  start_s: number;
+  end_s: number;
+  char_start: number;
+  char_end: number;
+}
+
+export interface TranscriptionInfo {
+  model: string;
+  language: string;
+  duration_s: number;
+  transcription_ms: number;
+  format: string;
+  /** The local transcript; null when EXPOSE_DETECTED_VALUES is off. */
+  transcript: string | null;
+  words: WordInfo[];
+}
+
+export interface BleepInfo {
+  style: string;
+  ranges: { start_s: number; end_s: number }[];
+  content_type: string;
+  audio_base64: string;
+}
+
+export interface AudioProcessResult extends FirewallResult {
+  transcription: TranscriptionInfo;
+  bleep: BleepInfo | null;
+}
+
+// ---- Latency benchmark (NFR-2) and Hardware Fit Calculator (Feature 7) ----
+
+export type BenchmarkVerdict = 'REAL_TIME_CAPABLE' | 'POST_CALL_WRAP_UP' | 'NOT_DETERMINED';
+
+export interface StageStats {
+  n: number;
+  mean_ms: number;
+  p50_ms: number;
+  p95_ms: number;
+  max_ms: number;
+}
+
+export interface BenchmarkLevel {
+  concurrency: number;
+  n_calls: number;
+  wall_s: number;
+  calls_per_minute: number | null;
+  stages: Record<string, StageStats | null>;
+  failures: Record<string, number>;
+}
+
+export interface BenchmarkRun {
+  run_id: string;
+  status: MeasurementStatus;
+  created_at: string;
+  finished_at: string | null;
+  config: { calls_per_level: number; concurrency: number[]; include_transcription: boolean; dial: string; inputs: string[] };
+  machine: { platform?: string; cpu?: string; physical_cores?: number | null; logical_cores?: number | null; ram_gb?: number | null };
+  models: { local?: string; cloud_stand_in?: string | null; whisper?: string; ollama_version?: string | null; gpu?: string };
+  cold: { stages: Record<string, number>; failures: string[] } | null;
+  levels: BenchmarkLevel[];
+  budget_s: number;
+  verdict: BenchmarkVerdict | null;
+  verdict_reason: string | null;
+  duration_s: number | null;
+  progress_done: number;
+  progress_total: number;
+  error: string | null;
+}
+
+export interface BenchmarkLatest {
+  run: BenchmarkRun | null;
+  completed: BenchmarkRun | null;
+}
+
+export interface SizingRequest {
+  seats: number;
+  calls_per_hour: number;
+  avg_call_minutes: number;
+  peak_factor: number;
+  mode: 'post_call' | 'live';
+}
+
+export interface SizingResponse {
+  status: 'OK' | 'NOT_MEASURED' | 'NO_FIT';
+  message: string;
+  inputs: SizingRequest & { seats: number };
+  budget_s: number;
+  required_rate_per_min: number;
+  benchmark_run_id: string | null;
+  formula: { required_rate: string; per_machine_rate: string; machines: string; headroom: string } | null;
+  recommendation: {
+    machines: number;
+    concurrency_per_machine: number;
+    per_machine_rate_per_min: number;
+    headroom_pct: number;
+    expected_latency: { p50_s: number; p95_s: number; n: number };
+    model: string | null;
+    machine: { cpu?: string; physical_cores?: number | null; logical_cores?: number | null; ram_gb?: number | null; platform?: string };
+    gpu: string;
+  } | null;
+  caveats: string[];
+}
+
+// ---- Breach Report Generator (Feature 8) ----
+
+export type BreachReportStatus = 'DRAFT' | 'REVIEWED' | 'WITHDRAWN';
+export type BreachReportSource = 'canary_run' | 'incident' | 'window';
+
+export interface BreachReportContent {
+  watermark: string;
+  title: string;
+  what_happened: string;
+  affected_requests: number;
+  categories: Record<string, number>;
+  reasons: Record<string, number>;
+  routes: Record<string, number>;
+  kill_switch: Record<string, number>;
+  dials: Record<string, number>;
+  receipt_ids: string[];
+  window: { first: string | null; last: string | null };
+  chain: { ok: boolean; count: number; reason: string };
+  incident: { incident_id: string; status: string; severity: string; contained_at: string | null; sla_state: string } | null;
+  regulators: { framework: string; note: string }[];
+  regulator_note: string;
+  synthetic_appendix: { call_id: string; type: string; field: string; surface: string }[];
+  privacy: string;
+}
+
+export interface BreachReport {
+  report_id: string;
+  status: BreachReportStatus;
+  created_at: string;
+  updated_at: string;
+  source_type: BreachReportSource;
+  source_ref: string | null;
+  query: Record<string, string | null>;
+  content: BreachReportContent;
+  incident_id: string | null;
+  reviewer: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+}
+
+export interface BreachReportVerify {
+  ok: boolean;
+  mismatches: { field: string; report: unknown; records: unknown }[];
+  chain: { ok: boolean; count: number; reason: string } | null;
 }
 
 // ---- Compliance & incident center ----

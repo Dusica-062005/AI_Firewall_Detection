@@ -165,3 +165,37 @@ button.kpi--link {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Breach reports */
+.draft-row {
+  align-items: flex-end;
+
+  .grow {
+    flex: 1;
+    min-width: 260px;
+  }
+}
+
+.watermark {
+  padding: var(--s-2) var(--s-3);
+  border: 1px dashed var(--c-warning);
+  border-radius: var(--r-md);
+  background: var(--c-warning-bg);
+  color: var(--c-warning);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.regulators {
+  margin: 0;
+  padding-left: var(--s-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  font-size: var(--fs-sm);
+}
+
+.reviewer {
+  width: 220px;
+}

@@ -176,6 +176,19 @@
         } @else {
           <p class="text-sm muted">{{ canaryError() ? 'Unavailable' : 'Not measured yet' }}</p>
         }
+        <div class="status-row benchmark-row">
+          <span class="status-row__label"><svg class="icon" lucideIcon="timer" aria-hidden="true"></svg>Latency (NFR-2)</span>
+          @if (benchmark(); as b) {
+            <app-status-badge [value]="b.verdict" />
+          } @else {
+            <span class="text-sm muted">Not measured yet</span>
+          }
+        </div>
+        @if (benchmark(); as b) {
+          @if (b.levels[0]?.stages?.['total']; as t) {
+            <p class="text-xs muted">Warm p95 {{ t.p95_ms / 1000 | number: '1.1-1' }} s (n={{ t.n }}) on {{ b.machine.cpu }}</p>
+          }
+        }
       </div>
     </div>
     </div>

@@ -20,6 +20,7 @@
       @case ('overview') { <app-compliance-overview (evidence)="openEvidence($event)" (openTab)="select($event)" /> }
       @case ('evidence') { <app-evidence-pack [(framework)]="framework" /> }
       @case ('incidents') { <app-incidents /> }
+      @case ('breach') { <app-breach-reports /> }
       @case ('requests') { <app-data-requests /> }
       @case ('systems') { <app-ai-systems /> }
     }

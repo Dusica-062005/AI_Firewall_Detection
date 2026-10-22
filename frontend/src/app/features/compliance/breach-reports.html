@@ -1,0 +1,178 @@
+<section class="card">
+  <div class="card-header">
+    <h2><svg class="icon" lucideIcon="file-warning" aria-hidden="true"></svg>Draft a breach report</h2>
+    <span class="card-header__meta">Drafts only: nothing is sent, filed or emailed</span>
+  </div>
+  <div class="card-body stack">
+    <p class="text-sm">
+      Pulls the facts from the signed receipts, leak-canary runs and incidents already stored: what happened, when, how many
+      requests and which data categories. Categories, counts and IDs only, never transcript text or values.
+    </p>
+    <div class="row wrap draft-row">
+      <label class="field">
+        <span class="field__label">Source</span>
+        <select class="select" [value]="source()" (change)="chooseSource($any($event.target).value)">
+          <option value="canary_run">Leak-canary run with leaks</option>
+          <option value="incident">Data-exposure incident</option>
+          <option value="window">Time window</option>
+        </select>
+      </label>
+      @switch (source()) {
+        @case ('canary_run') {
+          <label class="field grow">
+            <span class="field__label">Canary run</span>
+            <select class="select" [value]="ref()" (change)="ref.set($any($event.target).value)">
+              <option value="">{{ leakyRuns().length ? 'Select a run' : 'No completed run with leaks' }}</option>
+              @for (r of leakyRuns(); track r.run_id) { <option [value]="r.run_id">{{ runLabel(r) }}</option> }
+            </select>
+          </label>
+        }
+        @case ('incident') {
+          <label class="field grow">
+            <span class="field__label">Incident</span>
+            <select class="select" [value]="ref()" (change)="ref.set($any($event.target).value)">
+              <option value="">{{ exposures().length ? 'Select an incident' : 'No data-exposure incident' }}</option>
+              @for (i of exposures(); track i.incident_id) { <option [value]="i.incident_id">{{ i.incident_id }}: {{ i.title }}</option> }
+            </select>
+          </label>
+        }
+        @case ('window') {
+          <label class="field"><span class="field__label">From</span>
+            <input class="input" type="datetime-local" [value]="from()" (change)="from.set($any($event.target).value)" /></label>
+          <label class="field"><span class="field__label">To</span>
+            <input class="input" type="datetime-local" [value]="to()" (change)="to.set($any($event.target).value)" /></label>
+        }
+      }
+      <button type="button" class="btn btn-primary" (click)="draft()" [disabled]="drafting() || !canDraft()">
+        @if (drafting()) { <span class="spinner" aria-hidden="true"></span> }
+        <svg class="icon" lucideIcon="file-text" aria-hidden="true"></svg>Draft report
+      </button>
+    </div>
+    <app-error-alert [error]="draftError()" title="The report was not drafted" />
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-header"><h2><svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>Reports</h2></div>
+  <app-error-alert [error]="error()" title="Reports could not be loaded" [retryable]="true" (retry)="load()" />
+  <div class="card-body card-body--flush table-wrap">
+    @if (items().length) {
+      <table class="data-table">
+        <thead>
+          <tr><th scope="col">Report</th><th scope="col">Drafted</th><th scope="col">Source</th>
+            <th scope="col" class="num">Affected</th><th scope="col">Categories</th><th scope="col">Status</th></tr>
+        </thead>
+        <tbody>
+          @for (r of items(); track r.report_id) {
+            <tr class="is-clickable" tabindex="0" (click)="open(r)" (keydown.enter)="open(r)">
+              <td class="mono">{{ r.report_id }}</td>
+              <td class="nowrap">{{ r.created_at | date: 'MMM d, HH:mm' }}</td>
+              <td>{{ r.source_type | humanize }}</td>
+              <td class="num">{{ r.content.affected_requests }}</td>
+              <td><div class="tag-list">@for (c of r.content.categories | keyvalue; track c.key) { <span class="tag">{{ c.key }} x{{ c.value }}</span> }</div></td>
+              <td><app-status-badge [value]="r.status" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else if (!loading()) {
+      <div class="empty-state">
+        <svg class="icon" lucideIcon="file-warning" aria-hidden="true"></svg>
+        <span class="empty-state__title">No reports drafted</span>
+        <span>Draft one from a leak-canary run with leaks, a data-exposure incident or a time window.</span>
+      </div>
+    }
+  </div>
+</section>
+
+@if (selected(); as r) {
+  <div class="overlay" (click)="close()"></div>
+  <aside class="drawer drawer--wide" role="dialog" aria-modal="true" aria-labelledby="brr-title">
+    <div class="drawer__header">
+      <div class="stack" style="gap: 2px">
+        <h2 id="brr-title">{{ r.content.title }}</h2>
+        <span class="text-xs mono muted">{{ r.report_id }}</span>
+      </div>
+      <button type="button" class="btn btn-ghost btn-icon" aria-label="Close report" (click)="close()">
+        <svg class="icon" lucideIcon="x" aria-hidden="true"></svg>
+      </button>
+    </div>
+    <div class="drawer__body">
+      <div class="watermark" role="note">{{ r.content.watermark }}</div>
+      <div class="row wrap">
+        <app-status-badge [value]="r.status" [strong]="true" />
+        <app-status-badge [value]="r.content.chain.ok ? 'CHAIN_OK' : 'TAMPERED'" [strong]="true" />
+        @if (r.reviewer) { <span class="text-xs muted">Reviewed by {{ r.reviewer }}, {{ r.reviewed_at | date: 'MMM d, HH:mm' }}</span> }
+      </div>
+      <p class="text-sm">{{ r.content.what_happened }}</p>
+      <dl class="kv">
+        <dt>Affected requests</dt><dd>{{ r.content.affected_requests }}</dd>
+        <dt>Time window</dt><dd>{{ r.content.window.first ?? '-' }} to {{ r.content.window.last ?? '-' }}</dd>
+        <dt>Categories</dt><dd>@for (c of r.content.categories | keyvalue; track c.key) { <span class="tag">{{ c.key }} x{{ c.value }}</span> }</dd>
+        <dt>Reasons</dt><dd>@for (c of r.content.reasons | keyvalue; track c.key) { <span class="tag">{{ c.key | humanize }} x{{ c.value }}</span> }</dd>
+        <dt>Routes</dt><dd>@for (c of r.content.routes | keyvalue; track c.key) { <span class="tag">{{ c.key }} x{{ c.value }}</span> }</dd>
+        <dt>Kill switch / dial then</dt>
+        <dd>@for (c of r.content.kill_switch | keyvalue; track c.key) { <span class="tag">kill switch {{ c.key }} x{{ c.value }}</span> }
+          @for (c of r.content.dials | keyvalue; track c.key) { <span class="tag">{{ c.key | humanize }} x{{ c.value }}</span> }</dd>
+        <dt>Incident</dt>
+        <dd>{{ r.content.incident ? r.content.incident.incident_id + ' (' + r.content.incident.status + ', ' + r.content.incident.severity + ')' : 'None linked' }}</dd>
+        <dt>Receipts</dt><dd class="mono text-xs">{{ r.content.receipt_ids.join(', ') || 'none' }}</dd>
+      </dl>
+
+      <span class="section-title">Regulators to consider</span>
+      <p class="text-xs muted">{{ r.content.regulator_note }}</p>
+      <ul class="regulators">@for (g of r.content.regulators; track g.framework) { <li><strong>{{ g.framework }}:</strong> {{ g.note }}</li> }</ul>
+
+      @if (r.content.synthetic_appendix.length) {
+        <span class="section-title">Appendix: synthetic test data</span>
+        <table class="data-table">
+          <thead><tr><th scope="col">Call</th><th scope="col">Type</th><th scope="col">Field</th><th scope="col">Surface (synthetic)</th></tr></thead>
+          <tbody>@for (a of r.content.synthetic_appendix; track a.call_id + a.type) {
+            <tr><td class="mono">{{ a.call_id }}</td><td>{{ a.type }}</td><td class="mono text-xs">{{ a.field }}</td><td>{{ a.surface }}</td></tr>
+          }</tbody>
+        </table>
+      }
+
+      <app-error-alert [error]="actionError()" title="The action did not complete" />
+      @if (verify(); as v) {
+        <div class="alert" [class.alert-success]="v.ok" [class.alert-error]="!v.ok">
+          <svg class="icon" [lucideIcon]="v.ok ? 'circle-check' : 'circle-x'" aria-hidden="true"></svg>
+          <span>
+            @if (v.ok) { Every count matches the records, and the receipt chain verifies. }
+            @else {
+              Differences: @for (m of v.mismatches; track m.field) { {{ m.field }} } @empty { none }.
+              Chain: {{ v.chain?.reason ?? 'not checked' }}
+            }
+          </span>
+        </div>
+      }
+      <div class="row wrap">
+        <button type="button" class="btn btn-secondary" (click)="runVerify(r)" [disabled]="busy()">
+          <svg class="icon" lucideIcon="shield-check" aria-hidden="true"></svg>Verify against records
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="download(r)">
+          <svg class="icon" lucideIcon="download" aria-hidden="true"></svg>Download markdown
+        </button>
+        @if (!r.incident_id) {
+          <button type="button" class="btn btn-secondary" (click)="createIncident(r)" [disabled]="busy()">
+            <svg class="icon" lucideIcon="flag" aria-hidden="true"></svg>Create incident
+          </button>
+        }
+      </div>
+      @if (r.status === 'DRAFT') {
+        <div class="row wrap">
+          <input class="input reviewer" placeholder="Reviewer name" [value]="reviewer()" (input)="reviewer.set($any($event.target).value)"
+                 aria-label="Reviewer name" />
+          <button type="button" class="btn btn-primary" (click)="review(r, 'REVIEWED')" [disabled]="busy() || reviewer().trim().length < 2">
+            Mark reviewed
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="review(r, 'WITHDRAWN')" [disabled]="busy() || reviewer().trim().length < 2">
+            Withdraw
+          </button>
+        </div>
+        <p class="text-xs muted">Reviewing records a decision only. Any notification to a regulator stays a human step outside this tool.</p>
+      }
+      <div class="watermark" role="note">{{ r.content.watermark }}</div>
+    </div>
+  </aside>
+}

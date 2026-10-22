@@ -98,6 +98,21 @@ The API location is read at runtime from `frontend/public/config.json`:
 
 3. To use a different model, set `OLLAMA_MODEL` in `backend/.env`.
 
+### 4. Local transcription (audio)
+
+`pip install -r requirements.txt` installs faster-whisper (CTranslate2, no torch), a pinned PyAV
+(`av==14.2.0`; faster-whisper 1.2.1 does not work with PyAV 15+), python-multipart, psutil and
+pyttsx3. The Whisper model (`WHISPER_MODEL=base`, about 145 MB) downloads once on the first audio
+request and then works offline. Audio is processed from a temp file that is deleted right away;
+it is never stored or sent.
+
+To recreate the synthetic test recordings (offline Windows speech engine):
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe scripts\make_synthetic_audio.py
+```
+
 If Ollama is missing, not running, or the model is not pulled, the UI reports
 `Unreachable` or `Model missing` and summaries show as unavailable. The firewall never falls
 back to any other model.
@@ -118,6 +133,10 @@ All settings live in `backend/.env`; see [backend/.env.example](backend/.env.exa
 | `NORMALIZE_NUMBERS` | `true` | Detect spoken and split identifiers ("P four eight two", "nau aath saat", "P48. Sorry, 2913") |
 | `QUALITY_EMBED_MODEL` / `QUALITY_REFERENCE_MODEL` | `nomic-embed-text` / empty | Dial quality score: embedding model, and the model that summarizes the raw samples (empty: `MOCK_CLOUD_MODEL`, else `OLLAMA_MODEL`) |
 | `RECEIVED_LOG_FILE` | `./data/received.log` | Every payload the mock receiver accepts; leak canaries measure against it |
+| `WHISPER_MODEL` / `WHISPER_DEVICE` / `WHISPER_COMPUTE_TYPE` | `base` / `cpu` / `int8` | Local transcription (faster-whisper) |
+| `MAX_AUDIO_SECONDS` / `MAX_AUDIO_BYTES` | `300` / `26214400` | Audio upload limits (only the audio routes accept large bodies) |
+| `BLEEP_STYLE` | `tone` | Audio bleeping of protected words: `tone` (1 kHz) or `silence` |
+| `LIVE_ASSIST_BUDGET_S` / `POST_CALL_BUDGET_S` | `5` / `60` | Benchmark verdict and sizing budgets |
 | `OLLAMA_BASE_URL` / `OLLAMA_MODEL` / `OLLAMA_TIMEOUT_SECONDS` | `http://localhost:11434` / `llama3.2:3b` / `45` | Local model |
 | `CLOUDLINK_BASE_URL` / `CLOUDLINK_API_KEY` / `CLOUDLINK_TIMEOUT_SECONDS` | `http://localhost:8100` / placeholder / `5` | Mock receiver |
 | `ADMIN_API_KEY` | empty | When set, policy changes and audit purge require the `X-Admin-Key` header (enter it on the Settings page) |
@@ -195,12 +214,15 @@ Invoke-RestMethod -Method Post http://localhost:8000/api/canaries/runs -ContentT
 Invoke-RestMethod http://localhost:8000/api/canaries/runs
 ```
 
-The canary set is generated deterministically and committed. To regenerate it after changing the
-templates (the output is byte-identical for the same script):
+There are two canary sets: **main** (200 calls) and **held-out** (100 calls from different
+templates). Use the held-out set to check that a detection change generalizes; never tune
+recognizers against its misses. Both are generated deterministically and committed. To
+regenerate them after changing the templates (the output is byte-identical for the same script):
 
 ```powershell
 cd backend
-.\.venv\Scripts\python.exe scripts\generate_canaries.py
+.\.venv\Scripts\python.exe scripts\generate_canaries.py              # both sets
+.\.venv\Scripts\python.exe scripts\generate_canaries.py --set holdout
 ```
 
 Canary batches go through the real pipeline, so each call also writes an audit event and a
@@ -224,15 +246,53 @@ reporting a leak rate it did not measure.
 7. Verify the receipt chain still says CHAIN OK. Canary runs add one receipt per call, each
    recording `normalize_on`.
 
+## Audio, benchmark, sizing and breach reports
+
+- **Audio (Inspector > Audio):** upload a synthetic `.wav`, `.mp3` or `.m4a`. It is transcribed
+  locally, then processed like text. With "Bleep protected words" (WAV only) the response also
+  contains the recording with every tokenized value replaced by a tone.
+- **Benchmark (Measurements > Benchmark):** times the real pipeline per stage (n, p50, p95) and
+  throughput per concurrency level on this machine, and gives the NFR-2 verdict: real-time capable
+  (warm p95 within `LIVE_ASSIST_BUDGET_S`) or post-call wrap-up. Each call also writes an audit
+  event and a receipt.
+- **Hardware Fit (sidebar):** enter seats and calls per hour. The answer comes only from a
+  completed benchmark, with the formula, the run ID and the caveats; with no benchmark it says
+  "Not measured yet". It never extrapolates to hardware or models that were not benchmarked.
+- **Breach reports (Compliance > Breach reports):** draft a report from a canary run with leaks,
+  a data-exposure incident or a time window. Drafts hold categories, counts and IDs only, carry
+  "DRAFT for compliance review. Not filed. Not legal advice.", and can be verified against the
+  records, reviewed, linked to an incident and downloaded as Markdown. Nothing is ever sent.
+
+**Roadmap (not built):** a real Mitel Edge / CloudLink integration (the receiver is a mock), live
+microphone streaming, and protection against re-identification from quasi-identifiers ("the only
+cardiologist in a small town ...").
+
+### Manual verification (Milestone C)
+
+1. Start everything: `powershell -ExecutionPolicy Bypass -File scripts\start-demo.ps1`
+2. Inspector > Audio: upload `backend/tests/fixtures/audio/appointment.wav` with bleeping on and
+   select Transcribe and process. Expect the transcript, `[PERSON_1]` and `[PATIENT_ID_1]`, and a
+   receipt whose body has an `audio` block. In the playback, the name and the ID are beeped.
+3. Measurements > Benchmark: run it. Note the warm p95 and the verdict.
+4. Hardware Fit: 300 seats and 1,200 calls/hour. The numbers in the formula match the benchmark
+   table.
+5. Measurements > Leak canaries: run the main and the held-out set and compare with Milestone B's
+   numbers.
+6. Compliance > Breach reports: draft from the canary run with leaks, select Verify (expect every
+   count to match) and download the Markdown. Search it for a raw value: there is none outside the
+   synthetic appendix.
+7. Trust & Controls > Verify chain: CHAIN OK.
+
 ## Tests
 
 ```powershell
-# Backend: 188 tests (unit, integration, security). Uses real Presidio, a stub Ollama
-# and the in-process mock receiver. No network or credentials needed.
+# Backend: 263 tests (unit, integration, security). Uses real Presidio, a stub Ollama, a stub
+# transcriber and the in-process mock receiver. No network or credentials needed. One test
+# (marked slow) runs real faster-whisper and is skipped when the model is not cached.
 cd backend
 .\.venv\Scripts\python.exe -m pytest
 
-# Frontend: 19 tests (Vitest via the Angular unit-test builder).
+# Frontend: 23 tests (Vitest via the Angular unit-test builder).
 cd frontend
 npx ng test --watch=false
 
@@ -254,6 +314,11 @@ npx ng build
 | `tests/unit/test_canary_set.py` | Canary file format, exact spans, coverage minimums, byte-identical regeneration |
 | `tests/security/test_canaries.py` | Exact recall and leak rate on a hand-checked set; leaks measured at the real receiver; log mismatch fails the run; kill switch; determinism; compare deltas; admin key |
 | `tests/integration/test_quality.py` | Cosine scores, reference cache, null (not 0) without a summary, missing embedding model, raw text never reaches the mock cloud |
+| `tests/integration/test_audio.py` | Transcription through the pipeline; receipts and audit hold only audio facts; temp file deleted on success and error; failures process and send nothing; size limits |
+| `tests/integration/test_bleep.py` | Bleep ranges from word timings; only protected ranges change; WAV-only check before anything runs |
+| `tests/integration/test_benchmark.py` | Nearest-rank percentiles; cold call separated; verdict flips at the budget; failed stages recorded; transcription timed |
+| `tests/integration/test_sizing.py` | Exact formula and ceil boundaries; live vs post-call; failed levels never used; no benchmark means no numbers |
+| `tests/security/test_breach_reports.py` | Counts match records; no raw values outside the synthetic appendix; DRAFT watermark; verify detects a changed record; nothing sent |
 | `frontend/src/**/*.spec.ts` | Error normalization; unreachable backend; validation errors; unavailable metrics; missing model; blocked result rendering |
 
 ## Five-minute demo
@@ -301,6 +366,9 @@ backend/
     detection/      Presidio analyzer wrapper, custom recognizers, spoken-number normalizer
     canaries/       canary set (canaries.json), models and the leak-canary runner
     quality/        dial quality measurement (embedding similarity)
+    audio/          local transcription (faster-whisper) and audio bleeping
+    benchmark/      latency benchmark of the real pipeline
+    sizing/         Hardware Fit Calculator
     policy/         engine (decisions), models, loader, validation
     security/       redactor, outbound_validator
     ai/             ollama_client, summarizer
