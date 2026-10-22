@@ -48,7 +48,7 @@ _WORD = regex.compile(r"\w+")
 _RUN_GAP = regex.compile(r"[\s,\-]+")
 _LETTER_GAP = regex.compile(r"\s+")
 _GROUP = regex.compile(r"(?<![A-Za-z0-9])([A-Za-z]{0,3})(\d+)(?![A-Za-z0-9])")
-_SENTENCE_END = regex.compile(r"[.!?]")
+_SENTENCE_END = regex.compile(r"[.!?।]")  # । is the Devanagari full stop
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,6094 @@
+{
+  "version": "canaries-v1",
+  "generated_with_seed": 20261103,
+  "calls": [
+    {
+      "call_id": "can-0001",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Good morning, I'm calling for my mother. Her name is Lakshmi Reddy and her date of birth is April 6, 1957. She has a cardiology review on Friday.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lakshmi Reddy",
+          "spans": [
+            [
+              53,
+              66
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "06/04/1957",
+          "spans": [
+            [
+              92,
+              105
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0002",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "My Aadhaar number is 9999 0281 6181 for the insurance form, and my mobile is +91 95363 70972.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999902816181",
+          "spans": [
+            [
+              21,
+              35
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9536370972",
+          "spans": [
+            [
+              77,
+              92
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0003",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hello, Hannah Krishnan here. You can reach me on +91 99563 71811 if the doctor is running late today.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Hannah Krishnan",
+          "spans": [
+            [
+              7,
+              22
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9956371811",
+          "spans": [
+            [
+              49,
+              64
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0004",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I'm calling about my son Sneha Kulkarni. He was born on 01/06/1984 and needs his vaccination booked.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Sneha Kulkarni",
+          "spans": [
+            [
+              25,
+              39
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "01/06/1984",
+          "spans": [
+            [
+              56,
+              66
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0005",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P9181871. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9181871",
+          "spans": [
+            [
+              44,
+              52
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0006",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P9255951. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9255951",
+          "spans": [
+            [
+              44,
+              52
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0007",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hello, Manoj Weiss here. You can reach me on 9085473298 if the doctor is running late today.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Manoj Weiss",
+          "spans": [
+            [
+              7,
+              18
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9085473298",
+          "spans": [
+            [
+              45,
+              55
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0008",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hi, this is Mateo Bhat. My patient ID is P9636787 and I need to move my follow-up to next week.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Mateo Bhat",
+          "spans": [
+            [
+              12,
+              22
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9636787",
+          "spans": [
+            [
+              41,
+              49
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0009",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Good morning, I'm calling for my mother. Her name is Rahul Shetty and her date of birth is April 15, 2005. She has a cardiology review on Friday.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Rahul Shetty",
+          "spans": [
+            [
+              53,
+              65
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "15/04/2005",
+          "spans": [
+            [
+              91,
+              105
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0010",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P9932788. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9932788",
+          "spans": [
+            [
+              44,
+              52
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0011",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I need a copy of my prescription. I'm Deepa Menon, Aadhaar 9999 2671 1273, date of birth 12/08/1972.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Deepa Menon",
+          "spans": [
+            [
+              38,
+              49
+            ]
+          ]
+        },
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999926711273",
+          "spans": [
+            [
+              59,
+              73
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "12/08/1972",
+          "spans": [
+            [
+              89,
+              99
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0012",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hello, it's Tobias Haddad again. Tobias Haddad with the knee appointment. My patient ID is P9974863.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Tobias Haddad",
+          "spans": [
+            [
+              12,
+              25
+            ],
+            [
+              33,
+              46
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9974863",
+          "spans": [
+            [
+              91,
+              99
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0013",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Please update my contact number to +91 93193 89505. The old one no longer works. Thanks, Tanvi Carter.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9319389505",
+          "spans": [
+            [
+              35,
+              50
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Tanvi Carter",
+          "spans": [
+            [
+              89,
+              101
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0014",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hi, I missed a call from the clinic. My name is Imran Bhat, phone +91 93853 99440. Patient ID is P9194618.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Imran Bhat",
+          "spans": [
+            [
+              48,
+              58
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9385399440",
+          "spans": [
+            [
+              66,
+              81
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9194618",
+          "spans": [
+            [
+              97,
+              105
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0015",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I need a copy of my prescription. I'm Meera Hegde, Aadhaar 9999 2682 4398, date of birth 09/04/1943.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Meera Hegde",
+          "spans": [
+            [
+              38,
+              49
+            ]
+          ]
+        },
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999926824398",
+          "spans": [
+            [
+              59,
+              73
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "09/04/1943",
+          "spans": [
+            [
+              89,
+              99
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0016",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hi, this is Rohan Subramanian. My patient ID is P9977595 and I need to move my follow-up to next week.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Rohan Subramanian",
+          "spans": [
+            [
+              12,
+              29
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9977595",
+          "spans": [
+            [
+              48,
+              56
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0017",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P9652416. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9652416",
+          "spans": [
+            [
+              44,
+              52
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0018",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I want to confirm my blood test results. Patient ID P9812099, and please email the report to karthik.chatterjee22@example.org.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9812099",
+          "spans": [
+            [
+              52,
+              60
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "karthik.chatterjee22@example.org",
+          "spans": [
+            [
+              93,
+              125
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0019",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P9907863. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9907863",
+          "spans": [
+            [
+              44,
+              52
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0020",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "This is Deepa Moreau, date of birth May 28, 1953. My patient number is P9120159. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Deepa Moreau",
+          "spans": [
+            [
+              8,
+              20
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "28/05/1953",
+          "spans": [
+            [
+              36,
+              48
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9120159",
+          "spans": [
+            [
+              71,
+              79
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0021",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I need a copy of my prescription. I'm Divya Gowda, Aadhaar 9999 3490 6095, date of birth 07/12/1978.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Divya Gowda",
+          "spans": [
+            [
+              38,
+              49
+            ]
+          ]
+        },
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999934906095",
+          "spans": [
+            [
+              59,
+              73
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "07/12/1978",
+          "spans": [
+            [
+              89,
+              99
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0022",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Good morning, I'm calling for my mother. Her name is Harish Hegde and her date of birth is May 9, 1945. She has a cardiology review on Friday.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Harish Hegde",
+          "spans": [
+            [
+              53,
+              65
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "09/05/1945",
+          "spans": [
+            [
+              91,
+              102
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0023",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Can you send the discharge summary to nandini.carter13@example.org? It's for Lucas Bhat.",
+      "planted": [
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "nandini.carter13@example.org",
+          "spans": [
+            [
+              38,
+              66
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Lucas Bhat",
+          "spans": [
+            [
+              77,
+              87
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0024",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "This is Lakshmi Haddad, date of birth 11-08-1967. My patient number is P9000048. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lakshmi Haddad",
+          "spans": [
+            [
+              8,
+              22
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "11/08/1967",
+          "spans": [
+            [
+              38,
+              48
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9000048",
+          "spans": [
+            [
+              71,
+              79
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0025",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Can you send the discharge summary to rahul.moreau31@example.org? It's for Chiara Rao.",
+      "planted": [
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "rahul.moreau31@example.org",
+          "spans": [
+            [
+              38,
+              64
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Chiara Rao",
+          "spans": [
+            [
+              75,
+              85
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0026",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "This is Nisha Qureshi, date of birth 4 February 1974. My patient number is P9652754. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Nisha Qureshi",
+          "spans": [
+            [
+              8,
+              21
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "04/02/1974",
+          "spans": [
+            [
+              37,
+              52
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9652754",
+          "spans": [
+            [
+              75,
+              83
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0027",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Could someone call me on 95245 43835 about the MRI slot? My patient ID is P9750206 and my email is vikram.venkatesh23@example.org.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9524543835",
+          "spans": [
+            [
+              25,
+              36
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9750206",
+          "spans": [
+            [
+              74,
+              82
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "vikram.venkatesh23@example.org",
+          "spans": [
+            [
+              99,
+              129
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0028",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hello, Vikram Iyer here. You can reach me on 94259 79253 if the doctor is running late today.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Vikram Iyer",
+          "spans": [
+            [
+              7,
+              18
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9425979253",
+          "spans": [
+            [
+              45,
+              56
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0029",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P9199922. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9199922",
+          "spans": [
+            [
+              44,
+              52
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0030",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hello, it's Aditya Chatterjee again. Aditya Chatterjee with the knee appointment. My patient ID is P9516963.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Aditya Chatterjee",
+          "spans": [
+            [
+              12,
+              29
+            ],
+            [
+              37,
+              54
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9516963",
+          "spans": [
+            [
+              99,
+              107
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0031",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "This is Hannah Subramanian, date of birth 26-08-1983. My patient number is P9298666. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Hannah Subramanian",
+          "spans": [
+            [
+              8,
+              26
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "26/08/1983",
+          "spans": [
+            [
+              42,
+              52
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9298666",
+          "spans": [
+            [
+              75,
+              83
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0032",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hi, this is Varun Hegde. My patient ID is P9641171 and I need to move my follow-up to next week.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Varun Hegde",
+          "spans": [
+            [
+              12,
+              23
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9641171",
+          "spans": [
+            [
+              42,
+              50
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0033",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hello, it's Divya Weiss again. Divya Weiss with the knee appointment. My patient ID is P9800720.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Divya Weiss",
+          "spans": [
+            [
+              12,
+              23
+            ],
+            [
+              31,
+              42
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9800720",
+          "spans": [
+            [
+              87,
+              95
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0034",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Could someone call me on +91 98525 77690 about the MRI slot? My patient ID is P9398033 and my email is karthik.joshi13@example.org.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9852577690",
+          "spans": [
+            [
+              25,
+              40
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9398033",
+          "spans": [
+            [
+              78,
+              86
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "karthik.joshi13@example.org",
+          "spans": [
+            [
+              103,
+              130
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0035",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Please update my contact number to 097340 46633. The old one no longer works. Thanks, Shalini Krishnan.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9734046633",
+          "spans": [
+            [
+              35,
+              47
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Shalini Krishnan",
+          "spans": [
+            [
+              86,
+              102
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0036",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I'm calling about my son Deepa Carter. He was born on 28-03-1943 and needs his vaccination booked.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Deepa Carter",
+          "spans": [
+            [
+              25,
+              37
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "28/03/1943",
+          "spans": [
+            [
+              54,
+              64
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0037",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hi, I missed a call from the clinic. My name is Lakshmi Moreau, phone 91384 24849. Patient ID is P9558241.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lakshmi Moreau",
+          "spans": [
+            [
+              48,
+              62
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9138424849",
+          "spans": [
+            [
+              70,
+              81
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9558241",
+          "spans": [
+            [
+              97,
+              105
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0038",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Good morning, I'm calling for my mother. Her name is Chiara Kulkarni and her date of birth is 23-12-1997. She has a cardiology review on Friday.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Chiara Kulkarni",
+          "spans": [
+            [
+              53,
+              68
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "23/12/1997",
+          "spans": [
+            [
+              94,
+              104
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0039",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Can you send the discharge summary to arjun.lindqvist52@example.org? It's for Hannah Venkatesh.",
+      "planted": [
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "arjun.lindqvist52@example.org",
+          "spans": [
+            [
+              38,
+              67
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Hannah Venkatesh",
+          "spans": [
+            [
+              78,
+              94
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0040",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I'm calling about my son Hannah Joshi. He was born on 22 December 1946 and needs his vaccination booked.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Hannah Joshi",
+          "spans": [
+            [
+              25,
+              37
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "22/12/1946",
+          "spans": [
+            [
+              54,
+              70
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0041",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "This is Grace Gowda, date of birth 3 June 1977. My patient number is P9828799. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Grace Gowda",
+          "spans": [
+            [
+              8,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "03/06/1977",
+          "spans": [
+            [
+              35,
+              46
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9828799",
+          "spans": [
+            [
+              69,
+              77
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0042",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hi, this is Lakshmi Carter. My patient ID is P9183211 and I need to move my follow-up to next week.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lakshmi Carter",
+          "spans": [
+            [
+              12,
+              26
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9183211",
+          "spans": [
+            [
+              45,
+              53
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0043",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I need a copy of my prescription. I'm Deepa Hegde, Aadhaar 9999 2584 4406, date of birth January 1, 1992.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Deepa Hegde",
+          "spans": [
+            [
+              38,
+              49
+            ]
+          ]
+        },
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999925844406",
+          "spans": [
+            [
+              59,
+              73
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "01/01/1992",
+          "spans": [
+            [
+              89,
+              104
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0044",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P9376521. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9376521",
+          "spans": [
+            [
+              44,
+              52
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0045",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Could someone call me on 9192583253 about the MRI slot? My patient ID is P9795082 and my email is aparna.rao83@example.org.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9192583253",
+          "spans": [
+            [
+              25,
+              35
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9795082",
+          "spans": [
+            [
+              73,
+              81
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "aparna.rao83@example.org",
+          "spans": [
+            [
+              98,
+              122
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0046",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Please update my contact number to 9840839796. The old one no longer works. Thanks, Shalini Lindqvist.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9840839796",
+          "spans": [
+            [
+              35,
+              45
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Shalini Lindqvist",
+          "spans": [
+            [
+              84,
+              101
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0047",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Can you send the discharge summary to ishita.carter92@example.org? It's for Revathi Menon.",
+      "planted": [
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "ishita.carter92@example.org",
+          "spans": [
+            [
+              38,
+              65
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Revathi Menon",
+          "spans": [
+            [
+              76,
+              89
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0048",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I need a copy of my prescription. I'm Harish Deshpande, Aadhaar 9999 3228 1441, date of birth 19 November 2005.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Harish Deshpande",
+          "spans": [
+            [
+              38,
+              54
+            ]
+          ]
+        },
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999932281441",
+          "spans": [
+            [
+              64,
+              78
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "19/11/2005",
+          "spans": [
+            [
+              94,
+              110
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0049",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "My Aadhaar number is 9999-7754-6726 for the insurance form, and my mobile is 096083 93586.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999977546726",
+          "spans": [
+            [
+              21,
+              35
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9608393586",
+          "spans": [
+            [
+              77,
+              89
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0050",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I'm calling about my son Shalini Mehta. He was born on 18-06-1967 and needs his vaccination booked.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Shalini Mehta",
+          "spans": [
+            [
+              25,
+              38
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "18/06/1967",
+          "spans": [
+            [
+              55,
+              65
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0051",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hello, Lucas Subramanian here. You can reach me on 93097 67247 if the doctor is running late today.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lucas Subramanian",
+          "spans": [
+            [
+              7,
+              24
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9309767247",
+          "spans": [
+            [
+              51,
+              62
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0052",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Good morning, I'm calling for my mother. Her name is Emily Qureshi and her date of birth is 21-06-1958. She has a cardiology review on Friday.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Emily Qureshi",
+          "spans": [
+            [
+              53,
+              66
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "21/06/1958",
+          "spans": [
+            [
+              92,
+              102
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0053",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Good morning, I'm calling for my mother. Her name is Varun Lindqvist and her date of birth is 27/03/1960. She has a cardiology review on Friday.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Varun Lindqvist",
+          "spans": [
+            [
+              53,
+              68
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "27/03/1960",
+          "spans": [
+            [
+              94,
+              104
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0054",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I'm calling about my son Vikram Qureshi. He was born on 4 January 2001 and needs his vaccination booked.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Vikram Qureshi",
+          "spans": [
+            [
+              25,
+              39
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "04/01/2001",
+          "spans": [
+            [
+              56,
+              70
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0055",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Could someone call me on 090193 41996 about the MRI slot? My patient ID is P9413294 and my email is meera.venkatesh80@example.org.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9019341996",
+          "spans": [
+            [
+              25,
+              37
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9413294",
+          "spans": [
+            [
+              75,
+              83
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "meera.venkatesh80@example.org",
+          "spans": [
+            [
+              100,
+              129
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0056",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I need a copy of my prescription. I'm Lakshmi Haddad, Aadhaar 9999-4906-2099, date of birth October 19, 1956.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lakshmi Haddad",
+          "spans": [
+            [
+              38,
+              52
+            ]
+          ]
+        },
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999949062099",
+          "spans": [
+            [
+              62,
+              76
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "19/10/1956",
+          "spans": [
+            [
+              92,
+              108
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0057",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "I need a copy of my prescription. I'm Lakshmi Mehta, Aadhaar 9999-9930-0277, date of birth 16/12/1988.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lakshmi Mehta",
+          "spans": [
+            [
+              38,
+              51
+            ]
+          ]
+        },
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999999300277",
+          "spans": [
+            [
+              61,
+              75
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "16/12/1988",
+          "spans": [
+            [
+              91,
+              101
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0058",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hello, it's Divya Gowda again. Divya Gowda with the knee appointment. My patient ID is P9062703.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Divya Gowda",
+          "spans": [
+            [
+              12,
+              23
+            ],
+            [
+              31,
+              42
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9062703",
+          "spans": [
+            [
+              87,
+              95
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0059",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Good morning, I'm calling for my mother. Her name is Emily Iyer and her date of birth is 21-04-1944. She has a cardiology review on Friday.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Emily Iyer",
+          "spans": [
+            [
+              53,
+              63
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "21/04/1944",
+          "spans": [
+            [
+              89,
+              99
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0060",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Hello, it's Lakshmi Hegde again. Lakshmi Hegde with the knee appointment. My patient ID is P9332458.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lakshmi Hegde",
+          "spans": [
+            [
+              12,
+              25
+            ],
+            [
+              33,
+              46
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9332458",
+          "spans": [
+            [
+              91,
+              99
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0061",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hello, Rahul Iyer here. You can reach me on nine one four one zero one six three five eight if the doctor is running late today.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Rahul Iyer",
+          "spans": [
+            [
+              7,
+              17
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9141016358",
+          "spans": [
+            [
+              44,
+              91
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0062",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hello, Shalini Krishnan here. You can reach me on nine nine six two six three double seven five seven if the doctor is running late today.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Shalini Krishnan",
+          "spans": [
+            [
+              7,
+              23
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9962637757",
+          "spans": [
+            [
+              50,
+              101
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0063",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hello, it's Rohan Mehta again. Rohan Mehta with the knee appointment. My patient ID is P nine nine six five seven six nine.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Rohan Mehta",
+          "spans": [
+            [
+              12,
+              23
+            ],
+            [
+              31,
+              42
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9965769",
+          "spans": [
+            [
+              87,
+              122
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0064",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "This is Tanvi Joshi, date of birth 27 August 1974. My patient number is P nine six double two nine eight five. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Tanvi Joshi",
+          "spans": [
+            [
+              8,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "27/08/1974",
+          "spans": [
+            [
+              35,
+              49
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9622985",
+          "spans": [
+            [
+              72,
+              109
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0065",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hello, Emily Shetty here. You can reach me on double nine four five zero six double zero six three if the doctor is running late today.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Emily Shetty",
+          "spans": [
+            [
+              7,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9945060063",
+          "spans": [
+            [
+              46,
+              98
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0066",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "I need a copy of my prescription. I'm Aparna Carter, Aadhaar nine double nine nine five four four zero five two one five, date of birth 13-10-2005.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Aparna Carter",
+          "spans": [
+            [
+              38,
+              51
+            ]
+          ]
+        },
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999954405215",
+          "spans": [
+            [
+              61,
+              120
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "13/10/2005",
+          "spans": [
+            [
+              136,
+              146
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0067",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P nine two three eight nine eight five. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9238985",
+          "spans": [
+            [
+              44,
+              82
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0068",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "I want to confirm my blood test results. Patient ID P nine one four six three eight four, and please email the report to divya.shetty05@example.org.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9146384",
+          "spans": [
+            [
+              52,
+              88
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "divya.shetty05@example.org",
+          "spans": [
+            [
+              121,
+              147
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0069",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "I need a copy of my prescription. I'm Divya Deshpande, Aadhaar nine nine double nine double one zero six two four zero eight, date of birth 14 July 1999.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Divya Deshpande",
+          "spans": [
+            [
+              38,
+              53
+            ]
+          ]
+        },
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999911062408",
+          "spans": [
+            [
+              63,
+              124
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "14/07/1999",
+          "spans": [
+            [
+              140,
+              152
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0070",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hello, Aparna Joshi here. You can reach me on nine six one two eight nine five two two seven if the doctor is running late today.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Aparna Joshi",
+          "spans": [
+            [
+              7,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9612895227",
+          "spans": [
+            [
+              46,
+              92
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0071",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hello, it's Tobias Hegde again. Tobias Hegde with the knee appointment. My patient ID is P nine four three four six four zero.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Tobias Hegde",
+          "spans": [
+            [
+              12,
+              24
+            ],
+            [
+              32,
+              44
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9434640",
+          "spans": [
+            [
+              89,
+              125
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0072",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P nine six eight one five five four. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9681554",
+          "spans": [
+            [
+              44,
+              79
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0073",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P nine two three six nine zero one. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9236901",
+          "spans": [
+            [
+              44,
+              78
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0074",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Please update my contact number to nine zero three seven nine seven zero one six five. The old one no longer works. Thanks, Revathi Iyer.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9037970165",
+          "spans": [
+            [
+              35,
+              85
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Revathi Iyer",
+          "spans": [
+            [
+              124,
+              136
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0075",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hello, Lakshmi Lindqvist here. You can reach me on nine zero one three four seven two five seven two if the doctor is running late today.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lakshmi Lindqvist",
+          "spans": [
+            [
+              7,
+              24
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9013472572",
+          "spans": [
+            [
+              51,
+              100
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0076",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hi, I missed a call from the clinic. My name is Arjun Chatterjee, phone 94390 23296. Patient ID is P nine one six one eight zero zero.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Arjun Chatterjee",
+          "spans": [
+            [
+              48,
+              64
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9439023296",
+          "spans": [
+            [
+              72,
+              83
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9161800",
+          "spans": [
+            [
+              99,
+              133
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0077",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "I want to confirm my blood test results. Patient ID P nine three double one two seven zero, and please email the report to revathi.chatterjee02@example.org.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9311270",
+          "spans": [
+            [
+              52,
+              90
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "revathi.chatterjee02@example.org",
+          "spans": [
+            [
+              123,
+              155
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0078",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "My Aadhaar number is 9999 4192 7433 for the insurance form, and my mobile is nine nine double nine seven zero double four one four.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999941927433",
+          "spans": [
+            [
+              21,
+              35
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9999704414",
+          "spans": [
+            [
+              77,
+              130
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0079",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Please update my contact number to nine double four one nine one four three double one. The old one no longer works. Thanks, Gaurav Chatterjee.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9441914311",
+          "spans": [
+            [
+              35,
+              86
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Gaurav Chatterjee",
+          "spans": [
+            [
+              125,
+              142
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0080",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "This is Meera Deshpande, date of birth 07/08/1971. My patient number is P nine eight eight one nine zero eight. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Meera Deshpande",
+          "spans": [
+            [
+              8,
+              23
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "07/08/1971",
+          "spans": [
+            [
+              39,
+              49
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9881908",
+          "spans": [
+            [
+              72,
+              110
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0081",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Hi, this is Karthik Venkatesh. My patient ID is P990. Sorry, the rest is 9900 and I need to move my follow-up to next week.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Karthik Venkatesh",
+          "spans": [
+            [
+              12,
+              29
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9909900",
+          "spans": [
+            [
+              48,
+              52
+            ],
+            [
+              73,
+              77
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0082",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Hi, I missed a call from the clinic. My name is Imran Joshi, phone 91712 16260. Patient ID is P959. Sorry, the rest is 6430.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Imran Joshi",
+          "spans": [
+            [
+              48,
+              59
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9171216260",
+          "spans": [
+            [
+              67,
+              78
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9596430",
+          "spans": [
+            [
+              94,
+              98
+            ],
+            [
+              119,
+              123
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0083",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Hi, this is Gaurav Iyer. My patient ID is P979. Sorry, the rest is 9831 and I need to move my follow-up to next week.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Gaurav Iyer",
+          "spans": [
+            [
+              12,
+              23
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9799831",
+          "spans": [
+            [
+              42,
+              46
+            ],
+            [
+              67,
+              71
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0084",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Hello, it's Rahul Mehta again. Rahul Mehta with the knee appointment. My patient ID is P972. Sorry, the line dropped. It's 2916.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Rahul Mehta",
+          "spans": [
+            [
+              12,
+              23
+            ],
+            [
+              31,
+              42
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9722916",
+          "spans": [
+            [
+              87,
+              91
+            ],
+            [
+              123,
+              127
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0085",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "I want to confirm my blood test results. Patient ID P922. Sorry, the line dropped. It's 1174, and please email the report to nisha.hegde22@example.org.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9221174",
+          "spans": [
+            [
+              52,
+              56
+            ],
+            [
+              88,
+              92
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "nisha.hegde22@example.org",
+          "spans": [
+            [
+              125,
+              150
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0086",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Could someone call me on +91 95837 42550 about the MRI slot? My patient ID is P973. Wait, then 5450 and my email is shalini.weiss97@example.org.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9583742550",
+          "spans": [
+            [
+              25,
+              40
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9735450",
+          "spans": [
+            [
+              78,
+              82
+            ],
+            [
+              95,
+              99
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "shalini.weiss97@example.org",
+          "spans": [
+            [
+              116,
+              143
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0087",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Hello, it's Ishita Rao again. Ishita Rao with the knee appointment. My patient ID is P938. Sorry, the line dropped. It's 4443.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Ishita Rao",
+          "spans": [
+            [
+              12,
+              22
+            ],
+            [
+              30,
+              40
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9384443",
+          "spans": [
+            [
+              85,
+              89
+            ],
+            [
+              121,
+              125
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0088",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Could someone call me on 090008 82888 about the MRI slot? My patient ID is P971. Sorry, the rest is 7404 and my email is deepa.shetty76@example.org.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9000882888",
+          "spans": [
+            [
+              25,
+              37
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9717404",
+          "spans": [
+            [
+              75,
+              79
+            ],
+            [
+              100,
+              104
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "deepa.shetty76@example.org",
+          "spans": [
+            [
+              121,
+              147
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0089",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "I want to confirm my blood test results. Patient ID P948. Sorry, the line dropped. It's 0884, and please email the report to deepa.weiss57@example.org.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9480884",
+          "spans": [
+            [
+              52,
+              56
+            ],
+            [
+              88,
+              92
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "deepa.weiss57@example.org",
+          "spans": [
+            [
+              125,
+              150
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0090",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Hi, I missed a call from the clinic. My name is Mateo Shetty, phone 9526128895. Patient ID is P917. Sorry, the rest is 4041.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Mateo Shetty",
+          "spans": [
+            [
+              48,
+              60
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9526128895",
+          "spans": [
+            [
+              68,
+              78
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9174041",
+          "spans": [
+            [
+              94,
+              98
+            ],
+            [
+              119,
+              123
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0091",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "This is Lucas Kulkarni, date of birth 03/11/1983. My patient number is P921. Sorry, the rest is 0313. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Lucas Kulkarni",
+          "spans": [
+            [
+              8,
+              22
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "03/11/1983",
+          "spans": [
+            [
+              38,
+              48
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9210313",
+          "spans": [
+            [
+              71,
+              75
+            ],
+            [
+              96,
+              100
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0092",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "This is Emily Moreau, date of birth 19 August 1951. My patient number is P911. Sorry, the line dropped. It's 8425. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Emily Moreau",
+          "spans": [
+            [
+              8,
+              20
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "19/08/1951",
+          "spans": [
+            [
+              36,
+              50
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9118425",
+          "spans": [
+            [
+              73,
+              77
+            ],
+            [
+              109,
+              113
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0093",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "Hi, I missed a call from the clinic. My name is Arjun Shetty, phone nine seven zero eight six zero five five three zero. Patient ID is P922. Sorry, the line dropped. It's six two six four.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Arjun Shetty",
+          "spans": [
+            [
+              48,
+              60
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9708605530",
+          "spans": [
+            [
+              68,
+              119
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9226264",
+          "spans": [
+            [
+              135,
+              139
+            ],
+            [
+              171,
+              187
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0094",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "This is Imran Subramanian, date of birth February 28, 1991. My patient number is P992. Sorry, the rest is three four six zero. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Imran Subramanian",
+          "spans": [
+            [
+              8,
+              25
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "28/02/1991",
+          "spans": [
+            [
+              41,
+              58
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9923460",
+          "spans": [
+            [
+              81,
+              85
+            ],
+            [
+              106,
+              125
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0095",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "I want to confirm my blood test results. Patient ID P966. Sorry, the line dropped. It's six seven two six, and please email the report to varun.krishnan78@example.org.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9666726",
+          "spans": [
+            [
+              52,
+              56
+            ],
+            [
+              88,
+              105
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "varun.krishnan78@example.org",
+          "spans": [
+            [
+              138,
+              166
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0096",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "The nurse asked me to call back. Patient ID P947. Sorry, the line dropped. It's double zero four zero. I have had a fever since yesterday.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9470040",
+          "spans": [
+            [
+              44,
+              48
+            ],
+            [
+              80,
+              101
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0097",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "Hello, it's Karthik Chatterjee again. Karthik Chatterjee with the knee appointment. My patient ID is P918. Wait, then two one zero three.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Karthik Chatterjee",
+          "spans": [
+            [
+              12,
+              30
+            ],
+            [
+              38,
+              56
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9182103",
+          "spans": [
+            [
+              101,
+              105
+            ],
+            [
+              118,
+              136
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0098",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "Hi, I missed a call from the clinic. My name is Shalini Qureshi, phone nine nine zero three six nine eight seven nine one. Patient ID is P921. Wait, then two zero double eight.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Shalini Qureshi",
+          "spans": [
+            [
+              48,
+              63
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9903698791",
+          "spans": [
+            [
+              71,
+              121
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9212088",
+          "spans": [
+            [
+              137,
+              141
+            ],
+            [
+              154,
+              175
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0099",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "Hi, I missed a call from the clinic. My name is Ananya Chatterjee, phone nine double six nine zero eight six double seven seven. Patient ID is P948. Sorry, the line dropped. It's double two zero eight.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Ananya Chatterjee",
+          "spans": [
+            [
+              48,
+              65
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9669086777",
+          "spans": [
+            [
+              73,
+              127
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9482208",
+          "spans": [
+            [
+              143,
+              147
+            ],
+            [
+              179,
+              200
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0100",
+      "language": "en",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "This is Shalini Qureshi, date of birth January 18, 1946. My patient number is P936. Sorry, the rest is nine seven six three. Can I see Dr. Rao on Monday?",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Shalini Qureshi",
+          "spans": [
+            [
+              8,
+              23
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "18/01/1946",
+          "spans": [
+            [
+              39,
+              55
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9369763",
+          "spans": [
+            [
+              78,
+              82
+            ],
+            [
+              103,
+              123
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0101",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Mera Aadhaar number 9999 3637 0076 hai, insurance claim ke liye chahiye.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999936370076",
+          "spans": [
+            [
+              20,
+              34
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0102",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Patient ID P9638743 hai, mujhe blood test ka result janna hai. Mera naam Rahul Nair hai.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9638743",
+          "spans": [
+            [
+              11,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Rahul Nair",
+          "spans": [
+            [
+              73,
+              83
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0103",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Doctor ne bola tha call karne ko, patient ID P9270215, mobile 93715 36201.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9270215",
+          "spans": [
+            [
+              45,
+              53
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9371536201",
+          "spans": [
+            [
+              62,
+              73
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0104",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Sir, Aditya Krishnan bol rahi hoon, mera number 94425 17348 hai, kal se bukhar hai.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Aditya Krishnan",
+          "spans": [
+            [
+              5,
+              20
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9442517348",
+          "spans": [
+            [
+              48,
+              59
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0105",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Mera Aadhaar number 9999-9701-9868 hai, insurance claim ke liye chahiye.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999997019868",
+          "spans": [
+            [
+              20,
+              34
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0106",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Doctor ne bola tha call karne ko, patient ID P9302028, mobile 099153 29240.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9302028",
+          "spans": [
+            [
+              45,
+              53
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9915329240",
+          "spans": [
+            [
+              62,
+              74
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0107",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Hello, main Farhan Menon bol raha hoon. Mera patient ID P9374364 hai, appointment reschedule karna hai.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Farhan Menon",
+          "spans": [
+            [
+              12,
+              24
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9374364",
+          "spans": [
+            [
+              56,
+              64
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0108",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Main apni beti Shalini Mehta ke liye call kar rahi hoon, uska janam 16 January 1950 ko hua tha.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Shalini Mehta",
+          "spans": [
+            [
+              15,
+              28
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "16/01/1950",
+          "spans": [
+            [
+              68,
+              83
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0109",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Mera Aadhaar number 9999-3206-4427 hai, insurance claim ke liye chahiye.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999932064427",
+          "spans": [
+            [
+              20,
+              34
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0110",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Namaste, meri date of birth June 1, 1952 hai. Mujhe Dr. Iyer se Thursday ko milna hai, naam Nandini Bhat hai.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "01/06/1952",
+          "spans": [
+            [
+              28,
+              40
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Nandini Bhat",
+          "spans": [
+            [
+              92,
+              104
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0111",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Main apni beti Tobias Rao ke liye call kar rahi hoon, uska janam November 22, 1989 ko hua tha.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Tobias Rao",
+          "spans": [
+            [
+              15,
+              25
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "22/11/1989",
+          "spans": [
+            [
+              65,
+              82
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0112",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Namaste, meri date of birth 16 June 1977 hai. Mujhe Dr. Iyer se Thursday ko milna hai, naam Harish Nair hai.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "16/06/1977",
+          "spans": [
+            [
+              28,
+              40
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Harish Nair",
+          "spans": [
+            [
+              92,
+              103
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0113",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Namaste, meri date of birth 18-08-1962 hai. Mujhe Dr. Iyer se Thursday ko milna hai, naam Farhan Rao hai.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "18/08/1962",
+          "spans": [
+            [
+              28,
+              38
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Farhan Rao",
+          "spans": [
+            [
+              90,
+              100
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0114",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Main apni beti Sneha Venkatesh ke liye call kar rahi hoon, uska janam 18 May 1990 ko hua tha.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Sneha Venkatesh",
+          "spans": [
+            [
+              15,
+              30
+            ]
+          ]
+        },
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "18/05/1990",
+          "spans": [
+            [
+              70,
+              81
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0115",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "hinglish",
+      "profile": "standard",
+      "text": "Doctor ne bola tha call karne ko, patient ID P9621707, mobile 099650 40114.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9621707",
+          "spans": [
+            [
+              45,
+              53
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9965040114",
+          "spans": [
+            [
+              62,
+              74
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0116",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hello, main Deepa Haddad bol raha hoon. Mera patient ID P nau do saat aath char nau chhe hai, appointment reschedule karna hai.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Deepa Haddad",
+          "spans": [
+            [
+              12,
+              24
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9278496",
+          "spans": [
+            [
+              56,
+              88
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0117",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Hello, main Meera Gowda bol raha hoon. Mera patient ID P nau teen char ek char char teen hai, appointment reschedule karna hai.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Meera Gowda",
+          "spans": [
+            [
+              12,
+              23
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9341443",
+          "spans": [
+            [
+              55,
+              88
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0118",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Haan ji, patient ID P nine six one two zero two zero hai aur report pooja.venkatesh24@example.org pe bhej dijiye.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9612020",
+          "spans": [
+            [
+              20,
+              52
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "pooja.venkatesh24@example.org",
+          "spans": [
+            [
+              68,
+              97
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0119",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Mera mobile number nau ek teen ek aath paanch nau ek char teen hai, report ready ho toh please call kar dena.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9131859143",
+          "spans": [
+            [
+              19,
+              62
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0120",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Please mera contact nine eight two six two seven zero nine double six update kar dijiye, purana number band ho gaya hai.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9826270966",
+          "spans": [
+            [
+              20,
+              69
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0121",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Patient ID P911. Sorry, phir se, 5532 hai, mujhe blood test ka result janna hai. Mera naam Rohan Moreau hai.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9115532",
+          "spans": [
+            [
+              11,
+              15
+            ],
+            [
+              33,
+              37
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Rohan Moreau",
+          "spans": [
+            [
+              91,
+              103
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0122",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Doctor ne bola tha call karne ko, patient ID P933. Haan, baaki hai 6688, mobile 098553 47454.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9336688",
+          "spans": [
+            [
+              45,
+              49
+            ],
+            [
+              67,
+              71
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9855347454",
+          "spans": [
+            [
+              80,
+              92
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0123",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Patient ID P955. Sorry, phir se, 1612 hai, mujhe blood test ka result janna hai. Mera naam Pooja Nair hai.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9551612",
+          "spans": [
+            [
+              11,
+              15
+            ],
+            [
+              33,
+              37
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Pooja Nair",
+          "spans": [
+            [
+              91,
+              101
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0124",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "Haan ji, patient ID P936. Ek second, aage teen chhe do chhe hai aur report aparna.hegde97@example.org pe bhej dijiye.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9363626",
+          "spans": [
+            [
+              20,
+              24
+            ],
+            [
+              42,
+              59
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "aparna.hegde97@example.org",
+          "spans": [
+            [
+              75,
+              101
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0125",
+      "language": "hinglish",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "Hello, main Varun Rao bol raha hoon. Mera patient ID P900. Haan, baaki hai seven five nine four hai, appointment reschedule karna hai.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Varun Rao",
+          "spans": [
+            [
+              12,
+              21
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9007594",
+          "spans": [
+            [
+              53,
+              57
+            ],
+            [
+              75,
+              95
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0126",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Meri janam tithi 26 January 1982 hai aur mera naam Kavya Venkatesh hai, doctor sahab se milna hai.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "26/01/1982",
+          "spans": [
+            [
+              17,
+              32
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Kavya Venkatesh",
+          "spans": [
+            [
+              51,
+              66
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0127",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Mera aadhaar number 9999 4286 4804 hai, beema ke kaagaz ke liye chahiye.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999942864804",
+          "spans": [
+            [
+              20,
+              34
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0128",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Main Divya Moreau ki maa bol rahi hoon, uska patient ID P9508290 hai aur mobile 9981480892 hai.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Divya Moreau",
+          "spans": [
+            [
+              5,
+              17
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9508290",
+          "spans": [
+            [
+              56,
+              64
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9981480892",
+          "spans": [
+            [
+              80,
+              90
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0129",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Mera phone number 92216 60183 hai, kripya mujhe vapas phone kijiye.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9221660183",
+          "spans": [
+            [
+              18,
+              29
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0130",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Mera phone number 090981 87666 hai, kripya mujhe vapas phone kijiye.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9098187666",
+          "spans": [
+            [
+              18,
+              30
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0131",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Mera aadhaar number 9999-2021-9681 hai, beema ke kaagaz ke liye chahiye.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999920219681",
+          "spans": [
+            [
+              20,
+              34
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0132",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Namaste, mera naam Arjun Lindqvist hai. Mera patient ID P9512549 hai, mujhe agle hafte ka samay chahiye.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Arjun Lindqvist",
+          "spans": [
+            [
+              19,
+              34
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9512549",
+          "spans": [
+            [
+              56,
+              64
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0133",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Main Kavya Iyer ki maa bol rahi hoon, uska patient ID P9122736 hai aur mobile 092128 26909 hai.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Kavya Iyer",
+          "spans": [
+            [
+              5,
+              15
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9122736",
+          "spans": [
+            [
+              54,
+              62
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9212826909",
+          "spans": [
+            [
+              78,
+              90
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0134",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Namaste, mera naam Tanvi Pillai hai. Mera patient ID P double nine five zero six four six hai, mujhe agle hafte ka samay chahiye.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Tanvi Pillai",
+          "spans": [
+            [
+              19,
+              31
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9950646",
+          "spans": [
+            [
+              53,
+              89
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0135",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Namaste, mera naam Chiara Subramanian hai. Mera patient ID P nau shunya chhe saat do nau paanch hai, mujhe agle hafte ka samay chahiye.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Chiara Subramanian",
+          "spans": [
+            [
+              19,
+              37
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9067295",
+          "spans": [
+            [
+              59,
+              95
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0136",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Patient ID P nau aath aath nau nau saat paanch hai, meri report lakshmi.shetty50@example.org par bhej dijiye.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9889975",
+          "spans": [
+            [
+              11,
+              46
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "lakshmi.shetty50@example.org",
+          "spans": [
+            [
+              64,
+              92
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0137",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Patient ID P905. Ek minute, baaki 9042 hai, meri report siddharth.rao18@example.org par bhej dijiye.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9059042",
+          "spans": [
+            [
+              11,
+              15
+            ],
+            [
+              34,
+              38
+            ]
+          ]
+        },
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "siddharth.rao18@example.org",
+          "spans": [
+            [
+              56,
+              83
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0138",
+      "language": "hi",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "Main Nandini Moreau ki maa bol rahi hoon, uska patient ID P976. Maaf kijiye, aage do ek teen saat hai aur mobile double nine seven three eight three four eight four nine hai.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Nandini Moreau",
+          "spans": [
+            [
+              5,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9762137",
+          "spans": [
+            [
+              58,
+              62
+            ],
+            [
+              82,
+              97
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9973834849",
+          "spans": [
+            [
+              113,
+              169
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0139",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "मरीज़ आईडी P9363351 है और फ़ोन नंबर +९१ ९०२५७ ५३१८३ है।",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9363351",
+          "spans": [
+            [
+              11,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9025753183",
+          "spans": [
+            [
+              36,
+              51
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0140",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "मेरा आधार नंबर 9999 1502 9508 है, बीमा के लिए चाहिए।",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999915029508",
+          "spans": [
+            [
+              15,
+              29
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0141",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "मेरी जन्म तिथि 24/01/2001 है, मुझे डॉक्टर से मिलना है।",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "24/01/2001",
+          "spans": [
+            [
+              15,
+              25
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0142",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "मेरा आधार नंबर 9999 2154 0078 है, बीमा के लिए चाहिए।",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999921540078",
+          "spans": [
+            [
+              15,
+              29
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0143",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "नमस्ते, मेरा नाम अर्जुन मेहता है। मेरा patient ID P9634941 है, मुझे अगले हफ्ते का समय चाहिए।",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "अर्जुन मेहता",
+          "spans": [
+            [
+              17,
+              29
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9634941",
+          "spans": [
+            [
+              50,
+              58
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0144",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "नमस्ते, मेरा नाम मीरा अग्रवाल है। मेरा patient ID P9148117 है, मुझे अगले हफ्ते का समय चाहिए।",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "मीरा अग्रवाल",
+          "spans": [
+            [
+              17,
+              29
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9148117",
+          "spans": [
+            [
+              50,
+              58
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0145",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "मेरी जन्म तिथि 11-02-1999 है, मुझे डॉक्टर से मिलना है।",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "11/02/1999",
+          "spans": [
+            [
+              15,
+              25
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0146",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "नमस्ते, मेरा नाम विक्रम सिंह है। मेरा patient ID P नौ तीन तीन छह पाँच छह आठ है, मुझे अगले हफ्ते का समय चाहिए।",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "विक्रम सिंह",
+          "spans": [
+            [
+              17,
+              28
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9336568",
+          "spans": [
+            [
+              49,
+              75
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0147",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "मेरा मोबाइल नंबर नौ आठ तीन सात नौ चार दो छह एक चार है, कृपया वापस फ़ोन करें।",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9837942614",
+          "spans": [
+            [
+              17,
+              50
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0148",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "नमस्ते, मेरा नाम रोहन वर्मा है। मेरा patient ID P नौ चार छह नौ नौ एक एक है, मुझे अगले हफ्ते का समय चाहिए।",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "रोहन वर्मा",
+          "spans": [
+            [
+              17,
+              27
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9469911",
+          "spans": [
+            [
+              48,
+              71
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0149",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "नमस्ते, मेरा नाम नंदिनी शर्मा है। मेरा patient ID P903। माफ़ कीजिए, आगे 8287 है, मुझे अगले हफ्ते का समय चाहिए।",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "नंदिनी शर्मा",
+          "spans": [
+            [
+              17,
+              29
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9038287",
+          "spans": [
+            [
+              50,
+              54
+            ],
+            [
+              72,
+              76
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0150",
+      "language": "hi",
+      "script": "native",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "मरीज़ आईडी P989। एक मिनट, बाकी पाँच छह दो आठ है और फ़ोन नंबर नौ नौ नौ पाँच दो सात सात तीन आठ चार है।",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9895628",
+          "spans": [
+            [
+              11,
+              15
+            ],
+            [
+              31,
+              44
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9995277384",
+          "spans": [
+            [
+              61,
+              96
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0151",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Nanna Aadhaar number 9999 9824 4426, insurance ge beku.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999998244426",
+          "spans": [
+            [
+              21,
+              35
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0152",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Nanna Aadhaar number 9999 1395 8097, insurance ge beku.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999913958097",
+          "spans": [
+            [
+              21,
+              35
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0153",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Nanna Aadhaar number 9999-3925-6162, insurance ge beku.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999939256162",
+          "spans": [
+            [
+              21,
+              35
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0154",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Namaskara, nanna hesaru Farhan Menon. Nanna patient ID P9924369, mundina vaara appointment beku.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Farhan Menon",
+          "spans": [
+            [
+              24,
+              36
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9924369",
+          "spans": [
+            [
+              55,
+              63
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0155",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Nanna Aadhaar number 9999 5202 7525, insurance ge beku.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999952027525",
+          "spans": [
+            [
+              21,
+              35
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0156",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Nanna Aadhaar number 9999-2092-0048, insurance ge beku.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999920920048",
+          "spans": [
+            [
+              21,
+              35
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0157",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Report annu imran.joshi23@example.org ge kalisi, nanna hesaru Farhan Deshpande.",
+      "planted": [
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "imran.joshi23@example.org",
+          "spans": [
+            [
+              12,
+              37
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Farhan Deshpande",
+          "spans": [
+            [
+              62,
+              78
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0158",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Report annu tanvi.gowda04@example.org ge kalisi, nanna hesaru Arjun Weiss.",
+      "planted": [
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "tanvi.gowda04@example.org",
+          "spans": [
+            [
+              12,
+              37
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Arjun Weiss",
+          "spans": [
+            [
+              62,
+              73
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0159",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Namaskara, nanna hesaru Varun Gowda. Nanna patient ID P ombattu sonne naalku eradu sonne sonne sonne, mundina vaara appointment beku.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Varun Gowda",
+          "spans": [
+            [
+              24,
+              35
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9042000",
+          "spans": [
+            [
+              54,
+              100
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0160",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Patient ID P9271301, phone nine nine three eight one six five two five nine, naale bartini.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9271301",
+          "spans": [
+            [
+              11,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9938165259",
+          "spans": [
+            [
+              27,
+              75
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0161",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Nanna Aadhaar number ombattu ombattu ombattu ombattu mooru ondu entu eradu entu entu mooru eradu, insurance ge beku.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999931828832",
+          "spans": [
+            [
+              21,
+              96
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0162",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Namaskara, nanna hesaru Divya Joshi. Nanna patient ID P983. Kshamisi, mundhe 1199, mundina vaara appointment beku.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Divya Joshi",
+          "spans": [
+            [
+              24,
+              35
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9831199",
+          "spans": [
+            [
+              54,
+              58
+            ],
+            [
+              77,
+              81
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0163",
+      "language": "kn",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "Namaskara, nanna hesaru Deepa Menon. Nanna patient ID P943. Ondu nimisha, uLidaddu eradu entu ombattu entu, mundina vaara appointment beku.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Deepa Menon",
+          "spans": [
+            [
+              24,
+              35
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9432898",
+          "spans": [
+            [
+              54,
+              58
+            ],
+            [
+              83,
+              106
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0164",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "ನನ್ನ ಮೊಬೈಲ್ ನಂಬರ್ ೦೯೫೭೧೦ ೩೧೨೮೬, ದಯವಿಟ್ಟು ಕರೆ ಮಾಡಿ.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9571031286",
+          "spans": [
+            [
+              18,
+              30
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0165",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "ವರದಿಯನ್ನು tanvi.deshpande24@example.org ಗೆ ಕಳುಹಿಸಿ, ನಾನು ಮೀರಾ ಕುಲಕರ್ಣಿ.",
+      "planted": [
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "tanvi.deshpande24@example.org",
+          "spans": [
+            [
+              10,
+              39
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "ಮೀರಾ ಕುಲಕರ್ಣಿ",
+          "spans": [
+            [
+              57,
+              70
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0166",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "ನನ್ನ ಜನ್ಮ ದಿನಾಂಕ ೫ July ೧೯೭೫, ವೈದ್ಯರನ್ನು ಭೇಟಿ ಮಾಡಬೇಕು.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "05/07/1975",
+          "spans": [
+            [
+              17,
+              28
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0167",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "ನನ್ನ ಜನ್ಮ ದಿನಾಂಕ 23-10-1940, ವೈದ್ಯರನ್ನು ಭೇಟಿ ಮಾಡಬೇಕು.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "23/10/1940",
+          "spans": [
+            [
+              17,
+              27
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0168",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "ನಮಸ್ಕಾರ, ನನ್ನ ಹೆಸರು ನವೀನ್ ರೆಡ್ಡಿ. ನನ್ನ patient ID P9425203, ಮುಂದಿನ ವಾರ ಅಪಾಯಿಂಟ್ಮೆಂಟ್ ಬೇಕು.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "ನವೀನ್ ರೆಡ್ಡಿ",
+          "spans": [
+            [
+              20,
+              32
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9425203",
+          "spans": [
+            [
+              50,
+              58
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0169",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "ರೋಗಿ ಐಡಿ P9614592, ಫೋನ್ +91 90318 03033.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9614592",
+          "spans": [
+            [
+              9,
+              17
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9031803033",
+          "spans": [
+            [
+              24,
+              39
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0170",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "ನನ್ನ ಜನ್ಮ ದಿನಾಂಕ 15-12-1978, ವೈದ್ಯರನ್ನು ಭೇಟಿ ಮಾಡಬೇಕು.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "15/12/1978",
+          "spans": [
+            [
+              17,
+              27
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0171",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "ನಮಸ್ಕಾರ, ನನ್ನ ಹೆಸರು ದಿವ್ಯಾ ನಾಯಕ್. ನನ್ನ patient ID P ಒಂಬತ್ತು ಐದು ಐದು ಏಳು ಎಂಟು ಮೂರು ಮೂರು, ಮುಂದಿನ ವಾರ ಅಪಾಯಿಂಟ್ಮೆಂಟ್ ಬೇಕು.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "ದಿವ್ಯಾ ನಾಯಕ್",
+          "spans": [
+            [
+              20,
+              32
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9557833",
+          "spans": [
+            [
+              50,
+              86
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0172",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "ನಮಸ್ಕಾರ, ನನ್ನ ಹೆಸರು ಕಾವ್ಯ ಹೆಗ್ಡೆ. ನನ್ನ patient ID P ಒಂಬತ್ತು ಏಳು ಒಂಬತ್ತು ಆರು ಒಂಬತ್ತು ಎಂಟು ಒಂಬತ್ತು, ಮುಂದಿನ ವಾರ ಅಪಾಯಿಂಟ್ಮೆಂಟ್ ಬೇಕು.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "ಕಾವ್ಯ ಹೆಗ್ಡೆ",
+          "spans": [
+            [
+              20,
+              32
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9796989",
+          "spans": [
+            [
+              50,
+              96
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0173",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "ರೋಗಿ ಐಡಿ P9615816, ಫೋನ್ ಒಂಬತ್ತು ಎಂಟು ಮೂರು ಏಳು ಮೂರು ಎಂಟು ಮೂರು ಏಳು ಏಳು ಮೂರು.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9615816",
+          "spans": [
+            [
+              9,
+              17
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9837383773",
+          "spans": [
+            [
+              24,
+              73
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0174",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "ನಮಸ್ಕಾರ, ನನ್ನ ಹೆಸರು ದಿವ್ಯಾ ನಾಯಕ್. ನನ್ನ patient ID P904. ಕ್ಷಮಿಸಿ, ಮುಂದೆ 2484, ಮುಂದಿನ ವಾರ ಅಪಾಯಿಂಟ್ಮೆಂಟ್ ಬೇಕು.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "ದಿವ್ಯಾ ನಾಯಕ್",
+          "spans": [
+            [
+              20,
+              32
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9042484",
+          "spans": [
+            [
+              50,
+              54
+            ],
+            [
+              71,
+              75
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0175",
+      "language": "kn",
+      "script": "native",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "ರೋಗಿ ಐಡಿ P988. ಒಂದು ನಿಮಿಷ, ಉಳಿದದ್ದು ಏಳು ನಾಲ್ಕು ನಾಲ್ಕು ಒಂಬತ್ತು, ಫೋನ್ ಒಂಬತ್ತು ಒಂಬತ್ತು ಐದು ಆರು ಎರಡು ನಾಲ್ಕು ಒಂದು ಏಳು ನಾಲ್ಕು ಎಂಟು.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9887449",
+          "spans": [
+            [
+              9,
+              13
+            ],
+            [
+              36,
+              61
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9956241748",
+          "spans": [
+            [
+              68,
+              124
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0176",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "En Aadhaar number 9999-2264-9962, insurance-kku venum.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999922649962",
+          "spans": [
+            [
+              18,
+              32
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0177",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Report-ai arjun.venkatesh81@example.org -kku anuppunga, naan Karthik Qureshi.",
+      "planted": [
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "arjun.venkatesh81@example.org",
+          "spans": [
+            [
+              10,
+              39
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "Karthik Qureshi",
+          "spans": [
+            [
+              61,
+              76
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0178",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Patient ID P9694893, phone 98856 58051, naalai varuven.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9694893",
+          "spans": [
+            [
+              11,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9885658051",
+          "spans": [
+            [
+              27,
+              38
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0179",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "En date of birth 12-06-1980, doctor-ai paarkanum.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "12/06/1980",
+          "spans": [
+            [
+              17,
+              27
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0180",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "En Aadhaar number 9999-9539-7540, insurance-kku venum.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999995397540",
+          "spans": [
+            [
+              18,
+              32
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0181",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "En date of birth 06-02-1975, doctor-ai paarkanum.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "06/02/1975",
+          "spans": [
+            [
+              17,
+              27
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0182",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "Vanakkam, en peyar Shalini Joshi. En patient ID P9048124, adutha vaaram appointment venum.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Shalini Joshi",
+          "spans": [
+            [
+              19,
+              32
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9048124",
+          "spans": [
+            [
+              48,
+              56
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0183",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "En mobile number +91 92689 77745, thayavu seidhu call pannunga.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9268977745",
+          "spans": [
+            [
+              17,
+              32
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0184",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "Patient ID P onbadhu poojyam onnu naalu naalu ezhu aaru, phone +91 90859 42124, naalai varuven.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9014476",
+          "spans": [
+            [
+              11,
+              55
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9085942124",
+          "spans": [
+            [
+              63,
+              78
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0185",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "En mobile number onbadhu ettu moonu rendu aaru naalu naalu ezhu ezhu poojyam, thayavu seidhu call pannunga.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9832644770",
+          "spans": [
+            [
+              17,
+              76
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0186",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "En mobile number double nine five six three one five zero three five, thayavu seidhu call pannunga.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9956315035",
+          "spans": [
+            [
+              17,
+              68
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0187",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "Vanakkam, en peyar Nisha Krishnan. En patient ID P967. Mannikkavum, adhu 6806, adutha vaaram appointment venum.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "Nisha Krishnan",
+          "spans": [
+            [
+              19,
+              33
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9676806",
+          "spans": [
+            [
+              49,
+              53
+            ],
+            [
+              73,
+              77
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0188",
+      "language": "ta",
+      "script": "latin",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "Patient ID P955. Mannikkavum, adhu naalu ettu ettu poojyam, phone nine nine two double five four two eight nine two, naalai varuven.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9554880",
+          "spans": [
+            [
+              11,
+              15
+            ],
+            [
+              35,
+              58
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9925542892",
+          "spans": [
+            [
+              66,
+              115
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0189",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "என் ஆதார் எண் ௯௯௯௯-௪௮௮௧-௭௪௫௮, காப்பீட்டுக்கு வேண்டும்.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999948817458",
+          "spans": [
+            [
+              14,
+              28
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0190",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "நோயாளி ஐடி P9817330, தொலைபேசி 93810 06902.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9817330",
+          "spans": [
+            [
+              11,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9381006902",
+          "spans": [
+            [
+              30,
+              41
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0191",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "அறிக்கையை lucas.joshi73@example.org க்கு அனுப்புங்கள், நான் மீரா வெங்கடேஷ்.",
+      "planted": [
+        {
+          "type": "EMAIL_ADDRESS",
+          "canonical": "lucas.joshi73@example.org",
+          "spans": [
+            [
+              10,
+              35
+            ]
+          ]
+        },
+        {
+          "type": "PERSON",
+          "canonical": "மீரா வெங்கடேஷ்",
+          "spans": [
+            [
+              60,
+              74
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0192",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "என் ஆதார் எண் ௯௯௯௯-௩௬௭௮-௭௯௭௯, காப்பீட்டுக்கு வேண்டும்.",
+      "planted": [
+        {
+          "type": "GOVERNMENT_ID",
+          "canonical": "999936787979",
+          "spans": [
+            [
+              14,
+              28
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0193",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "என் பிறந்த தேதி 09-11-1963, மருத்துவரைப் பார்க்க வேண்டும்.",
+      "planted": [
+        {
+          "type": "DATE_OF_BIRTH",
+          "canonical": "09/11/1963",
+          "spans": [
+            [
+              16,
+              26
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0194",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "என் மொபைல் எண் 98421 59797, தயவுசெய்து அழைக்கவும்.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9842159797",
+          "spans": [
+            [
+              15,
+              26
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0195",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "plain",
+      "profile": "standard",
+      "text": "நோயாளி ஐடி P9504729, தொலைபேசி ௦௯௯௯௭௭ ௩௬௩௦௦.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9504729",
+          "spans": [
+            [
+              11,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9997736300",
+          "spans": [
+            [
+              30,
+              42
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0196",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "நோயாளி ஐடி P9279936, தொலைபேசி ஒன்பது ஏழு இரண்டு மூன்று நான்கு எட்டு இரண்டு ஏழு எட்டு ஒன்பது.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9279936",
+          "spans": [
+            [
+              11,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9723482789",
+          "spans": [
+            [
+              30,
+              91
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0197",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "நோயாளி ஐடி P9558816, தொலைபேசி ஒன்பது பூஜ்ஜியம் ஏழு பூஜ்ஜியம் ஏழு ஒன்பது ஒன்று பூஜ்ஜியம் மூன்று ஒன்று.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9558816",
+          "spans": [
+            [
+              11,
+              19
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9070791031",
+          "spans": [
+            [
+              30,
+              100
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0198",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "spelled_digits",
+      "profile": "standard",
+      "text": "என் மொபைல் எண் ஒன்பது பூஜ்ஜியம் ஐந்து மூன்று ஒன்று மூன்று ஐந்து இரண்டு நான்கு ஒன்று, தயவுசெய்து அழைக்கவும்.",
+      "planted": [
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9053135241",
+          "spans": [
+            [
+              15,
+              83
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0199",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "split_id",
+      "profile": "standard",
+      "text": "நோயாளி ஐடி P910. ஒரு நிமிடம், மீதி 1728, தொலைபேசி ௯௮௧௭௮ ௩௨௪௭௯.",
+      "planted": [
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9101728",
+          "spans": [
+            [
+              11,
+              15
+            ],
+            [
+              35,
+              39
+            ]
+          ]
+        },
+        {
+          "type": "PHONE_NUMBER",
+          "canonical": "9817832479",
+          "spans": [
+            [
+              50,
+              61
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "call_id": "can-0200",
+      "language": "ta",
+      "script": "native",
+      "difficulty": "mixed",
+      "profile": "standard",
+      "text": "வணக்கம், என் பெயர் அர்ஜுன் கிருஷ்ணன். என் patient ID P903. ஒரு நிமிடம், மீதி இரண்டு இரண்டு ஒன்று நான்கு, அடுத்த வாரம் சந்திப்பு வேண்டும்.",
+      "planted": [
+        {
+          "type": "PERSON",
+          "canonical": "அர்ஜுன் கிருஷ்ணன்",
+          "spans": [
+            [
+              19,
+              36
+            ]
+          ]
+        },
+        {
+          "type": "PATIENT_ID",
+          "canonical": "P9032214",
+          "spans": [
+            [
+              53,
+              57
+            ],
+            [
+              77,
+              103
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
