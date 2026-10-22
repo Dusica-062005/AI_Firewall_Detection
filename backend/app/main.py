@@ -12,7 +12,19 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.errors import install_error_handlers
 from app.api.middleware import RequestContextMiddleware, configure_logging
-from app.api.routes import audit, canaries, compliance, health, inspect, metrics, policies, process, system, trust
+from app.api.routes import (
+    audit,
+    canaries,
+    compliance,
+    health,
+    inspect,
+    metrics,
+    policies,
+    process,
+    quality,
+    system,
+    trust,
+)
 from app.config import APP_VERSION, Settings, get_settings
 from app.container import Container, build_container
 
@@ -45,7 +57,7 @@ def create_app(settings: Settings | None = None, container: Container | None = N
         expose_headers=["X-Request-ID"],
         allow_credentials=False,
     )
-    for module in (health, system, inspect, process, policies, audit, metrics, compliance, trust, canaries):
+    for module in (health, system, inspect, process, policies, audit, metrics, compliance, trust, canaries, quality):
         app.include_router(module.router, prefix="/api")
     return app
 

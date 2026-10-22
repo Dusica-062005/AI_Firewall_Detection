@@ -24,6 +24,7 @@ from app.detection.recognizers import load_detection_config
 from app.integrations.cloudlink_client import CloudLinkClient
 from app.policy.engine import PolicyEngine
 from app.policy.models import Action
+from app.quality.service import QualityModels, QualityService
 from app.security.outbound_validator import OutboundValidator
 from app.security.redactor import Redactor
 from app.services.firewall_service import FirewallService
@@ -56,6 +57,7 @@ class Container:
     vault: TokenVault
     receipts: ReceiptService
     canaries: CanaryRunner
+    quality: QualityService
 
 
 def build_analyzer(settings: Settings) -> SensitiveDataAnalyzer:
@@ -142,6 +144,20 @@ def build_container(
         default_normalize=settings.normalize_numbers,
         rule_version_source=lambda: rule_version(settings.detection_config_file, policy_service.version()),
     )
+    quality = QualityService(
+        sessions=sessions,
+        processing=processing,
+        controls=controls,
+        models=QualityModels(
+            reference=settings.quality_reference_model or settings.mock_cloud_model or settings.ollama_model,
+            local=settings.ollama_model,
+            cloud=settings.mock_cloud_model or None,
+            embed=settings.quality_embed_model,
+        ),
+        ollama_base_url=settings.ollama_base_url,
+        timeout_seconds=max(settings.ollama_timeout_seconds, settings.mock_cloud_timeout_seconds),
+        ollama_transport=ollama_transport,
+    )
     return Container(
         settings=settings,
         engine=engine,
@@ -162,6 +178,7 @@ def build_container(
         vault=vault,
         receipts=receipts,
         canaries=canaries,
+        quality=quality,
     )
 
 

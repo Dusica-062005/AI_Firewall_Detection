@@ -59,6 +59,11 @@ class Settings(BaseSettings):
     # measure real leaks against this file, i.e. at the receiving end.
     received_log_file: Path = BACKEND_ROOT / "data" / "received.log"
 
+    # Dial quality score (Feature 4): Ollama embedding model, and the model that summarizes the
+    # RAW synthetic samples as the reference. Empty -> MOCK_CLOUD_MODEL if set, else OLLAMA_MODEL.
+    quality_embed_model: str = "nomic-embed-text"
+    quality_reference_model: str = ""
+
     # Trust layer secrets. Generate both with: python scripts/generate_keys.py
     vault_key: SecretStr = SecretStr("")  # Fernet key for the token vault
     receipt_signing_key: SecretStr = SecretStr("")  # base64 Ed25519 private key (32 bytes)

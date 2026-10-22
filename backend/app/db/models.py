@@ -148,6 +148,41 @@ class CanaryRunRecord(Base):
     leaks: Mapped[list] = mapped_column(JSON, default=list)
 
 
+class QualityRunRecord(Base):
+    """One dial quality measurement (Feature 4): embedding similarity per dial position."""
+
+    __tablename__ = "quality_runs"
+
+    run_id: Mapped[str] = mapped_column(String(48), primary_key=True)
+    status: Mapped[str] = mapped_column(String(12), index=True)  # RUNNING | COMPLETED | FAILED
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sample_ids: Mapped[list] = mapped_column(JSON)
+    reference_model: Mapped[str] = mapped_column(String(80))
+    local_model: Mapped[str] = mapped_column(String(80))
+    cloud_model: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    embed_model: Mapped[str] = mapped_column(String(80))
+    kill_switch_on: Mapped[bool] = mapped_column(Boolean)
+    machine: Mapped[str] = mapped_column(String(200))
+    duration_s: Mapped[float | None] = mapped_column(Float, nullable=True)
+    progress_done: Mapped[int] = mapped_column(Integer, default=0)
+    progress_total: Mapped[int] = mapped_column(Integer)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    positions: Mapped[list] = mapped_column(JSON, default=list)  # per dial position: score and n
+    samples: Mapped[list] = mapped_column(JSON, default=list)  # per sample and position
+
+
+class QualityReferenceRecord(Base):
+    """Cached reference summaries of the raw synthetic samples, keyed by sha256(model + prompt + text)."""
+
+    __tablename__ = "quality_references"
+
+    cache_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    model: Mapped[str] = mapped_column(String(80))
+    summary: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class AuditEventRecord(Base):
     __tablename__ = "audit_events"
 

@@ -45,6 +45,11 @@ def analyzer():
     return a
 
 
+def fixed_embedding(text: str) -> list[float]:
+    """Deterministic stand-in for an embedding model: a few simple text features."""
+    return [float(len(text)), float(sum(c.isupper() for c in text)), float(text.count(" ")), 1.0]
+
+
 @dataclass
 class OllamaStub:
     """Behaviour: ok | missing | timeout | down | empty | echo | fixed."""
@@ -52,13 +57,23 @@ class OllamaStub:
     mode: str = "ok"
     fixed_text: str = "Customer requested assistance with an appointment."
     prompts: list[str] = field(default_factory=list)
+    embed_missing: bool = False  # the embedding model is not pulled
+    embedded: list[str] = field(default_factory=list)
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         if self.mode == "down":
             raise httpx.ConnectError("connection refused", request=request)
         if request.url.path == "/api/tags":
             models = [] if self.mode == "missing" else [{"name": "llama3.2:3b"}]
+            if not self.embed_missing:
+                models.append({"name": "nomic-embed-text:latest"})
             return httpx.Response(200, json={"models": models})
+        if request.url.path == "/api/embed":
+            if self.embed_missing:
+                return httpx.Response(404, json={"error": 'model "nomic-embed-text" not found, try pulling it first'})
+            texts = json.loads(request.content)["input"]
+            self.embedded.extend(texts)
+            return httpx.Response(200, json={"embeddings": [fixed_embedding(t) for t in texts]})
         if request.url.path == "/api/generate":
             prompt = json.loads(request.content)["prompt"]
             self.prompts.append(prompt)
