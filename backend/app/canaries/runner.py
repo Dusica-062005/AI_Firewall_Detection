@@ -35,7 +35,7 @@ import regex
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.canaries.models import NUMERIC_TYPES, CanaryCall, CanarySet, PlantedValue, load_canary_set
+from app.canaries.models import HOLDOUT_FILE, NUMERIC_TYPES, CanaryCall, CanarySet, PlantedValue, load_canary_set
 from app.db.models import CanaryRunRecord
 from app.db.repositories import utcnow
 from app.detection.normalizer import NATIVE_DIGITS
@@ -91,6 +91,7 @@ class CanaryRunner:
         default_normalize: bool,
         rule_version_source: Callable[[], str],
         canary_set_loader: Callable[[], CanarySet] = load_canary_set,
+        holdout_set_loader: Callable[[], CanarySet] = lambda: load_canary_set(HOLDOUT_FILE),
     ) -> None:
         self._sessions = sessions
         self._processing = processing
@@ -100,35 +101,39 @@ class CanaryRunner:
         self._default_normalize = default_normalize
         self._rule_version_source = rule_version_source
         self._loader = canary_set_loader
+        self._holdout_loader = holdout_set_loader
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._mark_interrupted_runs()
 
     # ---- Canary set ---------------------------------------------------------------------
 
-    def canary_set(self) -> CanarySet:
-        return self._loader()
+    def canary_set(self, name: str = "main") -> CanarySet:
+        """``main`` (the 200-call set) or ``holdout`` (new templates, checks for overfitting)."""
+        if name not in ("main", "holdout"):
+            raise ValueError(f"Unknown canary set {name}.")
+        return self._holdout_loader() if name == "holdout" else self._loader()
 
     # ---- Starting and executing a run --------------------------------------------------------
 
-    def start(self, rule_version: str | None = None, normalize_on: bool | None = None) -> str:
+    def start(self, rule_version: str | None = None, normalize_on: bool | None = None, set_name: str = "main") -> str:
         """Create the run record and execute it in a background thread. Returns the run ID."""
         with self._lock:
             if self._thread is not None and self._thread.is_alive():
                 raise RunInProgress("A canary run is already in progress.")
-            run_id, canary_set, normalize = self._create(rule_version, normalize_on)
+            run_id, canary_set, normalize = self._create(rule_version, normalize_on, set_name)
             self._thread = threading.Thread(
                 target=self._execute_in_thread, args=(run_id, canary_set, normalize), name=f"canary-{run_id}", daemon=True
             )
             self._thread.start()
         return run_id
 
-    def run(self, rule_version: str | None = None, normalize_on: bool | None = None) -> str:
+    def run(self, rule_version: str | None = None, normalize_on: bool | None = None, set_name: str = "main") -> str:
         """Execute a run synchronously (tests and scripts). Returns the run ID."""
         with self._lock:
             if self._thread is not None and self._thread.is_alive():
                 raise RunInProgress("A canary run is already in progress.")
-            run_id, canary_set, normalize = self._create(rule_version, normalize_on)
+            run_id, canary_set, normalize = self._create(rule_version, normalize_on, set_name)
         self._execute_in_thread(run_id, canary_set, normalize)
         return run_id
 
@@ -137,8 +142,8 @@ class CanaryRunner:
         if thread is not None:
             thread.join(timeout)
 
-    def _create(self, rule_version: str | None, normalize_on: bool | None) -> tuple[str, CanarySet, bool]:
-        canary_set = self.canary_set()
+    def _create(self, rule_version: str | None, normalize_on: bool | None, set_name: str) -> tuple[str, CanarySet, bool]:
+        canary_set = self.canary_set(set_name)
         normalize = self._default_normalize if normalize_on is None else normalize_on
         run_id = f"canary-{utcnow().strftime('%Y%m%dT%H%M%SZ')}-{secrets.token_hex(3)}"
         with self._sessions.begin() as s:

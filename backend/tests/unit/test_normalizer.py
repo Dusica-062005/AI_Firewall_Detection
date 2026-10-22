@@ -75,6 +75,17 @@ def test_split_id_across_a_sentence_boundary(analyzer):
     assert ids[0].value == "P48. Sorry, then 2913"
 
 
+def test_split_join_stops_at_another_field():
+    # Found by the canary runs: spoken digits followed by a date were glued to the date.
+    text = "My number is nine four zero eight, date of birth 14 July 1999."
+    assert normalize_numbers(text).text == "My number is 9408, date of birth 14 July 1999."
+
+
+def test_split_join_needs_a_pause_and_an_id_cue():
+    assert "141999" not in normalize_numbers("Patient ID 14 July 1999").text  # no pause between parts
+    assert normalize_numbers("date of birth 14. Sorry, 1999").text == "date of birth 14. Sorry, 1999"
+
+
 def test_letter_joins_only_after_an_id_cue():
     assert normalize_numbers("patient ID P four eight two").text == "patient ID P482"
     assert normalize_numbers("Plan A four five").text == "Plan A 45"

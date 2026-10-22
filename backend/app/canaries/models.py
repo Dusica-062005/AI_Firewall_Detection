@@ -10,6 +10,9 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 CANARY_FILE = Path(__file__).resolve().parent / "canaries.json"
+# Held-out set: different templates and seed, used to check that detection changes generalize.
+HOLDOUT_FILE = Path(__file__).resolve().parent / "canaries_holdout.json"
+CANARY_SETS = {"main": CANARY_FILE, "holdout": HOLDOUT_FILE}
 
 Language = Literal["en", "hinglish", "hi", "kn", "ta"]
 Script = Literal["latin", "native"]

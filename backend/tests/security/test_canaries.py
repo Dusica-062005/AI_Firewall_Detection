@@ -191,6 +191,19 @@ def test_post_requires_the_admin_key_when_configured(canary_harness):
     h.container.canaries.wait(timeout=120)
 
 
+def test_holdout_set_is_selected_by_the_api(canary_harness):
+    h = canary_harness()
+    holdout = CanarySet(version="canaries-holdout-fixture", generated_with_seed=1, calls=FIXTURE.calls[:2])
+    h.container.canaries._holdout_loader = lambda: holdout
+    assert h.client.get("/api/canaries/set?set=holdout").json()["calls"] == 2
+    response = h.client.post("/api/canaries/runs", json={"set": "holdout", "normalize_on": True})
+    assert response.status_code == 202
+    h.container.canaries.wait(timeout=120)
+    run = h.client.get(f"/api/canaries/runs/{response.json()['run_id']}").json()
+    assert run["canary_set_version"] == "canaries-holdout-fixture" and run["progress_total"] == 2
+    assert h.client.post("/api/canaries/runs", json={"set": "other"}).status_code == 422
+
+
 def test_set_summary_and_run_receipts_record_normalize_on(canary_harness):
     h = canary_harness()
     summary = h.client.get("/api/canaries/set").json()

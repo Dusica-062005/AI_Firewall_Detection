@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timezone
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Path, Query
 
@@ -64,8 +65,10 @@ def _get(container: Container, run_id: str) -> CanaryRunRecord:
 
 
 @router.get("/set", response_model=CanarySetSummary)
-def canary_set(container: Container = Depends(get_container)) -> CanarySetSummary:
-    return CanarySetSummary(**container.canaries.canary_set().summary())
+def canary_set(
+    name: Literal["main", "holdout"] = Query("main", alias="set"), container: Container = Depends(get_container)
+) -> CanarySetSummary:
+    return CanarySetSummary(**container.canaries.canary_set(name).summary())
 
 
 @router.post(
@@ -76,7 +79,7 @@ def start_run(body: StartCanaryRun | None = None, container: Container = Depends
     """Run every canary call through the real pipeline in the background."""
     body = body or StartCanaryRun()
     try:
-        run_id = container.canaries.start(body.rule_version, body.normalize_on)
+        run_id = container.canaries.start(body.rule_version, body.normalize_on, body.set)
     except RunInProgress as exc:
         raise ApiError(409, "CANARY_RUN_IN_PROGRESS", str(exc)) from None
     return StartedRun(run_id=run_id, status="RUNNING")

@@ -1,6 +1,7 @@
-"""Generate the leak-canary set: app/canaries/canaries.json (committed to git).
+"""Generate the leak-canary sets: app/canaries/canaries.json and canaries_holdout.json (committed).
 
-    python scripts/generate_canaries.py
+    python scripts/generate_canaries.py              # both sets
+    python scripts/generate_canaries.py --set main   # or --set holdout
 
 Deterministic (fixed seed, no network): running it twice gives byte-identical output.
 Every name, ID and number is invented. Patient IDs start with P9, mobile numbers with 9 and
@@ -12,17 +13,19 @@ part of a template's fixed text, so every recorded span is exact.
 
 from __future__ import annotations
 
+import argparse
 import json
 import random
 import re
 import sys
 from collections import Counter
+from dataclasses import dataclass
 from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND))
 
-from app.canaries.models import CANARY_FILE, CanarySet  # noqa: E402
+from app.canaries.models import CANARY_FILE, HOLDOUT_FILE, CanarySet  # noqa: E402
 
 SEED = 20261103
 VERSION = "canaries-v1"
@@ -170,6 +173,59 @@ TEMPLATES = {
     ],
 }
 
+# Held-out set (C0): new phrasings written separately from the main templates, so detection
+# changes can be checked for overfitting. Never tune recognizers against this set's misses.
+HOLDOUT_TEMPLATES = {
+    ("en", "latin"): [
+        "Calling on behalf of {name}; the number on her hospital card is patient ID {pid}.",
+        "Hey, it's {name}. Could the clinic text me at {phone} when the lab results arrive?",
+        "For the claim form, my Aadhaar is {aadhaar} and I was born on {dob}.",
+        "I'd like the discharge letter emailed to {email}, please. Patient ID {pid}.",
+        "Pharmacy here, confirming a refill for {name}, born {dob}, reachable on {phone}.",
+        "Patient {name} missed today's physiotherapy slot; her MRN is {pid}.",
+        "Could you move the dental check-up for {name}? Patient ID {pid}, mobile {phone}.",
+        "My daughter {name} has a rash since Sunday. Her birthday is {dob}.",
+    ],
+    ("hinglish", "latin"): [
+        "Haan, {name} ki taraf se bol raha hoon, unka patient ID {pid} hai.",
+        "Report aa gayi kya? Mera email {email} hai, wahan bhej do.",
+        "Mere papa {name}, unki DOB {dob} hai, unko checkup chahiye.",
+        "Aadhaar {aadhaar} hai mera, claim form ke liye.",
+        "Mujhe callback chahiye is number pe: {phone}.",
+        "Kal ka appointment cancel karna hai, patient ID {pid}, naam {name}.",
+    ],
+    ("hi", "latin"): [
+        "Mere bete ka naam {name} hai, uska patient ID {pid} hai.",
+        "Kripya is number par sampark karein: {phone}.",
+        "Meri janm tithi {dob} hai, mujhe jaanch karwani hai.",
+    ],
+    ("hi", "native"): [
+        "मेरे पिता का नाम {name} है, उनका patient ID {pid} है।",
+        "कृपया इस नंबर पर फ़ोन करें: {phone}।",
+        "मेरा आधार {aadhaar} है और ईमेल {email} है।",
+    ],
+    ("kn", "latin"): [
+        "Nanna appa hesaru {name}, avara patient ID {pid}.",
+        "Ee number ge call maadi: {phone}.",
+        "Nanna janma dinaanka {dob}, check-up beku.",
+    ],
+    ("kn", "native"): [
+        "ನನ್ನ ತಂದೆಯ ಹೆಸರು {name}, ಅವರ patient ID {pid}.",
+        "ಈ ಸಂಖ್ಯೆಗೆ ಕರೆ ಮಾಡಿ: {phone}.",
+        "ನನ್ನ ಆಧಾರ್ {aadhaar}, ಇಮೇಲ್ {email}.",
+    ],
+    ("ta", "latin"): [
+        "En appa peyar {name}, avar patient ID {pid}.",
+        "Indha number-ku call pannunga: {phone}.",
+        "En pirandha thedhi {dob}, check-up venum.",
+    ],
+    ("ta", "native"): [
+        "என் அப்பா பெயர் {name}, அவர் patient ID {pid}.",
+        "இந்த எண்ணுக்கு அழைக்கவும்: {phone}.",
+        "என் ஆதார் {aadhaar}, மின்னஞ்சல் {email}.",
+    ],
+}
+
 SLOT_TYPES = {
     "name": "PERSON",
     "pid": "PATIENT_ID",
@@ -195,6 +251,34 @@ for _lang in ("hi", "kn", "ta"):
         (_lang, "native", "plain", 7), (_lang, "native", "spelled_digits", 3),
         (_lang, "native", "split_id", 1), (_lang, "native", "mixed", 1),
     ]
+
+# Held-out set: 100 calls, 15 per non-English language.
+HOLDOUT_SCHEDULE = [
+    ("en", "latin", "plain", 24), ("en", "latin", "spelled_digits", 8),
+    ("en", "latin", "split_id", 5), ("en", "latin", "mixed", 3),
+    ("hinglish", "latin", "hinglish", 9), ("hinglish", "latin", "spelled_digits", 3),
+    ("hinglish", "latin", "split_id", 2), ("hinglish", "latin", "mixed", 1),
+]
+for _lang in ("hi", "kn", "ta"):
+    HOLDOUT_SCHEDULE += [
+        (_lang, "latin", "plain", 5), (_lang, "latin", "spelled_digits", 2), (_lang, "latin", "split_id", 1),
+        (_lang, "native", "plain", 4), (_lang, "native", "spelled_digits", 2), (_lang, "native", "mixed", 1),
+    ]
+
+
+@dataclass(frozen=True)
+class SetConfig:
+    seed: int
+    version: str
+    templates: dict
+    schedule: list
+    path: Path
+
+
+SETS = {
+    "main": SetConfig(SEED, VERSION, TEMPLATES, SCHEDULE, CANARY_FILE),
+    "holdout": SetConfig(20261117, "canaries-holdout-v1", HOLDOUT_TEMPLATES, HOLDOUT_SCHEDULE, HOLDOUT_FILE),
+}
 
 
 # ---- Value rendering ---------------------------------------------------------------------------
@@ -287,8 +371,10 @@ def typed(slot: str, v: dict, language: str) -> str:
     return surface
 
 
-def build_call(rng: random.Random, call_id: str, language: str, script: str, difficulty: str) -> dict:
-    templates = TEMPLATES[(language, script)]
+def build_call(
+    rng: random.Random, call_id: str, language: str, script: str, difficulty: str, all_templates: dict = TEMPLATES
+) -> dict:
+    templates = all_templates[(language, script)]
     if difficulty in ("split_id", "mixed"):
         templates = [t for t in templates if "{pid}" in t]
     elif difficulty == "spelled_digits":
@@ -340,13 +426,14 @@ def build_call(rng: random.Random, call_id: str, language: str, script: str, dif
     }
 
 
-def build_canary_set() -> dict:
-    rng = random.Random(SEED)
+def build_canary_set(name: str = "main") -> dict:
+    config = SETS[name]
+    rng = random.Random(config.seed)
     calls = []
-    for language, script, difficulty, count in SCHEDULE:
+    for language, script, difficulty, count in config.schedule:
         for _ in range(count):
-            calls.append(build_call(rng, f"can-{len(calls) + 1:04d}", language, script, difficulty))
-    return {"version": VERSION, "generated_with_seed": SEED, "calls": calls}
+            calls.append(build_call(rng, f"can-{len(calls) + 1:04d}", language, script, difficulty, config.templates))
+    return {"version": config.version, "generated_with_seed": config.seed, "calls": calls}
 
 
 def render(data: dict) -> str:
@@ -354,17 +441,25 @@ def render(data: dict) -> str:
 
 
 def main() -> None:
-    data = build_canary_set()
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--set", choices=[*SETS, "all"], default="all")
+    for name in SETS if parser.parse_args().set == "all" else [parser.parse_args().set]:
+        write_set(name)
+
+
+def write_set(name: str) -> None:
+    config = SETS[name]
+    data = build_canary_set(name)
     CanarySet.model_validate(data)  # spans in range, 1-4 planted values, known types
     for call in data["calls"]:
         for p in call["planted"]:
             for start, end in p["spans"]:
                 assert 0 <= start < end <= len(call["text"]), call["call_id"]
-    CANARY_FILE.write_bytes(render(data).encode("utf-8"))
+    config.path.write_bytes(render(data).encode("utf-8"))
 
     calls = data["calls"]
     non_plain = sum(c["difficulty"] != "plain" for c in calls)
-    print(f"Wrote {len(calls)} calls to {CANARY_FILE.relative_to(BACKEND)} ({VERSION}, seed {SEED}).")
+    print(f"\nWrote {len(calls)} calls to {config.path.relative_to(BACKEND)} ({config.version}, seed {config.seed}).")
     print(f"Non-plain: {non_plain} ({non_plain / len(calls):.0%})")
     for label, key in (("language", lambda c: c["language"]), ("script", lambda c: f"{c['language']}/{c['script']}"),
                        ("difficulty", lambda c: c["difficulty"])):

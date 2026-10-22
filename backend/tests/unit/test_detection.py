@@ -161,6 +161,49 @@ def test_custom_person_spans_are_never_stopword_filtered(analyzer):
     assert [p.value for p in people] == ["Kavya Iyer"]
 
 
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    "text, value",
+    [
+        ("He was born on 2 March 1979 in Pune.", "2 March 1979"),
+        ("Uska janam 16 January 1950 ko hua tha.", "16 January 1950"),
+        ("Her birthday is 05/06/2012, she is turning eleven.", "05/06/2012"),
+        ("मेरी जन्म तिथि ११-०२-१९९९ है।", "११-०२-१९९९"),
+        ("ನನ್ನ ಜನ್ಮ ದಿನಾಂಕ 23-10-1940, ವೈದ್ಯರನ್ನು ಭೇಟಿ ಮಾಡಬೇಕು.", "23-10-1940"),
+        ("என் பிறந்த தேதி 09-11-1963, மருத்துவரைப் பார்க்க வேண்டும்.", "09-11-1963"),
+        ("My number is nine four zero eight, date of birth 14 July 1999.", "14 July 1999"),
+    ],
+)
+def test_date_of_birth_cues(analyzer, text, value):
+    assert [e.value for e in by_type(analyzer.analyze(text, normalize=True), "DATE_OF_BIRTH")] == [value]
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["I was born in Delhi and moved in 1999.", "Please book the appointment on 14/03/2026.", "Janam se yahin rehta hoon."],
+)
+def test_date_of_birth_needs_a_cue_and_a_date(analyzer, text):
+    assert not by_type(analyzer.analyze(text, normalize=True), "DATE_OF_BIRTH")
+
+
+@pytest.mark.parametrize(
+    "text, value",
+    [
+        ("नमस्ते, मेरा नाम अर्जुन मेहता है। मुझे समय चाहिए।", "अर्जुन मेहता"),
+        ("ನಮಸ್ಕಾರ, ನನ್ನ ಹೆಸರು ಅರ್ಜುನ್ ಗೌಡ. ನನಗೆ ಅಪಾಯಿಂಟ್ಮೆಂಟ್ ಬೇಕು.", "ಅರ್ಜುನ್ ಗೌಡ"),
+        ("வணக்கம், என் பெயர் அர்ஜுன் கிருஷ்ணன். சந்திப்பு வேண்டும்.", "அர்ஜுன் கிருஷ்ணன்"),
+    ],
+)
+def test_native_script_names_after_an_introduction(analyzer, text, value):
+    assert [e.value for e in by_type(analyzer.analyze(text), "PERSON")] == [value]
+
+
+def test_native_name_cue_without_a_name_is_not_a_person(analyzer):
+    assert not by_type(analyzer.analyze("आपका नाम क्या है?"), "PERSON")
+
+
 def test_unloaded_analyzer_raises(analyzer):
     import pytest
 

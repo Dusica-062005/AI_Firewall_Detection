@@ -55,7 +55,8 @@ presidio_entities:
 # the ends of a spaCy PERSON span, and a span made only of them is dropped. Custom-recognizer
 # spans are never filtered.
 person_stopwords: [hai, aur, mera, meri, mujhe, kal, se, ho, raha, rahi, chahiye, hoon, ka, ki, ke,
-                   ko, bhi, nahi, kya, aap, main, tha, thi, please, ji, naam]
+                   ko, bhi, nahi, kya, aap, main, tha, thi, please, ji, naam, hua, hui, uska, uski,
+                   apna, apni, आपका, मेरा, नाम, क्या, है]
 
 # Custom deterministic recognizers. "group" selects the capture group that holds the
 # sensitive value so that context words are not redacted.
@@ -102,9 +103,12 @@ custom_recognizers:
     # Above Presidio's PhoneRecognizer (0.75): Presidio keeps only one of two identical spans,
     # and this one must survive so the custom-recognizer overlap rule can apply.
     score: 0.8
+  # Cues in English, Hinglish ("janam ... ko hua") and native script (Hindi, Kannada, Tamil).
+  # Native-script cues have no \b: combining vowel signs are not word characters. Native digits
+  # in the date are matched once the spoken-number normalizer has mapped them to ASCII.
   - name: date-of-birth-contextual
     entity: DATE_OF_BIRTH
-    pattern: '\b(?:date\s+of\s+birth|d\.?o\.?b\.?|born\s+on|birth\s+date|janam\s+tithi)\s*(?:is|:|=|hai)?\s*(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?,?\s+\d{4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})\b'
+    pattern: '(?:\b(?:date\s+of\s+birth|d\.?o\.?b\.?|born(?:\s+on)?|birth\s*date|birthday(?:\s+is)?|janam(?:\s+tithi|\s+din)?)|जन्म\s*(?:तिथि|दिन)|जन्मतिथि|ಜನ್ಮ\s*ದಿನಾಂಕ|ಹುಟ್ಟಿದ\s*ದಿನಾಂಕ|பிறந்த\s*(?:தேதி|நாள்))\s*(?:is|was|:|=|hai|on)?\s*(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?,?\s+\d{4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})\b'
     group: 1
     score: 0.9
   # Common Indian first names and surnames (Latin script). spaCy misses many of them in
@@ -122,6 +126,13 @@ custom_recognizers:
   - name: in-name-introduction
     entity: PERSON
     pattern: '\b(?:main|mera\s+naam|my\s+name\s+is|this\s+is)\s+(?!(?-i:(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|May|June|July|August|September|October|November|December)\b))((?-i:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?))'
+    group: 1
+    score: 0.85
+  # Native-script self-introductions: "मेरा नाम ...", "ನನ್ನ ಹೆಸರು ...", "என் பெயர் ...". Captures up
+  # to three Devanagari, Kannada or Tamil words, stopping at punctuation or a verb such as "है".
+  - name: native-name-introduction
+    entity: PERSON
+    pattern: '(?:(?:मेरा\s+)?नाम|(?:ನನ್ನ\s+)?ಹೆಸರು|(?:என்\s+)?பெயர்)\s*(?:है\s+)?((?:(?!(?:है|हूँ|हूं|हैं|क्या|बोल|रहा|रही)(?![\p{L}\p{M}]))[\p{Devanagari}\p{Kannada}\p{Tamil}]+)(?:\s+(?!(?:है|हूँ|हूं|हैं|क्या|बोल|रहा|रही)(?![\p{L}\p{M}]))[\p{Devanagari}\p{Kannada}\p{Tamil}]+){0,2})'
     group: 1
     score: 0.85
   - name: health-term-denylist

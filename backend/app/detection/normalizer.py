@@ -36,6 +36,9 @@ NATIVE_DIGITS = str.maketrans(
 )
 
 ID_CUES = {"id", "number", "patient", "mrn", "aadhaar", "phone", "mobile"}
+# A cue for another field between two digit groups means a new value starts there
+# ("... zero eight, date of birth 14 July"), so the groups are not one split identifier.
+FIELD_CUES = ID_CUES | {"date", "birth", "dob", "born", "email", "account", "card", "ssn", "sin"}
 CUE_WINDOW_WORDS = 6
 SPLIT_MAX_GAP_WORDS = 8
 # A first part shorter than this cannot be an identifier on its own, so a following digit
@@ -49,6 +52,7 @@ _RUN_GAP = regex.compile(r"[\s,\-]+")
 _LETTER_GAP = regex.compile(r"\s+")
 _GROUP = regex.compile(r"(?<![A-Za-z0-9])([A-Za-z]{0,3})(\d+)(?![A-Za-z0-9])")
 _SENTENCE_END = regex.compile(r"[.!?।]")  # । is the Devanagari full stop
+_PAUSE = regex.compile(r"[.,;!?।]")
 
 
 @dataclass(frozen=True)
@@ -83,6 +87,12 @@ def normalize_numbers(text: str) -> Normalized:
 def _has_cue_before(text: str, position: int) -> bool:
     words = _WORD.findall(text[:position])[-CUE_WINDOW_WORDS:]
     return any(w.lower() in ID_CUES for w in words)
+
+
+def _nearest_cue_is_id(text: str, position: int) -> bool:
+    """The closest field cue before ``position`` introduces an identifier (not a date or email)."""
+    cues = [w.lower() for w in _WORD.findall(text[:position]) if w.lower() in FIELD_CUES]
+    return bool(cues) and cues[-1] in ID_CUES
 
 
 def _convert_digit_words(chars: list[tuple[str, int, int]]) -> list[tuple[str, int, int]]:
@@ -190,7 +200,7 @@ def _join_split_ids(chars: list[tuple[str, int, int]]) -> list[tuple[str, int, i
     for i, first in enumerate(groups[:-1]):
         if i in used or len(first.group(2)) > SPLIT_MAX_FIRST_DIGITS:
             continue
-        if not _has_cue_before(text, first.start()):
+        if not _has_cue_before(text, first.start()) or not _nearest_cue_is_id(text, first.start()):
             continue
         second = groups[i + 1]
         if second.group(1):  # the continuation must be digits only
@@ -198,6 +208,10 @@ def _join_split_ids(chars: list[tuple[str, int, int]]) -> list[tuple[str, int, i
         gap = text[first.end() : second.start()]
         if _RUN_GAP.fullmatch(gap):
             continue  # "+91 98765" is formatting, not a split; the recognizers handle it as is
+        if any(w.lower() in FIELD_CUES for w in _WORD.findall(gap)):
+            continue
+        if not _PAUSE.search(gap):
+            continue  # "14 July 1999": parts of one value; a split ID has a pause between its parts
         if len(_WORD.findall(gap)) > SPLIT_MAX_GAP_WORDS or len(_SENTENCE_END.findall(gap)) > 1:
             continue
         if len(first.group(2)) + len(second.group(2)) > SPLIT_MAX_TOTAL_DIGITS:
