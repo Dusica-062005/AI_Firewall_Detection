@@ -55,11 +55,22 @@
                       [attr.aria-checked]="c.dial === p.id" [disabled]="saving()" (click)="setDial(p.id)">
                 <span class="dial__label">{{ p.label }}</span>
                 <span class="text-xs muted">{{ p.description }}</span>
+                <span class="dial__score text-xs">
+                  @if (qualityFor(p.id); as q) {
+                    Quality score <strong class="mono">{{ q.score === null ? '-' : q.score.toFixed(2) }}</strong> (n={{ q.n }})
+                  } @else {
+                    Quality score: not measured yet
+                  }
+                </span>
               </button>
             }
           </div>
           <p class="text-xs muted">
-            The dial only adds protection on top of policy; it never weakens a policy rule. Quality score per position: not measured yet.
+            The dial only adds protection on top of policy; it never weakens a policy rule.
+            @if (quality(); as q) {
+              Scores from run {{ q.run_id }} ({{ q.created_at | date: 'MMM d, HH:mm' }}): similarity to the raw-text summary, not a human rating.
+            }
+            <a routerLink="/measurements" fragment="quality">Measure on the Measurements page</a>.
           </p>
         }
       </div>

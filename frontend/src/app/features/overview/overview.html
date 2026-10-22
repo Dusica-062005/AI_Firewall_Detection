@@ -93,6 +93,7 @@
       </div>
     </div>
 
+    <div class="stack side-column">
     <div class="card">
       <div class="card-header">
         <h2><svg class="icon" lucideIcon="server" aria-hidden="true"></svg>System status</h2>
@@ -152,6 +153,31 @@
           }
         </div>
       </div>
+    </div>
+
+    <div class="card canary-card">
+      <div class="card-header">
+        <h2><svg class="icon" lucideIcon="target" aria-hidden="true"></svg>Last canary run</h2>
+        <a class="btn btn-ghost btn-sm" routerLink="/measurements">Measurements</a>
+      </div>
+      <div class="card-body">
+        @if (lastCanary(); as c) {
+          <div class="canary-numbers">
+            <div>
+              <span class="kpi__label text-xs muted">Detection recall</span>
+              <strong class="canary-value">{{ pct(c.recall) }}</strong>
+            </div>
+            <div>
+              <span class="kpi__label text-xs muted">Leak rate at receiver</span>
+              <strong class="canary-value">{{ pct(c.leak_rate) }}</strong>
+            </div>
+          </div>
+          <p class="text-xs muted">n={{ c.n_planted }} planted values, {{ c.created_at | date: 'MMM d, HH:mm' }}, normalization {{ c.normalize_on ? 'on' : 'off' }}</p>
+        } @else {
+          <p class="text-sm muted">{{ canaryError() ? 'Unavailable' : 'Not measured yet' }}</p>
+        }
+      </div>
+    </div>
     </div>
   </section>
 

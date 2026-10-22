@@ -80,6 +80,12 @@
   font-weight: 600;
 }
 
+.dial__score {
+  margin-top: auto;
+  padding-top: 4px;
+  color: var(--c-text-2);
+}
+
 .verify {
   display: flex;
   flex-direction: column;

@@ -467,6 +467,144 @@ export interface VerifyResult {
   count: number;
 }
 
+// ---- Measurements: leak canaries (Feature 5) and dial quality (Feature 4) ----
+
+export type MeasurementStatus = 'RUNNING' | 'COMPLETED' | 'FAILED';
+
+export interface CanarySetSummary {
+  version: string;
+  calls: number;
+  planted_values: number;
+  by_language: Record<string, number>;
+  by_script: Record<string, number>;
+  by_difficulty: Record<string, number>;
+  by_type: Record<string, number>;
+}
+
+/** Recall and leak rate for one slice of the canary set. Rates are null when n is 0. */
+export interface CanaryBucket {
+  key: string;
+  n_calls: number;
+  n_planted: number;
+  detected: number;
+  recall: number | null;
+  leaked: number;
+  leak_rate: number | null;
+}
+
+export interface CanaryMetrics {
+  overall: CanaryBucket;
+  by_type: CanaryBucket[];
+  by_difficulty: CanaryBucket[];
+  by_language: CanaryBucket[];
+  by_script: CanaryBucket[];
+  route_counts: Record<string, number>;
+  route_reasons: Record<string, number>;
+  payloads_sent: number;
+  received_lines: number;
+  low_confidence_holds: number;
+  call_errors: number;
+}
+
+export interface CanaryMiss {
+  call_id: string;
+  type: string;
+  difficulty: string;
+  language: string;
+  script: string;
+  surface: string;
+}
+
+export interface CanaryLeak extends CanaryMiss {
+  field: string;
+}
+
+export interface CanaryRunSummary {
+  run_id: string;
+  status: MeasurementStatus;
+  created_at: string;
+  finished_at: string | null;
+  canary_set_version: string;
+  rule_version: string;
+  normalize_on: boolean;
+  dial: string;
+  kill_switch_on: boolean;
+  machine: string;
+  duration_s: number | null;
+  progress_done: number;
+  progress_total: number;
+  error: string | null;
+  n_planted: number | null;
+  recall: number | null;
+  leak_rate: number | null;
+}
+
+export interface CanaryRunDetail extends CanaryRunSummary {
+  low_confidence_threshold: number;
+  metrics: CanaryMetrics | null;
+  misses: CanaryMiss[];
+  leaks: CanaryLeak[];
+}
+
+export interface CanaryCompareRow {
+  group: 'overall' | 'type' | 'difficulty' | 'language' | 'script';
+  key: string;
+  a: CanaryBucket | null;
+  b: CanaryBucket | null;
+  recall_delta: number | null;
+  leak_rate_delta: number | null;
+}
+
+export interface CanaryCompare {
+  a: CanaryRunSummary;
+  b: CanaryRunSummary;
+  rows: CanaryCompareRow[];
+}
+
+export interface QualityPositionScore {
+  position: DialPosition;
+  score: number | null;
+  n: number;
+  n_null: number;
+}
+
+export interface QualitySampleScore {
+  sample_id: string;
+  title: string;
+  position: DialPosition;
+  similarity: number | null;
+  decision: string;
+  route: string;
+  source: string;
+  summary_status: string;
+}
+
+export interface QualityRun {
+  run_id: string;
+  status: MeasurementStatus;
+  created_at: string;
+  finished_at: string | null;
+  sample_ids: string[];
+  reference_model: string;
+  local_model: string;
+  cloud_model: string | null;
+  embed_model: string;
+  kill_switch_on: boolean;
+  machine: string;
+  duration_s: number | null;
+  progress_done: number;
+  progress_total: number;
+  error: string | null;
+  positions: QualityPositionScore[];
+  samples: QualitySampleScore[];
+  note: string;
+}
+
+export interface QualityLatest {
+  run: QualityRun | null;
+  completed: QualityRun | null;
+}
+
 // ---- Compliance & incident center ----
 
 export type FrameworkId = 'GDPR' | 'HIPAA' | 'ISO_42001' | 'SOC_2';

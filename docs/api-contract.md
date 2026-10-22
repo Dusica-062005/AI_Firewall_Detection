@@ -25,8 +25,8 @@ Interactive schema: `http://localhost:8000/docs` (generated from the Pydantic mo
 | Status | Code examples | Meaning |
 |---|---|---|
 | 401 | `UNAUTHORIZED` | `X-Admin-Key` missing or wrong (only when `ADMIN_API_KEY` is set) |
-| 404 | `POLICY_NOT_FOUND`, `AUDIT_EVENT_NOT_FOUND` | Resource does not exist |
-| 409 | `POLICY_EXISTS` | Policy ID already used |
+| 404 | `POLICY_NOT_FOUND`, `AUDIT_EVENT_NOT_FOUND`, `CANARY_RUN_NOT_FOUND`, `QUALITY_RUN_NOT_FOUND` | Resource does not exist |
+| 409 | `POLICY_EXISTS`, `CANARY_RUN_IN_PROGRESS`, `QUALITY_RUN_IN_PROGRESS`, `CANARY_RUN_NOT_COMPLETED` | Policy ID already used; a measurement run is already running; a compared run is not completed |
 | 413 | `PAYLOAD_TOO_LARGE`, `TRANSCRIPT_TOO_LARGE` | Body over `MAX_REQUEST_BYTES` or transcript over `MAX_TRANSCRIPT_CHARS` |
 | 422 | `VALIDATION_ERROR`, `UNKNOWN_PROFILE`, `POLICY_INVALID` | Schema or semantic validation failed |
 | 500 | `INTERNAL_ERROR` | Unexpected error; nothing was sent to any AI service |
@@ -58,6 +58,14 @@ of the firewall, not an API error.
 | GET | `/integrations/status` | - | Ollama and mock CloudLink availability |
 | GET | `/config` | - | Safe configuration (secrets are reported only as configured or not) |
 | GET | `/samples` | - | Synthetic demo transcripts |
+| GET | `/canaries/set` | - | Canary set summary: version, counts by language, script, difficulty and type |
+| POST | `/canaries/runs` | admin | Start a leak-canary batch in the background (`202`) |
+| GET | `/canaries/runs` | - | Canary runs, newest first, summary metrics only |
+| GET | `/canaries/runs/{run_id}` | - | One run: progress while running; breakdowns, misses and leaks when completed |
+| GET | `/canaries/compare?a=&b=` | - | Side-by-side metrics of two completed runs with deltas (b minus a) |
+| POST | `/quality/runs` | admin | Start a dial quality measurement in the background (`202`) |
+| GET | `/quality/latest` | - | The most recent quality run (any status) and the most recent completed one |
+| GET | `/quality/runs/{run_id}` | - | One quality run with per-position and per-sample scores |
 
 "admin" means `X-Admin-Key` is required when `ADMIN_API_KEY` is set. Without it the API is
 intended only for a trusted local environment.
@@ -301,6 +309,128 @@ Aggregates over retained audit events. Keys: `total_requests`, `decision_counts`
 `cloud_handoffs_sent`, `local_summaries_generated`, `latency` (`total`, `detection`, `policy`,
 `local_ai`, `cloud`, each with `count`, `avg_ms`, `p50_ms`, `p95_ms`, `max_ms`) and `timeline`
 (hourly buckets for `window_hours` with per-decision counts).
+
+## Leak canaries (Feature 5, FR-8)
+
+A canary batch runs every call in `app/canaries/canaries.json` through the real pipeline
+(`mode=full`, dial `max_quality` so the cloud path is exercised, model calls skipped). Each call
+uses the request ID `{run_id}-{call_id}`, so its receipt and the receiver's log line can be found.
+
+- **Detection recall**: a planted value counts as detected when every one of its spans overlaps a
+  detected entity of any type.
+- **Leak rate at the receiver**: read from `RECEIVED_LOG_FILE`, never from what the firewall
+  believes it sent. A planted value leaked when any surface part appears in a received
+  `sanitized_transcript` or `sanitized_summary` (case-insensitive), or, for numbers, its digits
+  appear once spaces, hyphens and native-script digits are normalized.
+- If the receiver log does not account for every payload the firewall delivered, the run is
+  `FAILED` with a message naming `RECEIVED_LOG_FILE`, and no leak rate is reported.
+
+`POST /canaries/runs` body (both fields optional):
+
+```json
+{ "normalize_on": true, "rule_version": "my-label" }
+```
+
+`normalize_on` overrides `NORMALIZE_NUMBERS` for this run only. `rule_version` defaults to
+`rules-` plus a hash of `detection.yaml` and the policy-set version. Response `202`:
+
+```json
+{ "run_id": "canary-20261022T064721Z-ebce9a", "status": "RUNNING" }
+```
+
+`GET /canaries/runs/{run_id}` when completed (metric values from a real run on the 200-call
+set with normalization on; IDs and the rule-version hash are illustrative; lists shortened):
+
+```json
+{
+  "run_id": "canary-20261022T064721Z-ebce9a",
+  "status": "COMPLETED",
+  "canary_set_version": "canaries-v1",
+  "rule_version": "rules-3f9c0d2a71be",
+  "normalize_on": true,
+  "dial": "max_quality",
+  "kill_switch_on": false,
+  "low_confidence_threshold": 0.6,
+  "machine": "Windows-11-10.0.26200-SP0 (8 CPUs)",
+  "duration_s": 5.32,
+  "progress_done": 200,
+  "progress_total": 200,
+  "error": null,
+  "n_planted": 390,
+  "recall": 0.8923,
+  "leak_rate": 0.1179,
+  "metrics": {
+    "overall": { "key": "all", "n_calls": 200, "n_planted": 390, "detected": 348, "recall": 0.8923, "leaked": 46, "leak_rate": 0.1179 },
+    "by_difficulty": [
+      { "key": "spelled_digits", "n_calls": 43, "n_planted": 81, "detected": 66, "recall": 0.8148, "leaked": 14, "leak_rate": 0.1728 }
+    ],
+    "by_type": [], "by_language": [], "by_script": [],
+    "route_counts": { "CLOUD": 160, "LOCAL": 12, "NONE": 28 },
+    "route_reasons": { "cloud_validation_failed": 12, "policy_blocked": 28, "policy_cloud": 160 },
+    "payloads_sent": 160,
+    "received_lines": 160,
+    "low_confidence_holds": 0,
+    "call_errors": 0
+  },
+  "misses": [
+    { "call_id": "can-0084", "type": "PATIENT_ID", "difficulty": "split_id", "language": "en", "script": "latin", "surface": "P972 … 2916" }
+  ],
+  "leaks": [
+    { "call_id": "can-0084", "type": "PATIENT_ID", "difficulty": "split_id", "language": "en", "script": "latin", "surface": "P972 … 2916", "field": "sanitized_transcript" }
+  ]
+}
+```
+
+Rates are `null` when a bucket has no planted values. `GET /canaries/compare?a=..&b=..` returns
+`{ "a": <summary>, "b": <summary>, "rows": [...] }`, one row per slice (`overall`, then each
+`type`, `difficulty`, `language` and `script`), each with both buckets plus `recall_delta` and
+`leak_rate_delta` (b minus a).
+
+## Dial quality (Feature 4, FR-7)
+
+For each synthetic sample except `clean-question` and `government-id`, the raw transcript is
+summarized locally by the reference model (`QUALITY_REFERENCE_MODEL`, else `MOCK_CLOUD_MODEL`,
+else `OLLAMA_MODEL`) and cached. Each dial position then runs the real pipeline, and the
+re-hydrated agent summary is compared with the reference by cosine similarity of Ollama
+embeddings (`QUALITY_EMBED_MODEL`, default `nomic-embed-text`). A position's score is the mean
+over samples that produced a summary; a sample without one is `null`, never `0`.
+
+The score measures how close the protected summary is to the summary of the raw text. It is a
+similarity number, not a human quality rating.
+
+`POST /quality/runs` body: `{}` or `{ "sample_ids": ["appointment-standard"] }`. Response `202`
+with `{ "run_id", "status" }`. `GET /quality/latest` (scores from a real run with llama3.2:3b and
+nomic-embed-text; the run ID is illustrative; samples shortened):
+
+```json
+{
+  "run": { "run_id": "quality-20261022T065012Z-4d1e2f", "status": "COMPLETED" },
+  "completed": {
+    "run_id": "quality-20261022T065012Z-4d1e2f",
+    "status": "COMPLETED",
+    "reference_model": "llama3.2:3b",
+    "local_model": "llama3.2:3b",
+    "cloud_model": null,
+    "embed_model": "nomic-embed-text",
+    "machine": "Windows-11-10.0.26200-SP0 (8 CPUs)",
+    "duration_s": 217.28,
+    "error": null,
+    "positions": [
+      { "position": "max_privacy", "score": 0.95, "n": 6, "n_null": 1 },
+      { "position": "balanced", "score": 0.94, "n": 6, "n_null": 1 },
+      { "position": "max_quality", "score": 0.95, "n": 6, "n_null": 1 }
+    ],
+    "samples": [
+      { "sample_id": "appointment-restricted", "title": "Appointment request (restricted)", "position": "max_privacy",
+        "similarity": null, "decision": "BLOCKED", "route": "NONE", "source": "NONE", "summary_status": "NO_SUMMARY" }
+    ],
+    "note": "The score measures how close the protected summary is to the summary of the raw text. It is a similarity number, not a human quality rating."
+  }
+}
+```
+
+If the embedding model is not installed the run is `FAILED` with
+`"error": "Embedding model 'nomic-embed-text' is not installed. Run: ollama pull nomic-embed-text"`.
 
 ## Mock CloudLink receiver (port 8100, simulated)
 

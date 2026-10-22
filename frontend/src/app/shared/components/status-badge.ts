@@ -70,6 +70,8 @@ const STYLES: Record<string, BadgeStyle> = {
   UNSIGNED: { variant: 'warning', icon: 'fingerprint' },
   CHAIN_OK: { variant: 'success', icon: 'link' },
   TAMPERED: { variant: 'error', icon: 'shield-alert' },
+  // Measurement runs
+  RUNNING: { variant: 'info', icon: 'timer' },
   // Compliance controls
   PASS: { variant: 'success', icon: 'circle-check' },
   PARTIAL: { variant: 'warning', icon: 'triangle-alert' },

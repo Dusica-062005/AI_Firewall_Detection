@@ -5,6 +5,7 @@ import { testProviders } from '../../testing/test-providers';
 import { FirewallResult } from '../core/models/api.models';
 import { Inspector } from './inspector/inspector';
 import { InspectorStateService } from './inspector/inspector-state.service';
+import { Measurements } from './measurements/measurements';
 import { Overview } from './overview/overview';
 import { Settings } from './settings/settings';
 
@@ -122,6 +123,81 @@ describe('Overview', () => {
     expect(text(el)).toContain('Chart unavailable');
     const values = Array.from(el.querySelectorAll('.kpi__value')).map((v) => v.textContent?.trim());
     expect(values.every((v) => v === '-')).toBe(true);
+  });
+});
+
+describe('Measurements', () => {
+  const RUN_ID = 'canary-20261022T063000Z-a1b2c3';
+  const SET = {
+    version: 'canaries-v1', calls: 200, planted_values: 390,
+    by_language: { en: 100, hi: 25 }, by_script: {}, by_difficulty: { plain: 105 }, by_type: {},
+  };
+  const bucket = (key: string, recall: number, leakRate: number) => ({
+    key, n_calls: 200, n_planted: 390, detected: Math.round(recall * 390), recall,
+    leaked: Math.round(leakRate * 390), leak_rate: leakRate,
+  });
+
+  function summary(status: 'RUNNING' | 'COMPLETED', done = 200) {
+    const completed = status === 'COMPLETED';
+    return {
+      run_id: RUN_ID, status, created_at: '2026-10-22T06:30:00Z', finished_at: completed ? '2026-10-22T06:30:06Z' : null,
+      canary_set_version: 'canaries-v1', rule_version: 'rules-0123456789ab', normalize_on: true, dial: 'max_quality',
+      kill_switch_on: false, machine: 'Windows-11 (8 CPUs)', duration_s: completed ? 5.3 : null, progress_done: done,
+      progress_total: 200, error: null, n_planted: completed ? 390 : null, recall: completed ? 0.8923 : null,
+      leak_rate: completed ? 0.1179 : null,
+    };
+  }
+
+  async function setup(runs: unknown[]) {
+    TestBed.configureTestingModule({ providers: testProviders() });
+    const controller = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(Measurements);
+    fixture.detectChanges();
+    controller.expectOne('/api/canaries/set').flush(SET);
+    controller.expectOne('/api/canaries/runs').flush(runs);
+    await fixture.whenStable();
+    return { fixture, controller };
+  }
+
+  it('shows "Not measured yet" when there is no run', async () => {
+    const { fixture } = await setup([]);
+    const el = text(fixture.nativeElement);
+    expect(el).toContain('Not measured yet');
+    expect(el).not.toContain('%');
+    fixture.destroy();
+  });
+
+  it('renders recall and leak rate from a stored run, with n and run ID', async () => {
+    const { fixture, controller } = await setup([summary('COMPLETED')]);
+    controller.expectOne(`/api/canaries/runs/${RUN_ID}`).flush({
+      ...summary('COMPLETED'), low_confidence_threshold: 0.6,
+      metrics: {
+        overall: bucket('all', 0.8923, 0.1179), by_type: [], by_difficulty: [bucket('spelled_digits', 0.8148, 0.1728)],
+        by_language: [], by_script: [bucket('hi/native', 0.4737, 0.6316)], route_counts: { CLOUD: 160 },
+        route_reasons: {}, payloads_sent: 160, received_lines: 160, low_confidence_holds: 0, call_errors: 0,
+      },
+      misses: [], leaks: [],
+    });
+    await fixture.whenStable();
+    const el = text(fixture.nativeElement);
+    expect(el).toContain('89.2%');
+    expect(el).toContain('11.8%');
+    expect(el).toContain('n=390');
+    expect(el).toContain(RUN_ID);
+    expect(el).toContain('rules-0123456789ab');
+    expect(el).toContain('Spelled digits');
+    expect(el).not.toContain('Not measured yet');
+    fixture.destroy();
+  });
+
+  it('disables Run while a run is in progress and shows progress', async () => {
+    const { fixture } = await setup([summary('RUNNING', 10)]);
+    const el = fixture.nativeElement as HTMLElement;
+    const button = Array.from(el.querySelectorAll('button')).find((b) => b.textContent?.includes('Run canary batch'));
+    expect(button?.disabled).toBe(true);
+    expect(text(el)).toContain('Running: 10 / 200 calls');
+    expect(el.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')).toBe('10');
+    fixture.destroy();
   });
 });
 

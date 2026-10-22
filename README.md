@@ -92,6 +92,7 @@ The API location is read at runtime from `frontend/public/config.json`:
 
    ```powershell
    ollama pull llama3.2:3b
+   ollama pull nomic-embed-text    # about 270 MB; only for the dial quality score (Measurements)
    ollama list
    ```
 
@@ -114,6 +115,9 @@ All settings live in `backend/.env`; see [backend/.env.example](backend/.env.exa
 | `SPACY_MODEL` | `en_core_web_md` | spaCy model used by Presidio |
 | `EXPOSE_DETECTED_VALUES` | `true` | Return detected values to the Inspector (synthetic demo only; never stored) |
 | `UNMATCHED_ENTITY_ACTION` | `LOCAL_ONLY` | Action for detected entities no policy covers (`LOCAL_ONLY` or `BLOCK`) |
+| `NORMALIZE_NUMBERS` | `true` | Detect spoken and split identifiers ("P four eight two", "nau aath saat", "P48. Sorry, 2913") |
+| `QUALITY_EMBED_MODEL` / `QUALITY_REFERENCE_MODEL` | `nomic-embed-text` / empty | Dial quality score: embedding model, and the model that summarizes the raw samples (empty: `MOCK_CLOUD_MODEL`, else `OLLAMA_MODEL`) |
+| `RECEIVED_LOG_FILE` | `./data/received.log` | Every payload the mock receiver accepts; leak canaries measure against it |
 | `OLLAMA_BASE_URL` / `OLLAMA_MODEL` / `OLLAMA_TIMEOUT_SECONDS` | `http://localhost:11434` / `llama3.2:3b` / `45` | Local model |
 | `CLOUDLINK_BASE_URL` / `CLOUDLINK_API_KEY` / `CLOUDLINK_TIMEOUT_SECONDS` | `http://localhost:8100` / placeholder / `5` | Mock receiver |
 | `ADMIN_API_KEY` | empty | When set, policy changes and audit purge require the `X-Admin-Key` header (enter it on the Settings page) |
@@ -170,15 +174,65 @@ expected on the host. The Compose file passes `docker compose config` validation
 images were not built in the development environment (the Docker daemon was not running), so
 treat this path as unverified.
 
+## Measurements (leak canaries, languages, dial quality)
+
+The **Measurements** page turns protection claims into stored, measured numbers. Every number
+comes from a stored run and is shown with its sample size (n), run ID, rule version and machine.
+With no run, the page says "Not measured yet".
+
+- **Leak canaries:** 200 synthetic hospital calls with planted fake identities (English,
+  Hinglish, Hindi, Kannada and Tamil, in Latin and native scripts; plain, spelled digits, split
+  IDs and mixed). Each batch runs every call through the real pipeline and reports detection
+  recall and the leak rate measured at the mock receiver.
+- **Languages:** recall and leak rate per language and script from the latest canary run.
+- **Dial quality:** similarity of each dial position's summary to the raw-text summary
+  (needs `ollama pull nomic-embed-text`). It is a similarity number, not a human quality rating.
+
+Run a canary batch from the UI (Measurements > Leak canaries > Run canary batch), or with the API:
+
+```powershell
+Invoke-RestMethod -Method Post http://localhost:8000/api/canaries/runs -ContentType 'application/json' -Body '{"normalize_on": true}'
+Invoke-RestMethod http://localhost:8000/api/canaries/runs
+```
+
+The canary set is generated deterministically and committed. To regenerate it after changing the
+templates (the output is byte-identical for the same script):
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe scripts\generate_canaries.py
+```
+
+Canary batches go through the real pipeline, so each call also writes an audit event and a
+signed receipt (request ID `{run_id}-{call_id}`). Leaks are read from `RECEIVED_LOG_FILE`; the
+mock receiver and the backend must use the same file, otherwise the run fails rather than
+reporting a leak rate it did not measure.
+
+### Manual verification
+
+1. Start everything: `powershell -ExecutionPolicy Bypass -File scripts\start-demo.ps1`
+2. Inspector: paste "My patient ID is P nine four eight two nine one three, call me." and
+   Process. Expect `[PATIENT_ID_1]` covering the spoken digits.
+3. Measurements > Leak canaries: run once with "Normalize spoken numbers" off, once on, then
+   compare. The spelled_digits and split_id rows should improve.
+4. Check the leak rate against what really reached `backend/data/received.log`: open the file
+   and search for a value from the leaks table.
+5. Trust & Controls > kill switch on > run canaries again. Expect 0 payloads sent and a leak
+   rate of 0. Turn it off.
+6. Measurements > Dial quality: run it. Scores appear per position, and the Trust & Controls
+   dial card shows them.
+7. Verify the receipt chain still says CHAIN OK. Canary runs add one receipt per call, each
+   recording `normalize_on`.
+
 ## Tests
 
 ```powershell
-# Backend: 96 tests (unit, integration, security). Uses real Presidio, a stub Ollama
+# Backend: 188 tests (unit, integration, security). Uses real Presidio, a stub Ollama
 # and the in-process mock receiver. No network or credentials needed.
 cd backend
 .\.venv\Scripts\python.exe -m pytest
 
-# Frontend: 16 tests (Vitest via the Angular unit-test builder).
+# Frontend: 19 tests (Vitest via the Angular unit-test builder).
 cd frontend
 npx ng test --watch=false
 
@@ -196,6 +250,10 @@ npx ng build
 | `tests/security/test_outbound_enforcement.py` | Permitted payloads reach the receiver; blocked, local-only and failure cases never do; client-supplied decisions rejected; tampering refused |
 | `tests/security/test_audit_privacy.py` | No raw values in the database, audit API, logs or validation errors |
 | `tests/integration/test_api.py` | Invalid and oversized requests; policy CRUD and live effect; persistence across restarts; admin key; audit filters; metrics; CORS; config secrecy |
+| `tests/unit/test_normalizer.py` | Spoken English and Hindi digits, double/triple, native-script digits, split IDs, span mapping; normalization off keeps the old behaviour |
+| `tests/unit/test_canary_set.py` | Canary file format, exact spans, coverage minimums, byte-identical regeneration |
+| `tests/security/test_canaries.py` | Exact recall and leak rate on a hand-checked set; leaks measured at the real receiver; log mismatch fails the run; kill switch; determinism; compare deltas; admin key |
+| `tests/integration/test_quality.py` | Cosine scores, reference cache, null (not 0) without a summary, missing embedding model, raw text never reaches the mock cloud |
 | `frontend/src/**/*.spec.ts` | Error normalization; unreachable backend; validation errors; unavailable metrics; missing model; blocked result rendering |
 
 ## Five-minute demo
@@ -240,7 +298,9 @@ backend/
     api/            routes, middleware (request IDs, limits, logging), errors, deps
     schemas/        Pydantic request/response models
     services/       firewall_service (enforcement), processing_service (workflow), policy_service
-    detection/      Presidio analyzer wrapper and custom recognizers
+    detection/      Presidio analyzer wrapper, custom recognizers, spoken-number normalizer
+    canaries/       canary set (canaries.json), models and the leak-canary runner
+    quality/        dial quality measurement (embedding similarity)
     policy/         engine (decisions), models, loader, validation
     security/       redactor, outbound_validator
     ai/             ollama_client, summarizer

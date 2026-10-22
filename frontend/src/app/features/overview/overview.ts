@@ -4,13 +4,14 @@ import { Router, RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { forkJoin } from 'rxjs';
 
-import { ApiError, AuditEvent, IntegrationsStatus, MetricsSummary } from '../../core/models/api.models';
+import { ApiError, AuditEvent, CanaryRunSummary, IntegrationsStatus, MetricsSummary } from '../../core/models/api.models';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { SystemStatusService } from '../../core/services/system-status.service';
 import { DecisionChart } from '../../shared/components/decision-chart';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { StatusBadge } from '../../shared/components/status-badge';
 import { DurationPipe, HumanizePipe } from '../../shared/pipes/format.pipes';
+import { pct } from '../measurements/measurement-format';
 
 @Component({
   selector: 'app-overview',
@@ -37,6 +38,11 @@ export class Overview implements OnInit {
   });
 
   protected readonly hasActivity = computed(() => (this.metrics()?.total_requests ?? 0) > 0);
+
+  /** Latest completed leak-canary run (Feature 5); null means not measured yet. */
+  protected readonly lastCanary = signal<CanaryRunSummary | null>(null);
+  protected readonly canaryError = signal<ApiError | null>(null);
+  protected readonly pct = pct;
 
   ngOnInit(): void {
     this.load();
@@ -69,6 +75,16 @@ export class Overview implements OnInit {
       error: (err: ApiError) => {
         this.integrations.set(null);
         this.integrationsError.set(err);
+      },
+    });
+    this.api.canaryRuns().subscribe({
+      next: (runs) => {
+        this.lastCanary.set(runs.find((r) => r.status === 'COMPLETED') ?? null);
+        this.canaryError.set(null);
+      },
+      error: (err: ApiError) => {
+        this.lastCanary.set(null);
+        this.canaryError.set(err);
       },
     });
     this.system.refresh();

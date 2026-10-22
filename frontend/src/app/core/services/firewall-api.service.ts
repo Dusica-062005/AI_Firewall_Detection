@@ -9,6 +9,10 @@ import {
   AuditEvent,
   AuditFilters,
   AuditListResponse,
+  CanaryCompare,
+  CanaryRunDetail,
+  CanaryRunSummary,
+  CanarySetSummary,
   ComplianceOverview,
   Controls,
   DataRequest,
@@ -25,6 +29,7 @@ import {
   IncidentCreate,
   IncidentStatus,
   IntegrationsStatus,
+  MeasurementStatus,
   MetricsSummary,
   Policy,
   PolicyCreate,
@@ -33,6 +38,7 @@ import {
   PolicyValidationResponse,
   ProcessRequest,
   ProfileInfo,
+  QualityLatest,
   SampleTranscript,
   Severity,
   SystemStatus,
@@ -157,6 +163,35 @@ export class FirewallApiService {
     return this.http.post<VerifyResult>(this.url('/receipts/verify'), {}, {
       params: new HttpParams().set('tamper_demo', tamperDemo),
     });
+  }
+
+  // Measurements: leak canaries and dial quality
+  canarySet(): Observable<CanarySetSummary> {
+    return this.http.get<CanarySetSummary>(this.url('/canaries/set'));
+  }
+
+  canaryRuns(): Observable<CanaryRunSummary[]> {
+    return this.http.get<CanaryRunSummary[]>(this.url('/canaries/runs'));
+  }
+
+  canaryRun(runId: string): Observable<CanaryRunDetail> {
+    return this.http.get<CanaryRunDetail>(this.url(`/canaries/runs/${encodeURIComponent(runId)}`));
+  }
+
+  startCanaryRun(normalizeOn: boolean): Observable<{ run_id: string; status: MeasurementStatus }> {
+    return this.http.post<{ run_id: string; status: MeasurementStatus }>(this.url('/canaries/runs'), { normalize_on: normalizeOn });
+  }
+
+  compareCanaryRuns(a: string, b: string): Observable<CanaryCompare> {
+    return this.http.get<CanaryCompare>(this.url('/canaries/compare'), { params: new HttpParams().set('a', a).set('b', b) });
+  }
+
+  qualityLatest(): Observable<QualityLatest> {
+    return this.http.get<QualityLatest>(this.url('/quality/latest'));
+  }
+
+  startQualityRun(): Observable<{ run_id: string; status: MeasurementStatus }> {
+    return this.http.post<{ run_id: string; status: MeasurementStatus }>(this.url('/quality/runs'), {});
   }
 
   // Compliance & incident center

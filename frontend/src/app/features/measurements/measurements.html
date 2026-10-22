@@ -1,0 +1,286 @@
+<div class="page">
+  <header class="page-header">
+    <div class="page-header__text">
+      <h1>Measurements</h1>
+      <p>How well the firewall protects data, in measured numbers: planted canary identities, per-language accuracy and the quality cost of each dial position.</p>
+    </div>
+    <div class="toolbar">
+      <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
+        <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>Refresh
+      </button>
+    </div>
+  </header>
+
+  <div class="tabs tabs--page" role="tablist" aria-label="Measurement sections" (keydown)="onTabKey($event)">
+    @for (t of tabs; track t.id) {
+      <button type="button" role="tab" [id]="'mtab-' + t.id" [attr.aria-selected]="current() === t.id"
+              [attr.tabindex]="current() === t.id ? 0 : -1" aria-controls="measurement-panel" (click)="select(t.id)">
+        {{ t.label }}
+      </button>
+    }
+  </div>
+
+  <app-error-alert [error]="loadError()" title="Measurements could not be loaded" [retryable]="true" (retry)="load()" />
+
+  <div id="measurement-panel" class="stack panel" role="tabpanel" [attr.aria-labelledby]="'mtab-' + current()">
+    @switch (current()) {
+      @case ('canaries') {
+        <!-- Run control and canary set -->
+        <section class="card">
+          <div class="card-header">
+            <h2><svg class="icon" lucideIcon="target" aria-hidden="true"></svg>Leak canaries</h2>
+            @if (canarySet(); as s) { <span class="card-header__meta">Set {{ s.version }}</span> }
+          </div>
+          <div class="card-body stack">
+            <p class="text-sm">
+              Synthetic calls with planted fake identities run through the real pipeline (dial at maximum quality, so the cloud path is exercised).
+              Recall is what the detector caught; the leak rate is what actually arrived at the mock CloudLink receiver.
+            </p>
+            @if (canarySet(); as s) {
+              <div class="row wrap set-summary">
+                <span><strong>{{ s.calls }}</strong> calls</span>
+                <span><strong>{{ s.planted_values }}</strong> planted values</span>
+                @for (c of counts(s.by_language); track c[0]) { <span class="tag">{{ c[0] }} {{ c[1] }}</span> }
+                @for (c of counts(s.by_difficulty); track c[0]) { <span class="tag">{{ c[0] | humanize }} {{ c[1] }}</span> }
+              </div>
+            }
+            <div class="row wrap">
+              <label class="checkbox">
+                <input type="checkbox" [checked]="normalize()" (change)="normalize.set($any($event.target).checked)" [disabled]="running()" />
+                Normalize spoken numbers
+              </label>
+              <button type="button" class="btn btn-primary" (click)="run()" [disabled]="running() || loading()">
+                @if (running()) { <span class="spinner" aria-hidden="true"></span> }
+                <svg class="icon" lucideIcon="play" aria-hidden="true"></svg>Run canary batch
+              </button>
+            </div>
+            <app-error-alert [error]="startError()" title="The canary batch did not start" />
+            @if (active(); as a) {
+              @if (a.status === 'RUNNING') {
+                <div class="progress" role="progressbar" aria-label="Canary batch progress"
+                     [attr.aria-valuenow]="a.progress_done" aria-valuemin="0" [attr.aria-valuemax]="a.progress_total">
+                  <div class="progress__bar" [style.width.%]="progress(a)"></div>
+                </div>
+                <span class="text-xs muted">Running: {{ a.progress_done }} / {{ a.progress_total }} calls ({{ a.run_id }})</span>
+              } @else {
+                <div class="alert alert-error">
+                  <svg class="icon" lucideIcon="circle-x" aria-hidden="true"></svg>
+                  <span>Run {{ a.run_id }} failed: {{ a.error }}</span>
+                </div>
+              }
+            }
+          </div>
+        </section>
+
+        <!-- Headline numbers -->
+        <section class="grid grid-2" aria-label="Latest canary results">
+          <div class="card kpi">
+            <span class="kpi__label"><svg class="icon" lucideIcon="scan-search" aria-hidden="true"></svg>Detection recall</span>
+            @if (metrics(); as m) {
+              <span class="kpi__value">{{ pct(m.overall.recall) }}</span>
+              <span class="kpi__meta">{{ m.overall.detected }} of n={{ m.overall.n_planted }} planted values caught</span>
+            } @else {
+              <span class="kpi__value kpi__value--empty">Not measured yet</span>
+              <span class="kpi__meta">Run a canary batch to measure recall.</span>
+            }
+          </div>
+          <div class="card kpi">
+            <span class="kpi__label"><svg class="icon" lucideIcon="cloud" aria-hidden="true"></svg>Leak rate at the receiver</span>
+            @if (metrics(); as m) {
+              <span class="kpi__value">{{ pct(m.overall.leak_rate) }}</span>
+              <span class="kpi__meta">{{ m.overall.leaked }} of n={{ m.overall.n_planted }} reached the mock CloudLink receiver</span>
+            } @else {
+              <span class="kpi__value kpi__value--empty">Not measured yet</span>
+              <span class="kpi__meta">Measured from what the receiver logged, not from a claim.</span>
+            }
+          </div>
+        </section>
+
+        @if (detail(); as d) {
+          @if (d.metrics; as m) {
+            <dl class="kv kv--inline run-meta">
+              <dt>Run</dt><dd class="mono">{{ d.run_id }}</dd>
+              <dt>When</dt><dd>{{ d.created_at | date: 'MMM d, y, HH:mm:ss' }} ({{ d.duration_s }} s)</dd>
+              <dt>Rule version</dt><dd class="mono">{{ d.rule_version }}</dd>
+              <dt>Settings</dt>
+              <dd>Normalization {{ d.normalize_on ? 'on' : 'off' }}, dial {{ d.dial | humanize }}, kill switch {{ d.kill_switch_on ? 'on' : 'off' }}, low-confidence threshold {{ d.low_confidence_threshold }}</dd>
+              <dt>Machine</dt><dd>{{ d.machine }}</dd>
+              <dt>Routing</dt>
+              <dd>
+                {{ m.payloads_sent }} payloads sent ({{ m.received_lines }} logged by the receiver);
+                {{ m.low_confidence_holds }} kept local by the low-confidence rule (fail closed)
+                @for (r of counts(m.route_counts); track r[0]) { <span class="tag">{{ r[0] }} {{ r[1] }}</span> }
+              </dd>
+            </dl>
+
+            <div class="grid grid-2">
+              <section class="card">
+                <div class="card-header"><h2>By difficulty</h2></div>
+                <div class="card-body card-body--flush table-wrap">
+                  <table class="data-table">
+                    <thead><tr><th scope="col">Difficulty</th><th scope="col" class="num">n calls</th><th scope="col" class="num">n planted</th><th scope="col" class="num">Recall</th><th scope="col" class="num">Leak rate</th></tr></thead>
+                    <tbody>
+                      @for (b of m.by_difficulty; track b.key) {
+                        <tr><td>{{ b.key | humanize }}</td><td class="num">{{ b.n_calls }}</td><td class="num">{{ b.n_planted }}</td><td class="num">{{ pct(b.recall) }}</td><td class="num">{{ pct(b.leak_rate) }}</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+              <section class="card">
+                <div class="card-header"><h2>By language and script</h2></div>
+                <div class="card-body card-body--flush table-wrap">
+                  <table class="data-table">
+                    <thead><tr><th scope="col">Language</th><th scope="col">Script</th><th scope="col" class="num">n planted</th><th scope="col" class="num">Recall</th><th scope="col" class="num">Leak rate</th></tr></thead>
+                    <tbody>
+                      @for (b of languageRows(); track b.key) {
+                        <tr><td>{{ b.language }}</td><td>{{ b.script }}</td><td class="num">{{ b.n_planted }}</td><td class="num">{{ pct(b.recall) }}</td><td class="num">{{ pct(b.leak_rate) }}</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+
+            <section class="card">
+              <div class="card-header">
+                <h2><svg class="icon" lucideIcon="cloud-off" aria-hidden="true"></svg>Leaks at the receiver</h2>
+                <span class="card-header__meta">{{ d.leaks.length }} planted value(s)</span>
+              </div>
+              <div class="card-body card-body--flush table-wrap">
+                @if (d.leaks.length) {
+                  <table class="data-table">
+                    <thead><tr><th scope="col">Call</th><th scope="col">Type</th><th scope="col">Difficulty</th><th scope="col">Language</th><th scope="col">Payload field</th><th scope="col">Surface text (synthetic)</th></tr></thead>
+                    <tbody>
+                      @for (l of d.leaks; track l.call_id + l.type) {
+                        <tr><td class="mono">{{ l.call_id }}</td><td>{{ l.type }}</td><td>{{ l.difficulty | humanize }}</td><td>{{ l.language }}/{{ l.script }}</td><td class="mono text-xs">{{ l.field }}</td><td class="cell-wrap">{{ l.surface }}</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <div class="empty-state"><span class="empty-state__title">No planted value reached the receiver in this run</span></div>
+                }
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-header">
+                <h2><svg class="icon" lucideIcon="search" aria-hidden="true"></svg>Detection misses</h2>
+                <span class="card-header__meta">{{ d.misses.length }} planted value(s)</span>
+              </div>
+              <div class="card-body card-body--flush table-wrap">
+                @if (d.misses.length) {
+                  <table class="data-table">
+                    <thead><tr><th scope="col">Call</th><th scope="col">Type</th><th scope="col">Difficulty</th><th scope="col">Language</th><th scope="col">Surface text (synthetic)</th></tr></thead>
+                    <tbody>
+                      @for (miss of d.misses; track miss.call_id + miss.type) {
+                        <tr><td class="mono">{{ miss.call_id }}</td><td>{{ miss.type }}</td><td>{{ miss.difficulty | humanize }}</td><td>{{ miss.language }}/{{ miss.script }}</td><td class="cell-wrap">{{ miss.surface }}</td></tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else {
+                  <div class="empty-state"><span class="empty-state__title">Every planted value was detected</span></div>
+                }
+              </div>
+            </section>
+          }
+        }
+
+        <!-- Compare two runs -->
+        <section class="card">
+          <div class="card-header"><h2><svg class="icon" lucideIcon="git-compare" aria-hidden="true"></svg>Compare runs</h2></div>
+          <div class="card-body stack">
+            @if (completedRuns().length >= 2) {
+              <div class="row wrap compare-pick">
+                <label class="field">
+                  <span class="field__label">Run A (before)</span>
+                  <select class="select" [value]="compareA()" (change)="compareA.set($any($event.target).value)">
+                    @for (r of completedRuns(); track r.run_id) { <option [value]="r.run_id">{{ runLabel(r) }}</option> }
+                  </select>
+                </label>
+                <label class="field">
+                  <span class="field__label">Run B (after)</span>
+                  <select class="select" [value]="compareB()" (change)="compareB.set($any($event.target).value)">
+                    @for (r of completedRuns(); track r.run_id) { <option [value]="r.run_id">{{ runLabel(r) }}</option> }
+                  </select>
+                </label>
+                <button type="button" class="btn btn-secondary" (click)="compare()" [disabled]="comparing() || compareA() === compareB()">
+                  @if (comparing()) { <span class="spinner" aria-hidden="true"></span> }Compare
+                </button>
+              </div>
+              <app-error-alert [error]="compareError()" title="The runs could not be compared" />
+            } @else {
+              <p class="text-sm muted">Complete two runs (for example normalization off, then on) to compare them.</p>
+            }
+          </div>
+          @if (comparison(); as c) {
+            <div class="card-body card-body--flush table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Slice</th><th scope="col" class="num">n (A / B)</th>
+                    <th scope="col" class="num">Recall A</th><th scope="col" class="num">Recall B</th><th scope="col" class="num">Change</th>
+                    <th scope="col" class="num">Leak A</th><th scope="col" class="num">Leak B</th><th scope="col" class="num">Change</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of c.rows; track row.group + row.key) {
+                    <tr [class.row--group]="row.group === 'overall'">
+                      <td><span class="muted text-xs">{{ row.group }}</span> {{ bucketTitle(row.group, row.a ?? row.b, row.key) | humanize }}</td>
+                      <td class="num">{{ row.a?.n_planted ?? '-' }} / {{ row.b?.n_planted ?? '-' }}</td>
+                      <td class="num">{{ pct(row.a?.recall) }}</td>
+                      <td class="num">{{ pct(row.b?.recall) }}</td>
+                      <td class="num delta" [attr.data-trend]="trend(row.recall_delta, true)">{{ delta(row.recall_delta) }}</td>
+                      <td class="num">{{ pct(row.a?.leak_rate) }}</td>
+                      <td class="num">{{ pct(row.b?.leak_rate) }}</td>
+                      <td class="num delta" [attr.data-trend]="trend(row.leak_rate_delta, false)">{{ delta(row.leak_rate_delta) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+      }
+
+      @case ('languages') {
+        <section class="card">
+          <div class="card-header">
+            <h2><svg class="icon" lucideIcon="languages" aria-hidden="true"></svg>Detection by language</h2>
+            @if (detail(); as d) { <span class="card-header__meta mono">{{ d.run_id }} · {{ d.rule_version }}</span> }
+          </div>
+          <div class="card-body stack">
+            <div class="alert alert-info">
+              <svg class="icon" lucideIcon="info" aria-hidden="true"></svg>
+              <span>Measured on our synthetic set; these numbers are not a general benchmark.</span>
+            </div>
+          </div>
+          <div class="card-body card-body--flush table-wrap">
+            @if (languageRows().length) {
+              <table class="data-table">
+                <thead>
+                  <tr><th scope="col">Language</th><th scope="col">Script</th><th scope="col" class="num">n calls</th><th scope="col" class="num">n planted values</th><th scope="col" class="num">Recall</th><th scope="col" class="num">Leak rate</th></tr>
+                </thead>
+                <tbody>
+                  @for (b of languageRows(); track b.key) {
+                    <tr><td>{{ b.language }}</td><td>{{ b.script }}</td><td class="num">{{ b.n_calls }}</td><td class="num">{{ b.n_planted }}</td><td class="num">{{ pct(b.recall) }}</td><td class="num">{{ pct(b.leak_rate) }}</td></tr>
+                  }
+                </tbody>
+              </table>
+            } @else if (!loading()) {
+              <div class="empty-state">
+                <svg class="icon" lucideIcon="languages" aria-hidden="true"></svg>
+                <span class="empty-state__title">Not measured yet</span>
+                <span>Run a canary batch on the Leak canaries tab; this table uses the latest completed run.</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      @case ('quality') {
+        <app-dial-quality />
+      }
+    }
+  </div>
+</div>

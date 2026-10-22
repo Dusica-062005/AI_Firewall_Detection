@@ -1,0 +1,70 @@
+.tabs--page {
+  padding: 0;
+}
+
+.panel {
+  gap: var(--s-4);
+}
+
+.wrap {
+  flex-wrap: wrap;
+}
+
+.set-summary {
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+}
+
+.kpi__value--empty {
+  font-size: var(--fs-lg);
+  color: var(--c-text-2);
+}
+
+.run-meta {
+  padding: var(--s-3) var(--s-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  font-size: var(--fs-sm);
+}
+
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--c-neutral-bg);
+  overflow: hidden;
+}
+
+.progress__bar {
+  height: 100%;
+  background: var(--c-blue);
+  transition: width 0.3s ease;
+}
+
+.compare-pick {
+  align-items: flex-end;
+
+  .field {
+    min-width: 260px;
+  }
+}
+
+.delta[data-trend='better'] {
+  color: var(--c-success);
+  font-weight: 600;
+}
+
+.delta[data-trend='worse'] {
+  color: var(--c-error);
+  font-weight: 600;
+}
+
+.row--group td {
+  font-weight: 600;
+  background: var(--c-surface-muted);
+}
+
+.cell-wrap {
+  white-space: normal;
+  max-width: 320px;
+}

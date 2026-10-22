@@ -1,8 +1,17 @@
 import { DatePipe, JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 
-import { ApiError, DialPosition, Receipt, ReceiptListResponse, VerifyResult } from '../../core/models/api.models';
+import {
+  ApiError,
+  DialPosition,
+  QualityPositionScore,
+  QualityRun,
+  Receipt,
+  ReceiptListResponse,
+  VerifyResult,
+} from '../../core/models/api.models';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { SystemStatusService } from '../../core/services/system-status.service';
@@ -15,7 +24,7 @@ const PAGE_SIZE = 25;
 /** Trust layer: kill switch (Feature 3), privacy-utility dial (Feature 4) and signed receipts (Feature 2). */
 @Component({
   selector: 'app-trust',
-  imports: [DatePipe, JsonPipe, LucideDynamicIcon, StatusBadge, ErrorAlert, HumanizePipe],
+  imports: [DatePipe, JsonPipe, RouterLink, LucideDynamicIcon, StatusBadge, ErrorAlert, HumanizePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './trust.html',
   styleUrl: './trust.scss',
@@ -44,9 +53,20 @@ export class Trust implements OnInit {
   protected readonly verifyResult = signal<VerifyResult | null>(null);
   protected readonly verifyError = signal<ApiError | null>(null);
 
+  /** Latest completed dial quality measurement (Feature 4); null means not measured yet. */
+  protected readonly quality = signal<QualityRun | null>(null);
+
   ngOnInit(): void {
     this.status.refresh();
     this.loadReceipts();
+    this.api.qualityLatest().subscribe({
+      next: (latest) => this.quality.set(latest.completed),
+      error: () => this.quality.set(null),
+    });
+  }
+
+  protected qualityFor(position: DialPosition): QualityPositionScore | null {
+    return this.quality()?.positions.find((p) => p.position === position) ?? null;
   }
 
   protected loadReceipts(): void {

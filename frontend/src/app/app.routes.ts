@@ -39,6 +39,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/trust/trust').then((m) => m.Trust),
       },
       {
+        path: 'measurements',
+        title: 'Measurements - AI Data Firewall',
+        data: { title: 'Measurements' },
+        loadComponent: () => import('./features/measurements/measurements').then((m) => m.Measurements),
+      },
+      {
         path: 'compliance',
         title: 'Compliance Center - AI Data Firewall',
         data: { title: 'Compliance & Incident Center' },
