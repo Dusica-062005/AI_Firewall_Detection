@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -59,6 +60,7 @@ class OllamaStub:
     prompts: list[str] = field(default_factory=list)
     embed_missing: bool = False  # the embedding model is not pulled
     embedded: list[str] = field(default_factory=list)
+    delay_s: float = 0.0  # simulated generation time, for benchmark tests
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         if self.mode == "down":
@@ -74,9 +76,13 @@ class OllamaStub:
             texts = json.loads(request.content)["input"]
             self.embedded.extend(texts)
             return httpx.Response(200, json={"embeddings": [fixed_embedding(t) for t in texts]})
+        if request.url.path == "/api/version":
+            return httpx.Response(200, json={"version": "0.0.0-stub"})
         if request.url.path == "/api/generate":
             prompt = json.loads(request.content)["prompt"]
             self.prompts.append(prompt)
+            if self.delay_s:
+                time.sleep(self.delay_s)
             if self.mode == "timeout":
                 raise httpx.ReadTimeout("timed out", request=request)
             if self.mode == "missing":

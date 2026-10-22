@@ -15,6 +15,7 @@ from app.api.middleware import RequestContextMiddleware, configure_logging
 from app.api.routes import (
     audio,
     audit,
+    benchmarks,
     canaries,
     compliance,
     health,
@@ -62,7 +63,7 @@ def create_app(settings: Settings | None = None, container: Container | None = N
         expose_headers=["X-Request-ID"],
         allow_credentials=False,
     )
-    for module in (health, system, inspect, process, policies, audit, metrics, compliance, trust, canaries, quality, audio):
+    for module in (health, system, inspect, process, policies, audit, metrics, compliance, trust, canaries, quality, audio, benchmarks):
         app.include_router(module.router, prefix="/api")
     return app
 

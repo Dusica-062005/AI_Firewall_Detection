@@ -11,6 +11,7 @@ from app.ai.ollama_client import OllamaClient
 from app.ai.summarizer import Summarizer
 from app.audio.transcriber import Transcriber
 from app.audit.service import AuditService
+from app.benchmark.runner import BenchmarkRunner
 from app.canaries.runner import CanaryRunner, rule_version
 from app.compliance.data_requests import DataRequestService
 from app.compliance.incidents import IncidentService
@@ -60,6 +61,7 @@ class Container:
     canaries: CanaryRunner
     quality: QualityService
     transcriber: Transcriber
+    benchmarks: BenchmarkRunner | None = None
 
 
 def build_analyzer(settings: Settings) -> SensitiveDataAnalyzer:
@@ -160,7 +162,7 @@ def build_container(
         timeout_seconds=max(settings.ollama_timeout_seconds, settings.mock_cloud_timeout_seconds),
         ollama_transport=ollama_transport,
     )
-    return Container(
+    container = Container(
         settings=settings,
         engine=engine,
         analyzer=analyzer,
@@ -186,6 +188,22 @@ def build_container(
             settings.whisper_model, settings.whisper_device, settings.whisper_compute_type, settings.max_audio_seconds
         ),
     )
+    container.benchmarks = BenchmarkRunner(
+        sessions=sessions,
+        processing=processing,
+        controls=controls,
+        transcriber_source=lambda: container.transcriber,  # read at call time, so tests can swap it
+        models={
+            "local": settings.ollama_model,
+            "cloud_stand_in": settings.mock_cloud_model or None,
+            "whisper": f"{settings.whisper_model} ({settings.whisper_device}, {settings.whisper_compute_type})",
+        },
+        ollama_base_url=settings.ollama_base_url,
+        live_budget_s=settings.live_assist_budget_s,
+        audio_dir=settings.benchmark_audio_dir,
+        ollama_transport=ollama_transport,
+    )
+    return container
 
 
 def _publish_public_key(settings: Settings, receipts: ReceiptService) -> None:

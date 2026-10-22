@@ -68,6 +68,12 @@ class Settings(BaseSettings):
     max_audio_bytes: int = Field(default=25 * 1024 * 1024, ge=1024, le=200 * 1024 * 1024)
     audio_temp_dir: Path | None = None  # None: the system temp folder; files are deleted after use
 
+    # Latency benchmark (NFR-2) and sizing (Feature 7). "Real-time capable" means the warm p95 total
+    # at concurrency 1 fits LIVE_ASSIST_BUDGET_S; otherwise the honest claim is post-call wrap-up.
+    live_assist_budget_s: float = Field(default=5.0, gt=0, le=600)
+    post_call_budget_s: float = Field(default=60.0, gt=0, le=3600)
+    benchmark_audio_dir: Path = BACKEND_ROOT / "tests" / "fixtures" / "audio"
+
     # Dial quality score (Feature 4): Ollama embedding model, and the model that summarizes the
     # RAW synthetic samples as the reference. Empty -> MOCK_CLOUD_MODEL if set, else OLLAMA_MODEL.
     quality_embed_model: str = "nomic-embed-text"

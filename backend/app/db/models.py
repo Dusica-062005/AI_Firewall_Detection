@@ -172,6 +172,29 @@ class QualityRunRecord(Base):
     samples: Mapped[list] = mapped_column(JSON, default=list)  # per sample and position
 
 
+class BenchmarkRunRecord(Base):
+    """One latency benchmark (NFR-2, NFR-3): per-stage timings and throughput per concurrency level."""
+
+    __tablename__ = "benchmark_runs"
+
+    run_id: Mapped[str] = mapped_column(String(48), primary_key=True)
+    status: Mapped[str] = mapped_column(String(12), index=True)  # RUNNING | COMPLETED | FAILED
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    config: Mapped[dict] = mapped_column(JSON)  # calls_per_level, concurrency, include_transcription, dial, samples
+    machine: Mapped[dict] = mapped_column(JSON)  # platform, cpu, cores, ram, gpu (only what was detected)
+    models: Mapped[dict] = mapped_column(JSON)  # local, cloud stand-in, whisper, Ollama version
+    cold: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # the first call, excluded from stats
+    levels: Mapped[list] = mapped_column(JSON, default=list)  # per concurrency: stage stats, throughput
+    budget_s: Mapped[float] = mapped_column(Float)
+    verdict: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    verdict_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    duration_s: Mapped[float | None] = mapped_column(Float, nullable=True)
+    progress_done: Mapped[int] = mapped_column(Integer, default=0)
+    progress_total: Mapped[int] = mapped_column(Integer)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
 class QualityReferenceRecord(Base):
     """Cached reference summaries of the raw synthetic samples, keyed by sha256(model + prompt + text)."""
 
