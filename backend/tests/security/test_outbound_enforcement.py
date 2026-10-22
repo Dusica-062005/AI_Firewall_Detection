@@ -96,7 +96,7 @@ def test_policy_store_failure_prevents_outbound(harness, monkeypatch):
 
 
 def test_detection_failure_prevents_outbound(harness, monkeypatch):
-    def boom(_text):
+    def boom(_text, **_options):
         raise DetectionError("forced")
 
     monkeypatch.setattr(harness.container.analyzer, "analyze", boom)

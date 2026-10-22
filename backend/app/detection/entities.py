@@ -14,6 +14,7 @@ class DetectedEntity:
     value: str
     recognizer: str
     low_confidence: bool = False
+    normalized: bool = False  # found in the spoken-number normalized text (FR-15)
 
     @property
     def length(self) -> int:

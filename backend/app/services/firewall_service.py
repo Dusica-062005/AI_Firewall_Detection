@@ -72,12 +72,14 @@ class FirewallService:
         self.validator = validator
         self._policy_source = policy_source
 
-    def protect(self, text: str, profile: str, channel: str, dial: str = "max_quality") -> ProtectionOutcome:
+    def protect(
+        self, text: str, profile: str, channel: str, dial: str = "max_quality", normalize: bool = False
+    ) -> ProtectionOutcome:
         outcome = ProtectionOutcome(dial=dial)
 
         started = time.perf_counter()
         try:
-            outcome.entities = self.analyzer.analyze(text)
+            outcome.entities = self.analyzer.analyze(text, normalize=normalize)
         except DetectionError:
             outcome.detection_ms = _ms(started)
             outcome.failure = Failure("DETECTION_FAILURE", "analyzed", "Sensitive-data detection could not be completed.")

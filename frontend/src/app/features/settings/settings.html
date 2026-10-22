@@ -179,6 +179,8 @@
           <dt>Score threshold</dt><dd>{{ c.detection.score_threshold }} (lower scores are ignored)</dd>
           <dt>Low-confidence flag</dt><dd>Below {{ c.detection.low_confidence_threshold }}, still protected</dd>
           <dt>Values shown in Inspector</dt><dd>{{ c.detection.expose_detected_values ? 'Yes, synthetic demo only; never stored' : 'No' }}</dd>
+          <dt>Spoken-number normalization</dt>
+          <dd>{{ c.detection.normalize_numbers ? 'On: spoken and split identifiers ("P four eight two") are detected' : 'Off' }}</dd>
         </dl>
         <div class="alert alert-info">
           <svg class="icon" lucideIcon="info" aria-hidden="true"></svg>

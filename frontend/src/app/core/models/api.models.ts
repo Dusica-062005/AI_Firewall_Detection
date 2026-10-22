@@ -359,6 +359,7 @@ export interface AppConfig {
     low_confidence_threshold: number;
     expose_detected_values: boolean;
     unmatched_entity_action: string;
+    normalize_numbers: boolean;
   };
   recognizers: RecognizerInfo[];
   policy: {

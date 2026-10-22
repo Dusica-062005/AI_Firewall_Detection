@@ -105,13 +105,16 @@ class ProcessingService:
         operation: str,
         dial: str | None = None,
         run_models: bool = True,
+        normalize: bool | None = None,
     ) -> FirewallResult:
         """Process one call.
 
         ``dial`` overrides the operator dial for this request only (used by measurement runs).
         ``run_models=False`` skips both summaries while keeping routing, the real outbound
         handoff and the receipt (used by leak-canary batches, where only the payload matters).
+        ``normalize`` overrides the spoken-number normalizer setting for this request only.
         """
+        normalize_on = self.normalize_on if normalize is None else normalize
         total_started = time.perf_counter()
         warnings: list[tuple[str, str]] = []
         steps: list[ProcessingStep] = [
@@ -125,7 +128,9 @@ class ProcessingService:
 
         controls = await run_in_threadpool(self.controls.get)
         dial = dial or controls.dial
-        outcome: ProtectionOutcome = await run_in_threadpool(self.firewall.protect, transcript, profile, channel, dial)
+        outcome: ProtectionOutcome = await run_in_threadpool(
+            self.firewall.protect, transcript, profile, channel, dial, normalize_on
+        )
         decision = outcome.decision
         failure = outcome.failure
         label = outcome.label
@@ -338,7 +343,7 @@ class ProcessingService:
         receipt_ref: ReceiptRef | None = None
         try:
             facts = self._receipt_facts(request_id, event_id, operation, label, decision, outcome, route,
-                                        summary, cloud_model, outbound, controls.kill_switch, dial)
+                                        summary, cloud_model, outbound, controls.kill_switch, dial, normalize_on)
             record = await run_in_threadpool(self.receipts.append, facts)
             receipt_ref = ReceiptRef(receipt_id=record.receipt_id, seq=record.seq, hash=record.hash, signed=record.signature is not None)
             audit_detail += f" Receipt #{record.seq} {'signed' if record.signature else 'UNSIGNED'} and chained."
@@ -458,7 +463,7 @@ class ProcessingService:
 
     def _receipt_facts(
         self, request_id, event_id, operation, label, decision, outcome: ProtectionOutcome, route: RouteDecision,
-        summary: SummaryInfo, cloud_model, outbound: OutboundInfo, kill_switch: bool, dial: str,
+        summary: SummaryInfo, cloud_model, outbound: OutboundInfo, kill_switch: bool, dial: str, normalize_on: bool,
     ) -> ReceiptFacts:
         sent_texts = [t for t in ((outbound.payload or {}).get(k) for k in ("sanitized_transcript", "sanitized_summary")) if t]
         protected_ids = {id(e) for e in outcome.protected_entities}
@@ -484,7 +489,7 @@ class ProcessingService:
             allowed_categories_sent=allowed_sent,
             kill_switch=kill_switch,
             dial=dial,
-            normalize_on=self.normalize_on,
+            normalize_on=normalize_on,
         )
 
     def _entity_results(self, outcome: ProtectionOutcome) -> list[EntityResult]:

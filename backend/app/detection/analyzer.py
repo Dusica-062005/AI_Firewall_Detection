@@ -9,6 +9,7 @@ import time
 import regex
 
 from app.detection.entities import DetectedEntity
+from app.detection.normalizer import map_span, normalize_numbers
 from app.detection.recognizers import ContextualPatternRecognizer, DetectionConfig
 
 logger = logging.getLogger(__name__)
@@ -95,19 +96,27 @@ class SensitiveDataAnalyzer:
                 )
                 logger.error("detection engine failed to load", extra={"error_type": type(exc).__name__})
 
-    def analyze(self, text: str, resolve_overlaps: bool = True) -> list[DetectedEntity]:
+    def analyze(self, text: str, resolve_overlaps: bool = True, normalize: bool = False) -> list[DetectedEntity]:
         """Detect entities in ``text``. Raises DetectionError on any failure.
 
         ``resolve_overlaps=False`` returns every raw detection; outbound checks use it so an
         overlap decision can never hide a restricted value.
+
+        ``normalize=True`` runs detection on the spoken-number normalized text ("P four eight
+        two" -> "P482") and maps every span back, so values always come from the ORIGINAL text.
         """
         if self._engine is None:
             raise DetectionError("Detection engine is not available.")
         try:
+            norm = normalize_numbers(text) if normalize else None
+        except Exception as exc:  # noqa: BLE001 - fail closed: no detection result, no processing
+            raise DetectionError("Spoken-number normalization failed.") from exc
+        target = norm.text if norm is not None and norm.changed else text
+        try:
             presidio_entities = list(self.config.presidio_entities)
             custom_entities = sorted({r.entity for r in self.config.custom_recognizers})
             results = self._engine.analyze(
-                text=text,
+                text=target,
                 language="en",
                 entities=presidio_entities + custom_entities,
                 score_threshold=self.score_threshold,
@@ -121,17 +130,19 @@ class SensitiveDataAnalyzer:
             if category not in self.config.categories:
                 continue
             recognizer = (r.recognition_metadata or {}).get("recognizer_name", "presidio")
-            if category == "DATE_TIME" and recognizer == "SpacyRecognizer" and not _CONCRETE_DATE.search(text[r.start : r.end]):
+            if category == "DATE_TIME" and recognizer == "SpacyRecognizer" and not _CONCRETE_DATE.search(target[r.start : r.end]):
                 continue
+            start, end = (r.start, r.end) if target is text else map_span(norm, r.start, r.end)
             mapped.append(
                 DetectedEntity(
                     entity_type=category,
-                    start=r.start,
-                    end=r.end,
+                    start=start,
+                    end=end,
                     score=round(float(r.score), 3),
-                    value=text[r.start : r.end],
+                    value=text[start:end],
                     recognizer=recognizer,
                     low_confidence=float(r.score) < self.low_confidence_threshold,
+                    normalized=target is not text and text[start:end] != target[r.start : r.end],
                 )
             )
         if not resolve_overlaps:

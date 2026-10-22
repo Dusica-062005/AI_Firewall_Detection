@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     detection_low_confidence_threshold: float = Field(default=0.6, ge=0.0, le=1.0)
     expose_detected_values: bool = True
     unmatched_entity_action: Literal["LOCAL_ONLY", "BLOCK"] = "LOCAL_ONLY"
+    # Detect spoken and split identifiers ("P four eight two", "P48. ... 2913") (FR-15).
+    normalize_numbers: bool = True
 
     policy_seed_file: Path = APP_ROOT / "policies" / "default.yaml"
     detection_config_file: Path = APP_ROOT / "policies" / "detection.yaml"

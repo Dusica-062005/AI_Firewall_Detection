@@ -64,6 +64,7 @@ def app_config(container: Container = Depends(get_container)) -> AppConfig:
             "low_confidence_threshold": s.detection_low_confidence_threshold,
             "expose_detected_values": s.expose_detected_values,
             "unmatched_entity_action": s.unmatched_entity_action,
+            "normalize_numbers": s.normalize_numbers,
         },
         recognizers=[RecognizerInfo(**r) for r in container.analyzer.describe()],
         policy={

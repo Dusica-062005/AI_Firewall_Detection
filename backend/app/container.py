@@ -129,6 +129,7 @@ def build_container(
         vault=vault,
         receipts=receipts,
         low_confidence_stays_local=settings.route_low_confidence_local,
+        normalize_on=settings.normalize_numbers,
     )
     return Container(
         settings=settings,
