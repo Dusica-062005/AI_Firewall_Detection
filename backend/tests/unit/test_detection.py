@@ -143,6 +143,13 @@ def test_partial_denylist_match_never_shortens_a_name(analyzer):
     assert [p.value for p in people] == ["Priya Kapadia"]
 
 
+def test_name_denylist_never_splits_an_email_address(analyzer):
+    # A custom PERSON match on "kavya" would win the overlap and leave the rest of the email in
+    # clear text. Found by the leak-canary tests.
+    entities = analyzer.analyze("Send the report to kavya.iyer42@example.org please.")
+    assert [(e.entity_type, e.value) for e in entities] == [("EMAIL_ADDRESS", "kavya.iyer42@example.org")]
+
+
 def test_introduction_needs_a_capitalised_name(analyzer):
     assert not by_type(analyzer.analyze("Main bol rahi hoon, this is about my report."), "PERSON")
     assert not by_type(analyzer.analyze("This is Thursday, not Friday."), "PERSON")

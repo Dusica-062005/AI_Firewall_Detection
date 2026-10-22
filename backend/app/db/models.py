@@ -123,6 +123,31 @@ class ReceiptRecord(Base):
     key_id: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
 
+class CanaryRunRecord(Base):
+    """One leak-canary batch (Feature 5). Canary data is synthetic, so misses may hold surface text."""
+
+    __tablename__ = "canary_runs"
+
+    run_id: Mapped[str] = mapped_column(String(48), primary_key=True)
+    status: Mapped[str] = mapped_column(String(12), index=True)  # RUNNING | COMPLETED | FAILED
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    canary_set_version: Mapped[str] = mapped_column(String(40))
+    rule_version: Mapped[str] = mapped_column(String(64))
+    normalize_on: Mapped[bool] = mapped_column(Boolean)
+    low_confidence_threshold: Mapped[float] = mapped_column(Float)
+    dial: Mapped[str] = mapped_column(String(16))
+    kill_switch_on: Mapped[bool] = mapped_column(Boolean)
+    machine: Mapped[str] = mapped_column(String(200))
+    duration_s: Mapped[float | None] = mapped_column(Float, nullable=True)
+    progress_done: Mapped[int] = mapped_column(Integer, default=0)
+    progress_total: Mapped[int] = mapped_column(Integer)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    misses: Mapped[list] = mapped_column(JSON, default=list)
+    leaks: Mapped[list] = mapped_column(JSON, default=list)
+
+
 class AuditEventRecord(Base):
     __tablename__ = "audit_events"
 

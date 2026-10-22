@@ -10,6 +10,7 @@ from sqlalchemy import Engine
 from app.ai.ollama_client import OllamaClient
 from app.ai.summarizer import Summarizer
 from app.audit.service import AuditService
+from app.canaries.runner import CanaryRunner, rule_version
 from app.compliance.data_requests import DataRequestService
 from app.compliance.incidents import IncidentService
 from app.compliance.service import ComplianceService
@@ -54,6 +55,7 @@ class Container:
     controls: ControlsService
     vault: TokenVault
     receipts: ReceiptService
+    canaries: CanaryRunner
 
 
 def build_analyzer(settings: Settings) -> SensitiveDataAnalyzer:
@@ -131,6 +133,15 @@ def build_container(
         low_confidence_stays_local=settings.route_low_confidence_local,
         normalize_on=settings.normalize_numbers,
     )
+    canaries = CanaryRunner(
+        sessions=sessions,
+        processing=processing,
+        controls=controls,
+        received_log_file=settings.received_log_file,
+        low_confidence_threshold=settings.detection_low_confidence_threshold,
+        default_normalize=settings.normalize_numbers,
+        rule_version_source=lambda: rule_version(settings.detection_config_file, policy_service.version()),
+    )
     return Container(
         settings=settings,
         engine=engine,
@@ -150,6 +161,7 @@ def build_container(
         controls=controls,
         vault=vault,
         receipts=receipts,
+        canaries=canaries,
     )
 
 
