@@ -195,6 +195,29 @@ class BenchmarkRunRecord(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
+class BreachReportRecord(Base):
+    """A DRAFT breach report (Feature 8) built from stored receipts, canary runs and incidents.
+
+    Holds categories, counts and IDs only. ``query`` is what selected the records, so every count
+    can be recomputed and checked later. Nothing is ever sent or filed.
+    """
+
+    __tablename__ = "breach_reports"
+
+    report_id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    status: Mapped[str] = mapped_column(String(12), index=True)  # DRAFT | REVIEWED | WITHDRAWN
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    source_type: Mapped[str] = mapped_column(String(16))  # canary_run | incident | window
+    source_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    query: Mapped[dict] = mapped_column(JSON)
+    content: Mapped[dict] = mapped_column(JSON)
+    incident_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    reviewer: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
 class QualityReferenceRecord(Base):
     """Cached reference summaries of the raw synthetic samples, keyed by sha256(model + prompt + text)."""
 

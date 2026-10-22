@@ -13,6 +13,7 @@ from app.audio.transcriber import Transcriber
 from app.audit.service import AuditService
 from app.benchmark.runner import BenchmarkRunner
 from app.canaries.runner import CanaryRunner, rule_version
+from app.compliance.breach_reports import BreachReportService
 from app.compliance.data_requests import DataRequestService
 from app.compliance.incidents import IncidentService
 from app.compliance.service import ComplianceService
@@ -62,6 +63,7 @@ class Container:
     quality: QualityService
     transcriber: Transcriber
     benchmarks: BenchmarkRunner | None = None
+    breach_reports: BreachReportService | None = None
 
 
 def build_analyzer(settings: Settings) -> SensitiveDataAnalyzer:
@@ -203,6 +205,7 @@ def build_container(
         audio_dir=settings.benchmark_audio_dir,
         ollama_transport=ollama_transport,
     )
+    container.breach_reports = BreachReportService(sessions, receipts, incidents)
     return container
 
 
