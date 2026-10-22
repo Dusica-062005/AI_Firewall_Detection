@@ -109,6 +109,51 @@ def test_scan_ignores_placeholders(analyzer):
     assert analyzer.scan("PERSON_1 called about PATIENT_ID_1.") == []
 
 
+def hinglish_sample() -> str:
+    from app.samples import SAMPLES
+
+    return next(s for s in SAMPLES if s.id == "hinglish-triage").transcript
+
+
+def test_hinglish_function_words_are_not_names(analyzer):
+    for normalize in (False, True):
+        entities = analyzer.analyze(hinglish_sample(), normalize=normalize)
+        assert [e.value for e in by_type(entities, "PERSON")] == ["Priya Sharma"]
+
+
+def test_hinglish_sample_keeps_every_other_identifier(analyzer):
+    entities = analyzer.analyze(hinglish_sample(), normalize=True)
+    found = {(e.entity_type, e.value) for e in entities}
+    assert {
+        ("DATE_OF_BIRTH", "14/03/1986"),
+        ("PATIENT_ID", "P9048213"),
+        ("PHONE_NUMBER", "+91 98450 12345"),
+        ("HEALTH_TERM", "diabetes"),
+    } <= found
+
+
+def test_stopwords_are_trimmed_from_name_edges(analyzer):
+    people = by_type(analyzer.analyze("main bol raha hoon, mera naam Arjun Mehta hai"), "PERSON")
+    assert [p.value for p in people] == ["Arjun Mehta"]
+
+
+def test_partial_denylist_match_never_shortens_a_name(analyzer):
+    # The deny-list knows "Priya"; the whole name must still be protected (fail closed).
+    people = by_type(analyzer.analyze("Hello, main Priya Kapadia bol rahi hoon."), "PERSON")
+    assert [p.value for p in people] == ["Priya Kapadia"]
+
+
+def test_introduction_needs_a_capitalised_name(analyzer):
+    assert not by_type(analyzer.analyze("Main bol rahi hoon, this is about my report."), "PERSON")
+    assert not by_type(analyzer.analyze("This is Thursday, not Friday."), "PERSON")
+
+
+def test_custom_person_spans_are_never_stopword_filtered(analyzer):
+    # "Main" is a stop word, but the introduction recognizer's span is the name itself.
+    people = by_type(analyzer.analyze("Main Kavya Iyer, mujhe report chahiye."), "PERSON")
+    assert [p.value for p in people] == ["Kavya Iyer"]
+
+
 def test_unloaded_analyzer_raises(analyzer):
     import pytest
 

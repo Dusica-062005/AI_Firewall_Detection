@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from dataclasses import replace
 
 import regex
 
@@ -19,6 +20,7 @@ PLACEHOLDER_PATTERN = regex.compile(
     r"\[[A-Z][A-Z0-9_]{1,39}\]|(?<![A-Za-z0-9_])[A-Z][A-Z_]{1,30}_\d{1,4}(?![A-Za-z0-9_])"
 )
 REPEAT_RECOGNIZER = "firewall-repeated-value"
+_WORDS = regex.compile(r"\w+")
 # spaCy labels words such as "hours" or "today" as DATE/TIME. Keep a statistical date only
 # when it contains a digit or a weekday or month name.
 _CONCRETE_DATE = regex.compile(
@@ -51,6 +53,7 @@ class SensitiveDataAnalyzer:
         self.status = "NOT_LOADED"
         self.message = "Detection engine has not been loaded."
         self.load_seconds: float | None = None
+        self._stopwords = frozenset(w.lower() for w in config.person_stopwords)
 
     @property
     def ready(self) -> bool:
@@ -132,7 +135,15 @@ class SensitiveDataAnalyzer:
             recognizer = (r.recognition_metadata or {}).get("recognizer_name", "presidio")
             if category == "DATE_TIME" and recognizer == "SpacyRecognizer" and not _CONCRETE_DATE.search(target[r.start : r.end]):
                 continue
-            start, end = (r.start, r.end) if target is text else map_span(norm, r.start, r.end)
+            r_start, r_end = r.start, r.end
+            if category == "PERSON" and recognizer == "SpacyRecognizer":
+                # "hai aur", "chahiye" are Hinglish function words, not names; "mera naam Arjun
+                # Mehta" keeps only "Arjun Mehta".
+                trimmed = self._trim_stopwords(target, r_start, r_end)
+                if trimmed is None:
+                    continue
+                r_start, r_end = trimmed
+            start, end = (r_start, r_end) if target is text else map_span(norm, r_start, r_end)
             mapped.append(
                 DetectedEntity(
                     entity_type=category,
@@ -142,13 +153,44 @@ class SensitiveDataAnalyzer:
                     value=text[start:end],
                     recognizer=recognizer,
                     low_confidence=float(r.score) < self.low_confidence_threshold,
-                    normalized=target is not text and text[start:end] != target[r.start : r.end],
+                    normalized=target is not text and text[start:end] != target[r_start:r_end],
                 )
             )
         if not resolve_overlaps:
             return sorted(mapped, key=lambda e: (e.start, e.end))
-        resolved = self._resolve_overlaps(mapped)
+        resolved = self._resolve_overlaps(self._merge_same_category(text, mapped))
         return self._propagate_repeated_values(text, resolved)
+
+    def _trim_stopwords(self, text: str, start: int, end: int) -> tuple[int, int] | None:
+        """Strip stop words from both ends of a span; None when nothing else is left."""
+        words = [m for m in _WORDS.finditer(text, start, end) if m.group().lower() not in self._stopwords]
+        if not words:
+            return None
+        return words[0].start(), words[-1].end()
+
+    def _merge_same_category(self, text: str, entities: list[DetectedEntity]) -> list[DetectedEntity]:
+        """Merge overlapping spans of the same category into their union.
+
+        Custom recognizers win overlaps, so without this a short custom match ("Priya") could
+        knock out a longer statistical one ("Priya Kapadia") and leave part of the name in clear
+        text. The union always covers at least as much as either span (fail closed). The merged
+        entity keeps the preferred span's recognizer, score and flags.
+        """
+        custom = self._custom_names
+        result: list[DetectedEntity] = []
+        for category in sorted({e.entity_type for e in entities}):
+            group = sorted((e for e in entities if e.entity_type == category), key=lambda e: (e.start, e.end))
+            cluster: list[DetectedEntity] = []
+            for entity in group + [None]:
+                if entity is not None and cluster and entity.start < max(c.end for c in cluster):
+                    cluster.append(entity)
+                    continue
+                if cluster:
+                    best = min(cluster, key=lambda e: (0 if e.recognizer in custom else 1, -e.score, -e.length))
+                    start, end = min(c.start for c in cluster), max(c.end for c in cluster)
+                    result.append(best if (best.start, best.end) == (start, end) else replace(best, start=start, end=end, value=text[start:end]))
+                cluster = [entity] if entity is not None else []
+        return result
 
     def scan(self, text: str, resolve_overlaps: bool = True) -> list[DetectedEntity]:
         """Detect entities while ignoring firewall tokens such as [PERSON_1]."""

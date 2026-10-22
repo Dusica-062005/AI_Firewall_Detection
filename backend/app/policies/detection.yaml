@@ -7,8 +7,8 @@
 
 categories:
   PERSON:
-    description: Personal names detected by the spaCy named-entity model.
-    limitations: Statistical model. Misses uncommon or lowercase names and can mislabel organisations or places.
+    description: Personal names from the spaCy named-entity model, a deny-list of common Indian names and self-introductions ("main ...", "my name is ...").
+    limitations: Statistical model plus a fixed list. Misses uncommon or lowercase names and names in native scripts, and can mislabel organisations or places.
   PHONE_NUMBER:
     description: Phone numbers validated with the phonenumbers library.
     limitations: Base confidence is low (0.4) unless context words such as "call" or "phone" are nearby.
@@ -50,6 +50,12 @@ presidio_entities:
   IBAN_CODE: ACCOUNT_NUMBER
   US_SSN: GOVERNMENT_ID
   DATE_TIME: DATE_TIME
+
+# Hinglish function words that spaCy tags as PERSON ("hai aur", "chahiye"). They are trimmed from
+# the ends of a spaCy PERSON span, and a span made only of them is dropped. Custom-recognizer
+# spans are never filtered.
+person_stopwords: [hai, aur, mera, meri, mujhe, kal, se, ho, raha, rahi, chahiye, hoon, ka, ki, ke,
+                   ko, bhi, nahi, kya, aap, main, tha, thi, please, ji, naam]
 
 # Custom deterministic recognizers. "group" selects the capture group that holds the
 # sensitive value so that context words are not redacted.
@@ -101,6 +107,21 @@ custom_recognizers:
     pattern: '\b(?:date\s+of\s+birth|d\.?o\.?b\.?|born\s+on|birth\s+date|janam\s+tithi)\s*(?:is|:|=|hai)?\s*(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?,?\s+\d{4}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})\b'
     group: 1
     score: 0.9
+  # Common Indian first names and surnames (Latin script). spaCy misses many of them in
+  # Hinglish text. Words that are also everyday Hindi words (das = ten, asha = hope) are left out.
+  # A first name may take one following capitalised word as its surname.
+  - name: in-name-denylist
+    entity: PERSON
+    pattern: '\b((?:Aarav|Aditya|Ajay|Akash|Amit|Anand|Anil|Anita|Anjali|Ankit|Ananya|Aparna|Arjun|Arun|Aruna|Ashok|Ayesha|Bhavna|Chetan|Deepak|Deepika|Dinesh|Divya|Farhan|Fatima|Gaurav|Geeta|Gopal|Gurpreet|Harish|Harpreet|Imran|Ishaan|Ishita|Jaya|Karthik|Kavita|Kavya|Krishna|Lakshmi|Madhu|Mahesh|Manoj|Manpreet|Meena|Meera|Mohan|Mukesh|Murali|Nandini|Naveen|Neha|Nikhil|Nisha|Nitin|Padma|Pallavi|Pankaj|Pooja|Prakash|Pranav|Priya|Rahul|Rajesh|Rajiv|Ramesh|Ravi|Rekha|Revathi|Rohan|Rohit|Sachin|Sandeep|Sanjay|Sarita|Shalini|Shreya|Shweta|Siddharth|Sneha|Sonia|Srinivas|Sudha|Sunil|Sunita|Suresh|Swati|Tanvi|Usha|Varun|Venkat|Vijay|Vikram|Vinod|Vivek|Zoya)(?-i:\s+[A-Z][a-z]+)?|(?:Agarwal|Agrawal|Banerjee|Bhat|Bhatia|Chatterjee|Chauhan|Chopra|Deshpande|Dubey|Ghosh|Gowda|Gupta|Hegde|Iyengar|Iyer|Jadhav|Joshi|Kapoor|Khanna|Krishnan|Kulkarni|Malhotra|Mehta|Menon|Mishra|Mukherjee|Naidu|Nair|Nayak|Pandey|Patel|Patil|Pillai|Qureshi|Rathore|Reddy|Saxena|Sharma|Shetty|Srivastava|Subramanian|Tiwari|Venkatesh|Verma|Yadav))\b'
+    group: 1
+    score: 0.85
+  # "main Priya Sharma", "my name is ...": capitalised words after a self-introduction.
+  # (?-i:...) keeps the capital-letter check case-sensitive; weekdays and months are not names.
+  - name: in-name-introduction
+    entity: PERSON
+    pattern: '\b(?:main|mera\s+naam|my\s+name\s+is|this\s+is)\s+(?!(?-i:(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|May|June|July|August|September|October|November|December)\b))((?-i:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?))'
+    group: 1
+    score: 0.85
   - name: health-term-denylist
     entity: HEALTH_TERM
     pattern: '\b(diabetes|diabetic|chemo(?:therapy)?|dialysis|HIV|pregnan(?:t|cy)|cardiac|heart\s+attack|cancer|tumou?r|asthma|hypertension|high\s+blood\s+pressure|insulin|depression|epilepsy|tuberculosis|hepatitis|stroke|kidney\s+failure|thyroid|sugar\s+ki\s+bimari|dil\s+ki\s+bimari)\b'

@@ -26,7 +26,7 @@ class CustomRecognizerConfig(BaseModel):
 
     name: str = Field(pattern=r"^[a-z0-9][a-z0-9-]{2,63}$")
     entity: str = Field(pattern=r"^[A-Z][A-Z0-9_]{1,39}$")
-    pattern: str = Field(min_length=3, max_length=500)
+    pattern: str = Field(min_length=3, max_length=3000)  # long enough for a name deny-list
     group: int = Field(default=0, ge=0, le=9)
     score: float = Field(default=0.85, gt=0.0, le=1.0)
 
@@ -46,6 +46,8 @@ class DetectionConfig(BaseModel):
     categories: dict[str, CategoryInfo]
     presidio_entities: dict[str, str]
     custom_recognizers: list[CustomRecognizerConfig] = Field(default_factory=list)
+    # spaCy PERSON spans made only of these words are dropped (Hinglish function words).
+    person_stopwords: list[str] = Field(default_factory=list)
 
     def model_post_init(self, __context: object) -> None:
         known = set(self.categories)
