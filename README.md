@@ -137,6 +137,7 @@ All settings live in `backend/.env`; see [backend/.env.example](backend/.env.exa
 | `MAX_AUDIO_SECONDS` / `MAX_AUDIO_BYTES` | `300` / `26214400` | Audio upload limits (only the audio routes accept large bodies) |
 | `BLEEP_STYLE` | `tone` | Audio bleeping of protected words: `tone` (1 kHz) or `silence` |
 | `LIVE_ASSIST_BUDGET_S` / `POST_CALL_BUDGET_S` | `5` / `60` | Benchmark verdict and sizing budgets |
+| `AUTO_DRAFT_BREACH_REPORTS` | `true` | Draft a breach report automatically when a canary run leaks or a receipt shows a protected value left |
 | `OLLAMA_BASE_URL` / `OLLAMA_MODEL` / `OLLAMA_TIMEOUT_SECONDS` | `http://localhost:11434` / `llama3.2:3b` / `45` | Local model |
 | `CLOUDLINK_BASE_URL` / `CLOUDLINK_API_KEY` / `CLOUDLINK_TIMEOUT_SECONDS` | `http://localhost:8100` / placeholder / `5` | Mock receiver |
 | `ADMIN_API_KEY` | empty | When set, policy changes and audit purge require the `X-Admin-Key` header (enter it on the Settings page) |
@@ -262,6 +263,10 @@ reporting a leak rate it did not measure.
   a data-exposure incident or a time window. Drafts hold categories, counts and IDs only, carry
   "DRAFT for compliance review. Not filed. Not legal advice.", and can be verified against the
   records, reviewed, linked to an incident and downloaded as Markdown. Nothing is ever sent.
+  A canary run with leaks drafts one automatically.
+- **Audit evidence export (Audit Trail > Export evidence):** every audit event in the chosen range,
+  their signed receipts and a chain verification, as JSON (or CSV for spreadsheets), for an auditor.
+- **Local model down:** cloud egress fails closed too (NFR-5); detection and redaction still work.
 
 **Roadmap (not built):** a real Mitel Edge / CloudLink integration (the receiver is a mock), live
 microphone streaming, and protection against re-identification from quasi-identifiers ("the only

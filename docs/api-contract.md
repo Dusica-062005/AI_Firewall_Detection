@@ -54,6 +54,7 @@ of the firewall, not an API error.
 | GET | `/policies/entity-categories` | - | Categories a policy may reference |
 | GET | `/audit` | - | Paginated, filterable audit events |
 | GET | `/audit/{event_id}` | - | One privacy-safe audit event |
+| GET | `/audit/export?format=json\|csv&date_from=&date_to=` | - | Evidence export: every audit event in the range; JSON adds their signed receipts, a chain verification and the public key |
 | POST | `/audit/purge` | admin | Apply the retention period now |
 | GET | `/integrations/status` | - | Ollama and mock CloudLink availability |
 | GET | `/config` | - | Safe configuration (secrets are reported only as configured or not) |
@@ -557,6 +558,11 @@ Response `201` (from a test run of the canary fixture; shortened):
   }
 }
 ```
+
+Reports are also drafted **automatically** (`AUTO_DRAFT_BREACH_REPORTS=true`): once for each canary
+run that completes with leaks (its `GET /canaries/runs/{id}` then shows `breach_report_id`), and for
+any call whose receipt shows a protected value left the firewall. Automatic drafts carry
+`"query": {"trigger": "auto"}` and `"content": {"auto_drafted": true}`; they are still drafts only.
 
 `GET /breach-reports/{id}/verify` returns `{ "ok": true, "mismatches": [], "chain": {...} }`, or the
 fields whose stored value differs from the records. Errors: `404 CANARY_RUN_NOT_FOUND`,
