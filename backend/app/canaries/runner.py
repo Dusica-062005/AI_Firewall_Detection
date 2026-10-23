@@ -104,6 +104,8 @@ class CanaryRunner:
         self._holdout_loader = holdout_set_loader
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
+        # Called with the run ID when a completed run measured leaks (auto-drafts a breach report).
+        self.on_leaks: Callable[[str], object] | None = None
         self._mark_interrupted_runs()
 
     # ---- Canary set ---------------------------------------------------------------------
@@ -171,6 +173,11 @@ class CanaryRunner:
             outcomes = asyncio.run(self._process_all(run_id, canary_set, normalize))
             metrics, misses, leaks, error = self._measure(run_id, outcomes)
             self._finish(run_id, "FAILED" if error else "COMPLETED", started, metrics, misses, leaks, error)
+            if leaks and not error and self.on_leaks is not None:
+                try:
+                    self.on_leaks(run_id)
+                except Exception as exc:  # noqa: BLE001 - the measurement stands; drafting can be retried by hand
+                    logger.error("breach report auto-draft failed", extra={"run_id": run_id, "error_type": type(exc).__name__})
         except Exception as exc:  # noqa: BLE001 - recorded on the run; never reported as a result
             logger.error("canary run failed", extra={"run_id": run_id, "error_type": type(exc).__name__})
             self._finish(run_id, "FAILED", started, None, [], [], f"The run stopped with an error ({type(exc).__name__}).")

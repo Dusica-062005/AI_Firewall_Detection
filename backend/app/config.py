@@ -75,6 +75,10 @@ class Settings(BaseSettings):
     post_call_budget_s: float = Field(default=60.0, gt=0, le=3600)
     benchmark_audio_dir: Path = BACKEND_ROOT / "tests" / "fixtures" / "audio"
 
+    # Breach Report Generator (Feature 8): draft a report automatically when monitoring detects an
+    # exposure (a canary run with leaks, or a receipt showing a protected value left). Drafts only.
+    auto_draft_breach_reports: bool = True
+
     # Dial quality score (Feature 4): Ollama embedding model, and the model that summarizes the
     # RAW synthetic samples as the reference. Empty -> MOCK_CLOUD_MODEL if set, else OLLAMA_MODEL.
     quality_embed_model: str = "nomic-embed-text"

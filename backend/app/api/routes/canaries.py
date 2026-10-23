@@ -47,13 +47,15 @@ def _summary(r: CanaryRunRecord) -> CanaryRunSummary:
     )
 
 
-def _detail(r: CanaryRunRecord) -> CanaryRunDetail:
+def _detail(r: CanaryRunRecord, container: Container) -> CanaryRunDetail:
+    report = container.breach_reports.for_source("canary_run", r.run_id) if container.breach_reports else None
     return CanaryRunDetail(
         **_summary(r).model_dump(),
         low_confidence_threshold=r.low_confidence_threshold,
         metrics=r.metrics if r.status == "COMPLETED" else None,
         misses=r.misses or [],
         leaks=r.leaks or [],
+        breach_report_id=report.report_id if report else None,
     )
 
 
@@ -92,7 +94,7 @@ def list_runs(container: Container = Depends(get_container)) -> list[CanaryRunSu
 
 @router.get("/runs/{run_id}", response_model=CanaryRunDetail, responses={404: {"model": ErrorResponse}})
 def get_run(run_id: str = Path(pattern=RUN_ID_PATTERN), container: Container = Depends(get_container)) -> CanaryRunDetail:
-    return _detail(_get(container, run_id))
+    return _detail(_get(container, run_id), container)
 
 
 @router.get("/compare", response_model=CanaryCompare, responses={404: {"model": ErrorResponse}, 409: {"model": ErrorResponse}})

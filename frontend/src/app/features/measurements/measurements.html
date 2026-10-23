@@ -155,6 +155,17 @@
                 <h2><svg class="icon" lucideIcon="cloud-off" aria-hidden="true"></svg>Leaks at the receiver</h2>
                 <span class="card-header__meta">{{ d.leaks.length }} planted value(s)</span>
               </div>
+              @if (d.breach_report_id; as reportId) {
+                <div class="card-body">
+                  <div class="alert alert-warning">
+                    <svg class="icon" lucideIcon="file-warning" aria-hidden="true"></svg>
+                    <span>
+                      A draft breach report ({{ reportId }}) was created automatically for these leaks. Nothing was sent or filed.
+                      <a routerLink="/compliance" [queryParams]="{ tab: 'breach' }">Review it in the Compliance Center</a>.
+                    </span>
+                  </div>
+                </div>
+              }
               <div class="card-body card-body--flush table-wrap">
                 @if (d.leaks.length) {
                   <table class="data-table">

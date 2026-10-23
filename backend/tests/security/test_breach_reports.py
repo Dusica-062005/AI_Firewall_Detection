@@ -18,7 +18,10 @@ ALLOWED_TEXT = "My name is John Smith and I have diabetes, can I come on Thursda
 
 @pytest.fixture
 def reports(harness_factory):
+    """Manual drafting; automatic drafts are switched off here and tested separately below."""
+
     def factory(**overrides):
+        overrides.setdefault("auto_draft_breach_reports", False)
         h = harness_factory(**overrides)
         h.container.canaries._loader = lambda: FIXTURE
         return h
@@ -161,3 +164,49 @@ def test_admin_key_and_input_validation(reports):
     assert h.client.post("/api/breach-reports", json={"source": "window"}, headers=headers).status_code == 422
     assert h.client.post("/api/breach-reports", json={"source": "incident"}, headers=headers).status_code == 422
     assert h.client.get("/api/breach-reports/brr-000000000000").status_code == 404
+
+
+# ---- Automatic drafts (Feature 8: "automatically drafts a report") ---------------------------
+
+
+def test_a_canary_run_with_leaks_drafts_a_report_automatically(reports):
+    h = reports(auto_draft_breach_reports=True)
+    run_id = h.container.canaries.run(normalize_on=True)
+    listed = h.client.get("/api/breach-reports").json()
+    assert len(listed) == 1
+    report = listed[0]
+    assert report["source_type"] == "canary_run" and report["source_ref"] == run_id
+    assert report["status"] == "DRAFT" and report["content"]["auto_drafted"] is True
+    assert report["query"]["trigger"] == "auto"
+    assert h.client.get(f"/api/canaries/runs/{run_id}").json()["breach_report_id"] == report["report_id"]
+    assert h.client.get(f"/api/breach-reports/{report['report_id']}/verify").json()["ok"] is True
+    assert "automatically" in h.client.get(f"/api/breach-reports/{report['report_id']}/markdown").text
+
+
+def test_no_leaks_or_switched_off_means_no_automatic_draft(reports):
+    h = reports(auto_draft_breach_reports=True)
+    h.container.controls.set_kill_switch(True)  # nothing is sent, so nothing leaks
+    run_id = h.container.canaries.run(normalize_on=True)
+    assert h.client.get("/api/breach-reports").json() == []
+    assert h.client.get(f"/api/canaries/runs/{run_id}").json()["breach_report_id"] is None
+
+    off = reports()  # auto drafts off
+    off.container.canaries.run(normalize_on=True)
+    assert off.client.get("/api/breach-reports").json() == []
+
+
+def test_a_receipt_showing_a_protected_value_left_drafts_a_report(reports, monkeypatch):
+    from dataclasses import replace
+
+    h = reports(auto_draft_breach_reports=True)
+    original = h.container.processing._receipt_facts
+    # Simulate monitoring that finds a protected value in what was sent (the validator normally
+    # prevents this, so it cannot be produced through the real pipeline).
+    monkeypatch.setattr(h.container.processing, "_receipt_facts",
+                        lambda *a, **k: replace(original(*a, **k), protected_values_left=True))
+    body = h.process().json()
+    assert any("draft breach report was created" in w for w in body["warnings"])
+    listed = h.client.get("/api/breach-reports").json()
+    assert len(listed) == 1 and listed[0]["source_type"] == "window"
+    assert listed[0]["content"]["reasons"] == {"PROTECTED_VALUE_LEFT": 1}
+    assert listed[0]["content"]["auto_drafted"] is True

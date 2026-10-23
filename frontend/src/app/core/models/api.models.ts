@@ -561,6 +561,8 @@ export interface CanaryRunDetail extends CanaryRunSummary {
   metrics: CanaryMetrics | null;
   misses: CanaryMiss[];
   leaks: CanaryLeak[];
+  /** The draft breach report created automatically for this run's leaks. */
+  breach_report_id?: string | null;
 }
 
 export interface CanaryCompareRow {
@@ -736,6 +738,8 @@ export type BreachReportSource = 'canary_run' | 'incident' | 'window';
 
 export interface BreachReportContent {
   watermark: string;
+  /** Drafted automatically when monitoring detected an exposure. */
+  auto_drafted?: boolean;
   title: string;
   what_happened: string;
   affected_requests: number;

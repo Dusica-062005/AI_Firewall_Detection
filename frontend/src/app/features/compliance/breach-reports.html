@@ -70,7 +70,10 @@
               <td>{{ r.source_type | humanize }}</td>
               <td class="num">{{ r.content.affected_requests }}</td>
               <td><div class="tag-list">@for (c of r.content.categories | keyvalue; track c.key) { <span class="tag">{{ c.key }} x{{ c.value }}</span> }</div></td>
-              <td><app-status-badge [value]="r.status" /></td>
+              <td>
+                <app-status-badge [value]="r.status" />
+                @if (r.content.auto_drafted) { <span class="tag">Auto-drafted</span> }
+              </td>
             </tr>
           }
         </tbody>

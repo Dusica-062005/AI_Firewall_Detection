@@ -72,9 +72,10 @@ class BreachReportService:
     # ---- Drafting ---------------------------------------------------------------------------
 
     def draft(self, source: str, ref: str | None = None, start: datetime | None = None,
-              end: datetime | None = None) -> BreachReportRecord:
+              end: datetime | None = None, trigger: str = "manual") -> BreachReportRecord:
+        """``trigger`` is "manual" (a person asked) or "auto" (monitoring detected an exposure)."""
         query = {"source": source, "ref": ref, "from": start.isoformat() if start else None,
-                 "to": end.isoformat() if end else None}
+                 "to": end.isoformat() if end else None, "trigger": trigger}
         counted, appendix = self._compute(query)
         if source == "canary_run" and not counted["affected_requests"]:
             raise ReportSourceError("NO_LEAKS", "This canary run measured no leaks, so there is nothing to report.")
@@ -166,6 +167,7 @@ class BreachReportService:
         }[query["source"]]
         return {
             "watermark": WATERMARK,
+            "auto_drafted": query.get("trigger") == "auto",
             "title": f"Draft breach report: {query['source'].replace('_', ' ')} {query['ref'] or ''}".strip(),
             "what_happened": what,
             **counted,
@@ -184,6 +186,30 @@ class BreachReportService:
         return {"incident_id": incident.incident_id, "status": incident.status, "severity": incident.severity,
                 "contained_at": incident.contained_at.isoformat() if incident.contained_at else None,
                 "sla_state": incident.sla_state}
+
+    # ---- Automatic drafts (Feature 8: "automatically drafts a report") -------------------------
+
+    def auto_draft_for_canary_run(self, run_id: str) -> BreachReportRecord | None:
+        """Draft once for a canary run that measured leaks. Returns None when there is nothing to do."""
+        if self.for_source("canary_run", run_id) is not None:
+            return None
+        try:
+            return self.draft("canary_run", run_id, trigger="auto")
+        except ReportSourceError:
+            return None  # no leaks, or the run is not completed: nothing to report
+
+    def auto_draft_for_receipt(self, receipt: ReceiptRecord) -> BreachReportRecord | None:
+        """Draft for one receipt that shows a protected value left the firewall."""
+        at = _aware(receipt.created_at)
+        return self.draft("window", None, at, at, trigger="auto")
+
+    def for_source(self, source: str, ref: str) -> BreachReportRecord | None:
+        with self._sessions() as s:
+            return s.scalars(
+                select(BreachReportRecord).where(
+                    BreachReportRecord.source_type == source, BreachReportRecord.source_ref == ref
+                ).limit(1)
+            ).first()
 
     # ---- Verification, review and incident link -----------------------------------------------
 
@@ -268,7 +294,8 @@ def render_markdown(record: BreachReportRecord) -> str:
         f"# {c['title']}",
         "",
         f"Report {record.report_id}, status {record.status}, drafted "
-        f"{_aware(record.created_at).strftime('%Y-%m-%d %H:%M UTC')} by Mitel AI Data Firewall.",
+        f"{_aware(record.created_at).strftime('%Y-%m-%d %H:%M UTC')} by Mitel AI Data Firewall"
+        f"{' automatically, when monitoring detected the exposure' if c.get('auto_drafted') else ''}.",
     ]
     if record.reviewer:
         lines.append(f"Reviewed by {record.reviewer} on {_aware(record.reviewed_at).strftime('%Y-%m-%d %H:%M UTC')}"

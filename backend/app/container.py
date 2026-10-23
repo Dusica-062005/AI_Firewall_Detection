@@ -206,6 +206,9 @@ def build_container(
         ollama_transport=ollama_transport,
     )
     container.breach_reports = BreachReportService(sessions, receipts, incidents)
+    if settings.auto_draft_breach_reports:
+        canaries.on_leaks = container.breach_reports.auto_draft_for_canary_run
+        processing.on_exposure = container.breach_reports.auto_draft_for_receipt
     return container
 
 

@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 import { forkJoin } from 'rxjs';
 
@@ -41,7 +41,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
  */
 @Component({
   selector: 'app-measurements',
-  imports: [DatePipe, LucideDynamicIcon, ErrorAlert, HumanizePipe, DialQuality, BenchmarkTab],
+  imports: [DatePipe, RouterLink, LucideDynamicIcon, ErrorAlert, HumanizePipe, DialQuality, BenchmarkTab],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './measurements.html',
   styleUrl: './measurements.scss',

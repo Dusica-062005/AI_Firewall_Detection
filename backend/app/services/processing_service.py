@@ -93,6 +93,9 @@ class ProcessingService:
         self.receipts = receipts
         self.low_confidence_stays_local = low_confidence_stays_local
         self.normalize_on = normalize_on
+        # Called with the receipt when it shows a protected value left the firewall
+        # (auto-drafts a breach report, Feature 8). Never affects the request itself.
+        self.on_exposure = None
 
     async def run(
         self,
@@ -354,6 +357,12 @@ class ProcessingService:
             audit_detail += f" Receipt #{record.seq} {'signed' if record.signature else 'UNSIGNED'} and chained."
             if record.signature is None:
                 warnings.append(("RECEIPT_UNSIGNED", f"Receipt written without a signature: {self.receipts.key_status.message}"))
+            if facts.protected_values_left and self.on_exposure is not None:
+                try:
+                    await run_in_threadpool(self.on_exposure, record)
+                    warnings.append(("BREACH_REPORT_DRAFTED", "A protected value left the firewall; a draft breach report was created for review."))
+                except Exception:  # noqa: BLE001
+                    logger.error("breach report auto-draft failed", extra={"request_id": request_id})
         except Exception:  # noqa: BLE001
             logger.error("receipt write failed", extra={"request_id": request_id})
             warnings.append(("RECEIPT_WRITE_FAILED", "The signed receipt could not be written."))

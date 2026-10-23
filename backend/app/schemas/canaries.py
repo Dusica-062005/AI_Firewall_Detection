@@ -87,6 +87,7 @@ class CanaryRunDetail(CanaryRunSummary):
     metrics: CanaryMetrics | None
     misses: list[CanaryMiss]
     leaks: list[CanaryLeak]
+    breach_report_id: str | None = None  # the draft breach report created for this run's leaks
 
 
 class CompareRow(BaseModel):
