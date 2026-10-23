@@ -146,6 +146,17 @@ export class FirewallApiService {
     return this.http.get<AuditEvent>(this.url(`/audit/${encodeURIComponent(eventId)}`));
   }
 
+  auditExport(format: 'json' | 'csv', dateFrom?: string, dateTo?: string): Observable<string> {
+    let params = new HttpParams().set('format', format);
+    if (dateFrom) {
+      params = params.set('date_from', dateFrom);
+    }
+    if (dateTo) {
+      params = params.set('date_to', dateTo);
+    }
+    return this.http.get(this.url('/audit/export'), { params, responseType: 'text' });
+  }
+
   purgeAudit(): Observable<{ deleted: number; retention_days: number }> {
     return this.http.post<{ deleted: number; retention_days: number }>(this.url('/audit/purge'), {});
   }

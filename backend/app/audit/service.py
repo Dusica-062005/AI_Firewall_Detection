@@ -129,6 +129,18 @@ class AuditService:
         rows, total = self._repo.query(filters, page, page_size)
         return [to_schema(r) for r in rows], total
 
+    def all(self, filters: AuditFilters) -> list[AuditEvent]:
+        """Every matching event, oldest first (for evidence export)."""
+        events: list[AuditEvent] = []
+        page = 1
+        while True:
+            rows, total = self._repo.query(filters, page, 500)
+            events += [to_schema(r) for r in rows]
+            if not rows or len(events) >= total:
+                break
+            page += 1
+        return sorted(events, key=lambda e: e.created_at)
+
     def get(self, event_id: str) -> AuditEvent | None:
         row = self._repo.get(event_id)
         return to_schema(row) if row else None

@@ -32,6 +32,32 @@ export class Audit implements OnInit {
   protected readonly page = signal(1);
   protected readonly loading = signal(false);
   protected readonly error = signal<ApiError | null>(null);
+  protected readonly exporting = signal(false);
+  protected readonly exportError = signal<ApiError | null>(null);
+
+  /** Evidence export for an auditor: events in the From/To range (+ receipts and chain check in JSON). */
+  protected exportRecords(format: 'json' | 'csv'): void {
+    const { date_from, date_to } = this.filters.getRawValue() as { date_from?: string; date_to?: string };
+    const toIso = (value?: string) => (value ? new Date(value).toISOString() : undefined);
+    this.exporting.set(true);
+    this.exportError.set(null);
+    this.api.auditExport(format, toIso(date_from), toIso(date_to)).subscribe({
+      next: (content) => {
+        const type = format === 'csv' ? 'text/csv' : 'application/json';
+        const url = URL.createObjectURL(new Blob([content], { type }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `audit-evidence-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${format}`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: (err: ApiError) => {
+        this.exportError.set(err);
+        this.exporting.set(false);
+      },
+    });
+  }
   protected readonly policies = signal<Policy[]>([]);
 
   protected readonly selected = signal<AuditEvent | null>(null);

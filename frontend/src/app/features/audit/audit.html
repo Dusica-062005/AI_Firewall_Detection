@@ -5,12 +5,22 @@
       <p>Privacy-safe record of every firewall decision. Entries hold entity categories and counts, never transcript text or detected values.</p>
     </div>
     <div class="toolbar">
+      <button type="button" class="btn btn-secondary" (click)="exportRecords('json')" [disabled]="exporting()"
+              title="All audit events in the From/To range, plus the signed receipts and a chain verification">
+        <svg class="icon" lucideIcon="download" aria-hidden="true"></svg>
+        Export evidence (JSON)
+      </button>
+      <button type="button" class="btn btn-ghost" (click)="exportRecords('csv')" [disabled]="exporting()">
+        <svg class="icon" lucideIcon="download" aria-hidden="true"></svg>
+        CSV
+      </button>
       <button type="button" class="btn btn-secondary" (click)="load(page())" [disabled]="loading()">
         <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>
         Refresh
       </button>
     </div>
   </header>
+  <app-error-alert [error]="exportError()" title="The audit records could not be exported" />
 
   <form class="card filters" [formGroup]="filters" (ngSubmit)="apply()">
     <div class="filters__grid">
