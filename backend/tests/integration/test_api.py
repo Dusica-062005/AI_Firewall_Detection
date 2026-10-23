@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from tests.conftest import DEMO_TRANSCRIPT
 
 NEW_POLICY = {
@@ -198,13 +200,25 @@ def test_missing_model_is_reported_across_the_api(harness_factory):
     assert h.receiver_transport.handoff_requests() == []  # no cloud fallback
 
 
-def test_timeout_is_reported_and_cloud_still_honours_policy(harness_factory):
+def test_timeout_is_reported_and_cloud_egress_fails_closed(harness_factory):
     h = harness_factory(ollama_mode="timeout")
     body = h.process(profile="standard").json()
     assert body["summary"]["status"] == "TIMEOUT"
-    # Policy authorizes the sanitized transcript; it is sent without a summary.
-    assert body["outbound"]["status"] == "SENT"
-    assert body["outbound"]["payload"]["sanitized_summary"] is None
+    # NFR-5: with the local model unavailable, nothing goes to the cloud either, but the
+    # request stays usable: detection and redaction results are still returned.
+    assert body["outbound"]["status"] == "HELD_LOCAL"
+    assert body["routing"]["reason"] == "local_model_unavailable"
+    assert h.receiver_transport.handoff_requests() == []
+    assert "[PERSON_1]" in body["redacted_transcript"]
+
+
+@pytest.mark.parametrize("mode", ["down", "missing", "empty"])
+def test_unavailable_local_model_never_falls_back_to_cloud(harness_factory, mode):
+    h = harness_factory(ollama_mode=mode)
+    body = h.process(profile="standard").json()
+    assert body["summary"]["status"] != "GENERATED"
+    assert h.receiver_transport.handoff_requests() == []
+    assert body["routing"]["route"] == "LOCAL" and body["decision"] == "REDACTED"
 
 
 def test_config_never_exposes_secrets(harness):

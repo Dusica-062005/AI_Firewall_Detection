@@ -12,6 +12,10 @@ The first matching rule wins and every rule fails closed: anything other than an
     6. Dial at maximum privacy                 -> LOCAL
     7. Any low-confidence entity               -> LOCAL (a possible miss must not travel)
     8. Otherwise                               -> CLOUD
+
+After the local model has run, ``hold_if_local_model_failed`` applies NFR-5: if the local
+model was needed and is unavailable, cloud egress fails closed too, while detection and
+redaction results stay available (degraded mode).
 """
 
 from __future__ import annotations
@@ -62,3 +66,14 @@ def decide_route(
             "A low-confidence detection could be a missed identifier, so the request stays local (fail closed).",
         )
     return RouteDecision("CLOUD", "policy_cloud", "Policy, controls and confidence allow the tokenized text to reach the cloud stand-in.")
+
+
+def hold_if_local_model_failed(route: RouteDecision, local_model_failed: bool) -> RouteDecision:
+    """NFR-5: an unavailable local model also stops cloud egress (fail closed)."""
+    if route.route == "CLOUD" and local_model_failed:
+        return RouteDecision(
+            "LOCAL", "local_model_unavailable",
+            "The local model is unavailable, so nothing is sent to the cloud (fail closed). "
+            "Detection and redaction results remain available.",
+        )
+    return route

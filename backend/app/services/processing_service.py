@@ -41,7 +41,7 @@ from app.schemas.responses import (
 from app.security.outbound_validator import OutboundValidationError
 from app.security.redactor import contains_value
 from app.services.firewall_service import FirewallService, ProtectionOutcome
-from app.services.router import RouteDecision, decide_route
+from app.services.router import RouteDecision, decide_route, hold_if_local_model_failed
 from app.trust.controls import ControlsService
 from app.trust.receipts import ReceiptFacts, ReceiptService
 from app.trust.vault import TokenVault, VaultUnavailable
@@ -189,6 +189,7 @@ class ProcessingService:
             )
             if result.status in SUMMARY_WARNINGS:
                 warnings.append((SUMMARY_WARNINGS[result.status], result.message))
+            route = hold_if_local_model_failed(route, result.status in SUMMARY_WARNINGS)
 
         # ---- Cloud handoff (only when the router chose the cloud path) --------------------
         cloud_summary_status: str | None = None
