@@ -18,6 +18,20 @@ export interface LiveCaption {
 export type LiveState = 'idle' | 'connecting' | 'live' | 'processing' | 'done' | 'error';
 export type LiveSource = 'microphone' | 'recording';
 
+/** Stages of the whole-call pass after End call, in the order the backend reports them. */
+export type LiveStage = 'transcribing' | 'protecting' | 'protected' | 'local_ai' | 'cloud';
+
+export interface LiveStep {
+  stage: LiveStage;
+  startedAt: number;
+}
+
+/** The final protected transcript, available before the model calls finish. */
+export interface LivePreview {
+  decision: string;
+  redactedTranscript: string;
+}
+
 export interface LiveOptions {
   profile: string;
   channel: Channel;
@@ -80,8 +94,13 @@ export class LiveCallService {
   readonly seconds = signal(0);
   readonly error = signal<string | null>(null);
   readonly result = signal<AudioProcessResult | null>(null);
+  readonly steps = signal<LiveStep[]>([]);
+  readonly preview = signal<LivePreview | null>(null);
+  /** Ticks every second while the whole call is processed, for the elapsed times. */
+  readonly now = signal(Date.now());
 
   private socket: WebSocket | null = null;
+  private clock: ReturnType<typeof setInterval> | null = null;
   private context: AudioContext | null = null;
   private stream: MediaStream | null = null;
   private player: AudioBufferSourceNode | null = null;
@@ -143,6 +162,8 @@ export class LiveCallService {
     }
     this.stopCapture();
     this.state.set('processing');
+    this.now.set(Date.now());
+    this.clock = setInterval(() => this.now.set(Date.now()), 1000);
     this.socket?.send(JSON.stringify({ type: 'stop' }));
   }
 
@@ -163,6 +184,8 @@ export class LiveCallService {
     this.seconds.set(0);
     this.error.set(null);
     this.result.set(null);
+    this.steps.set([]);
+    this.preview.set(null);
     this.state.set('connecting');
     try {
       await this.connect(options);
@@ -198,7 +221,14 @@ export class LiveCallService {
           case 'status':
             this.seconds.set(message.seconds);
             break;
+          case 'progress':
+            this.steps.update((steps) => [...steps, { stage: message.stage, startedAt: Date.now() }]);
+            if (message.stage === 'protected') {
+              this.preview.set({ decision: message.decision, redactedTranscript: message.redacted_transcript });
+            }
+            break;
           case 'result':
+            this.stopClock();
             this.result.set(message.result as AudioProcessResult);
             this.state.set('done');
             this.socket = null;
@@ -233,7 +263,15 @@ export class LiveCallService {
     }
   }
 
+  private stopClock(): void {
+    if (this.clock) {
+      clearInterval(this.clock);
+      this.clock = null;
+    }
+  }
+
   private stopCapture(): void {
+    this.stopClock();
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;

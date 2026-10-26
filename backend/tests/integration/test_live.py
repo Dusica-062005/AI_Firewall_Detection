@@ -99,6 +99,24 @@ def test_captions_are_redacted_and_the_final_pass_runs_once(live_harness):
     assert len(h.receiver_transport.handoff_requests()) == 1  # only the final pass may reach the cloud
 
 
+def test_progress_shows_the_protected_transcript_before_the_model_calls(live_harness):
+    h = live_harness(["Hello, my name is John Smith.", "I need my appointment moved to Monday."])
+    _, messages = run_call(h, 2)
+    progress = [m for m in messages if m["type"] == "progress"]
+    assert [m["stage"] for m in progress] == ["transcribing", "protecting", "protected", "local_ai", "cloud"]
+    preview = progress[2]
+    assert "[PERSON_1]" in preview["redacted_transcript"] and "John Smith" not in json.dumps(progress)
+    assert preview["redacted_transcript"] == messages[-1]["result"]["redacted_transcript"]
+    assert messages.index(progress[-1]) < len(messages) - 1  # all progress comes before the result
+
+
+def test_inspect_mode_reports_no_model_stages(live_harness):
+    h = live_harness(["Hello, my name is John Smith."])
+    _, messages = run_call(h, 1, start={"mode": "inspect"})
+    assert [m["stage"] for m in messages if m["type"] == "progress"] == ["transcribing", "protecting", "protected"]
+    assert messages[-1]["type"] == "result"
+
+
 def test_nothing_is_sent_or_recorded_during_the_call(live_harness):
     h = live_harness(["Hello, my name is John Smith."])
     with h.client.websocket_connect("/api/live") as ws:

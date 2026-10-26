@@ -487,8 +487,12 @@ WebSockets), otherwise the socket is closed with code 1008.
    per chunk; a later message with the same `index` replaces an earlier caption (a value split across
    chunks was found). `withheld: true` means detection failed and the text is
    `[caption withheld: protection unavailable]`. It also sends `{"type": "status", "seconds": 8.0}`.
-5. Client sends `{"type": "stop"}`. The whole call is transcribed and processed once; the server
-   sends `{"type": "result", "result": <the /process-audio response>}` and closes.
+5. Client sends `{"type": "stop"}`. The whole call is transcribed and processed once. Each stage
+   is reported as it starts: `{"type": "progress", "stage": "transcribing" | "protecting" |
+   "protected" | "local_ai" | "cloud"}`; `protected` also carries `decision` and the final
+   `redacted_transcript`, which is ready in seconds while the model calls can take a minute on a
+   CPU. The server then sends `{"type": "result", "result": <the /process-audio response>}` and
+   closes.
 
 Captions are tokenized with the profile's policies plus every run of 5 or more digits. Until
 `stop` nothing is sent to the local model or the cloud, audited or receipted; closing the socket

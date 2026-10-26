@@ -128,6 +128,25 @@ describe('Inspector', () => {
     expect(el.querySelector('.caption--withheld')).not.toBeNull();
     expect(text(el)).not.toContain('Transcribe and process');
 
+    // After End call: each stage with its time, and the protected transcript before the models finish.
+    const t0 = Date.now();
+    live.state.set('processing');
+    live.steps.set([
+      { stage: 'transcribing', startedAt: t0 - 4000 },
+      { stage: 'protecting', startedAt: t0 - 2000 },
+      { stage: 'protected', startedAt: t0 - 2000 },
+      { stage: 'local_ai', startedAt: t0 - 2000 },
+    ]);
+    live.preview.set({ decision: 'REDACTED', redactedTranscript: 'My name is [PERSON_1].' });
+    live.now.set(t0 + 5000);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(text(el)).toContain('Transcribing the whole call (local)2 s');
+    expect(text(el)).toContain('Local AI summary (on this machine)7 s');
+    expect(el.querySelectorAll('.live-steps li.is-done').length).toBe(2);
+    expect(text(el)).toContain('Protected transcript (final) · REDACTED');
+    expect(text(el)).toContain('My name is [PERSON_1].');
+
     live.result.set({
       ...blockedResult(),
       transcription: {
@@ -142,6 +161,8 @@ describe('Inspector', () => {
     expect(text(el)).toContain('Local transcription');
     expect(text(el)).toContain('BLOCKED');
     live.result.set(null);
+    live.steps.set([]);
+    live.preview.set(null);
     live.state.set('idle');
   });
 });

@@ -69,6 +69,16 @@ def _ms(started: float) -> float:
     return round((time.perf_counter() - started) * 1000, 2)
 
 
+async def _report(progress, stage: str, **details) -> None:
+    """Tell a waiting client which stage started. A failed report never affects processing."""
+    if progress is None:
+        return
+    try:
+        await progress(stage, details)
+    except Exception:  # noqa: BLE001 - e.g. the live client went away; the call is still processed
+        logger.debug("progress report failed", extra={"stage": stage})
+
+
 class ProcessingService:
     def __init__(
         self,
@@ -110,6 +120,7 @@ class ProcessingService:
         run_models: bool = True,
         normalize: bool | None = None,
         audio: dict | None = None,
+        progress=None,
     ) -> FirewallResult:
         """Process one call.
 
@@ -119,6 +130,8 @@ class ProcessingService:
         ``normalize`` overrides the spoken-number normalizer setting for this request only.
         ``audio`` (audio calls) holds format, duration, model and transcription time; it goes into
         the latency breakdown and the signed receipt, never audio or text.
+        ``progress`` (live calls) is awaited with each stage as it starts, so the caller can show
+        the protected transcript before the slower model calls finish.
         """
         normalize_on = self.normalize_on if normalize is None else normalize
         total_started = time.perf_counter()
@@ -134,12 +147,15 @@ class ProcessingService:
 
         controls = await run_in_threadpool(self.controls.get)
         dial = dial or controls.dial
+        await _report(progress, "protecting")
         outcome: ProtectionOutcome = await run_in_threadpool(
             self.firewall.protect, transcript, profile, channel, dial, normalize_on
         )
         decision = outcome.decision
         failure = outcome.failure
         label = outcome.label
+        if failure is None:
+            await _report(progress, "protected", decision=label, redacted_transcript=outcome.redacted_text)
 
         steps.extend(self._security_steps(outcome))
 
@@ -184,6 +200,7 @@ class ProcessingService:
         elif not run_models:
             summary = summary.model_copy(update={"message": "Not run: model calls are disabled for this measurement run."})
         else:
+            await _report(progress, "local_ai")
             started = time.perf_counter()
             result = await self.summarizer.summarize(outcome.redacted_text or "")
             local_ai_ms = _ms(started)
@@ -240,6 +257,7 @@ class ProcessingService:
 
             if validated is not None:
                 checks = [ValidationCheckResult(name=c.name, passed=c.passed, detail=c.detail) for c in validated.checks]
+                await _report(progress, "cloud")
                 started = time.perf_counter()
                 try:
                     handoff = await self.cloudlink.send(validated, skip_cloud_summary=not run_models)

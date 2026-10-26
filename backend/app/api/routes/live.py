@@ -8,6 +8,8 @@ Protocol (JSON text frames, plus binary audio frames):
     server -> {"type": "caption", "index": 0, "text": "my name is [PERSON_1]", "withheld": false}
     server -> {"type": "status", "seconds": 12.0}
     client -> {"type": "stop"}
+    server -> {"type": "progress", "stage": "transcribing" | "protecting" | "protected" | "local_ai" | "cloud"}
+              ("protected" also carries "decision" and the final "redacted_transcript")
     server -> {"type": "result", "result": <AudioProcessResult>}   (the normal pipeline, once)
     server -> {"type": "error", "code": "...", "message": "..."}   (then the socket closes)
 
@@ -156,8 +158,20 @@ async def live(ws: WebSocket) -> None:
 
 
 async def _finish(ws, container, session, profile, channel, mode, bleep) -> None:
-    """The authoritative pass: transcribe the whole call, then the normal pipeline."""
+    """The authoritative pass: transcribe the whole call, then the normal pipeline.
+
+    Each stage is reported as it starts: the model calls take most of the time on a CPU, and the
+    protected transcript is ready long before they finish.
+    """
+
+    async def progress(stage: str, details: dict) -> None:
+        await ws.send_json({"type": "progress", "stage": stage, **details})
+
     wav = session.wav_bytes()
+    try:
+        await progress("transcribing", {})
+    except Exception:  # noqa: BLE001 - the call was ended with "stop", so it is processed regardless
+        pass
     temp_dir = container.settings.audio_temp_dir
     if temp_dir is not None:
         temp_dir.mkdir(parents=True, exist_ok=True)
@@ -180,7 +194,9 @@ async def _finish(ws, container, session, profile, channel, mode, bleep) -> None
         await _error(ws, "EMPTY_TRANSCRIPT", "No speech was recognized in the call. Nothing was processed.")
         return
     try:
-        result = await finish_audio_call(container, transcript, "wav", profile, channel, mode, wav if bleep else None)
+        result = await finish_audio_call(
+            container, transcript, "wav", profile, channel, mode, wav if bleep else None, progress=progress,
+        )
     except ApiError as exc:
         await _error(ws, exc.code, exc.message)
         return

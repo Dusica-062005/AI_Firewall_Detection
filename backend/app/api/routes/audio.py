@@ -133,11 +133,12 @@ async def process_audio(
 
 async def finish_audio_call(
     container: Container, transcript: Transcript, fmt: str, profile: str, channel: str,
-    mode: ProcessingMode, bleep_wav_bytes: bytes | None,
+    mode: ProcessingMode, bleep_wav_bytes: bytes | None, progress=None,
 ) -> AudioProcessResult:
     """Run a transcribed call through the normal workflow. Shared by uploads and live calls.
 
     ``bleep_wav_bytes`` (a 16-bit PCM WAV) also returns the recording with protected words bleeped.
+    ``progress`` reports each stage as it starts (live calls).
     """
     request = ProcessRequest(transcript=transcript.text, profile=profile, channel=channel, mode=mode)
     request_id = check_transcript_request(request, container)
@@ -147,7 +148,7 @@ async def finish_audio_call(
     }
     result = await container.processing.run(
         request_id=request_id, transcript=transcript.text, profile=profile, channel=channel, mode=mode,
-        operation="PROCESS", audio=audio,
+        operation="PROCESS", audio=audio, progress=progress,
     )
     expose = container.settings.expose_detected_values
     return AudioProcessResult(

@@ -25,13 +25,21 @@ import {
   SampleTranscript,
 } from '../../core/models/api.models';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
-import { LiveCallService } from '../../core/services/live-call.service';
+import { LiveCallService, LiveStage } from '../../core/services/live-call.service';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { DurationPipe } from '../../shared/pipes/format.pipes';
 import { InspectorResult } from './inspector-result';
 import { InspectorStateService } from './inspector-state.service';
 
 const DEFAULT_MAX_CHARS = 10000;
+
+const LIVE_STAGE_LABELS: Record<LiveStage, string> = {
+  transcribing: 'Transcribing the whole call (local)',
+  protecting: 'Detecting and protecting',
+  protected: 'Protected',
+  local_ai: 'Local AI summary (on this machine)',
+  cloud: 'Validated cloud handoff and cloud summary',
+};
 
 @Component({
   selector: 'app-inspector',
@@ -61,6 +69,17 @@ export class Inspector implements OnInit {
   protected readonly live = inject(LiveCallService);
   protected readonly liveFile = signal<File | null>(null);
   protected readonly liveActive = computed(() => ['connecting', 'live', 'processing'].includes(this.live.state()));
+  /** The whole-call pass after End call: each stage, whether it finished, and how long it took. */
+  protected readonly liveSteps = computed(() => {
+    const steps = this.live.steps().filter((s) => s.stage !== 'protected');
+    const now = this.live.now();
+    const processing = this.live.state() === 'processing';
+    return steps.map((step, i) => {
+      const done = i < steps.length - 1 || !processing;
+      const end = steps[i + 1]?.startedAt ?? (done ? step.startedAt : now);
+      return { label: LIVE_STAGE_LABELS[step.stage], done, seconds: Math.max(0, Math.round((end - step.startedAt) / 1000)) };
+    });
+  });
   protected readonly audioFile = signal<File | null>(null);
   protected readonly audioError = signal<string | null>(null);
   protected readonly bleep = signal(true);

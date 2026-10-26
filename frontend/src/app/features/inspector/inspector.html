@@ -195,8 +195,31 @@
                 }
               }
             </div>
-            @if (live.state() === 'processing') {
-              <div class="row"><span class="spinner" aria-hidden="true"></span><span class="text-sm">Transcribing the whole call and running the firewall</span></div>
+            @if (liveSteps().length && live.state() !== 'error') {
+              <ol class="live-steps" aria-label="Processing the whole call">
+                @for (step of liveSteps(); track step.label) {
+                  <li [class.is-done]="step.done">
+                    @if (step.done) {
+                      <svg class="icon" lucideIcon="circle-check" aria-hidden="true"></svg>
+                    } @else {
+                      <span class="spinner" aria-hidden="true"></span>
+                    }
+                    <span>{{ step.label }}</span>
+                    <span class="live-steps__time">{{ step.seconds }} s</span>
+                  </li>
+                }
+              </ol>
+              @if (live.state() === 'processing') {
+                <p class="text-xs muted">The AI summaries run on this computer's CPU and take most of the time. The protected transcript below is already final.</p>
+              }
+            } @else if (live.state() === 'processing') {
+              <div class="row"><span class="spinner" aria-hidden="true"></span><span class="text-sm">Ending the call</span></div>
+            }
+            @if (live.state() === 'processing' && live.preview(); as p) {
+              <div class="live-preview">
+                <span class="section-title">Protected transcript (final) · {{ p.decision }}</span>
+                <p class="text-sm">{{ p.redactedTranscript }}</p>
+              </div>
             }
           </div>
         </section>

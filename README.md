@@ -268,7 +268,9 @@ reporting a leak rate it did not measure.
   so a value split across chunks is caught and earlier captions are corrected. Captions never leave
   the computer and are not stored. Nothing reaches the local model, the cloud, the audit trail or a
   receipt until you select End call: then the whole call is transcribed and processed once, like
-  an uploaded file (summary, routing, receipt and optional bleep). Cancel processes nothing. If
+  an uploaded file (summary, routing, receipt and optional bleep). Each step shows with its time,
+  and the final protected transcript appears within seconds while the AI summaries (most of the
+  wait on a CPU) are still running. Cancel processes nothing. If
   detection fails, the caption is withheld instead of shown raw.
 - **Benchmark (Measurements > Benchmark):** times the real pipeline per stage (n, p50, p95) and
   throughput per concurrency level on this machine, and gives the NFR-2 verdict: real-time capable
@@ -314,7 +316,7 @@ town ...").
 ## Tests
 
 ```powershell
-# Backend: 284 tests (unit, integration, security). Uses real Presidio, a stub Ollama, a stub
+# Backend: 286 tests (unit, integration, security). Uses real Presidio, a stub Ollama, a stub
 # transcriber and the in-process mock receiver. No network or credentials needed. One test
 # (marked slow) runs real faster-whisper and is skipped when the model is not cached.
 cd backend
