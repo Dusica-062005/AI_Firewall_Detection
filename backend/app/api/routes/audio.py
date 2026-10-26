@@ -126,6 +126,19 @@ async def process_audio(
             raise ApiError(422, "BLEEP_WAV_ONLY", "Bleeping needs a 16-bit PCM .wav file.")
         audio_bytes = bytearray()
     transcript, fmt = await _transcribe(file, container, audio_bytes, _check_wav if bleep else None)
+    return await finish_audio_call(
+        container, transcript, fmt, profile, channel, mode, bytes(audio_bytes) if bleep else None
+    )
+
+
+async def finish_audio_call(
+    container: Container, transcript: Transcript, fmt: str, profile: str, channel: str,
+    mode: ProcessingMode, bleep_wav_bytes: bytes | None,
+) -> AudioProcessResult:
+    """Run a transcribed call through the normal workflow. Shared by uploads and live calls.
+
+    ``bleep_wav_bytes`` (a 16-bit PCM WAV) also returns the recording with protected words bleeped.
+    """
     request = ProcessRequest(transcript=transcript.text, profile=profile, channel=channel, mode=mode)
     request_id = check_transcript_request(request, container)
     audio = {
@@ -144,7 +157,8 @@ async def process_audio(
             transcription_ms=transcript.transcription_ms, format=fmt,
             transcript=transcript.text if expose else None, words=_words(transcript) if expose else [],
         ),
-        bleep=_bleep(bytes(audio_bytes), transcript, result, container.settings.bleep_style) if bleep else None,
+        bleep=_bleep(bleep_wav_bytes, transcript, result, container.settings.bleep_style)
+        if bleep_wav_bytes is not None else None,
     )
 
 

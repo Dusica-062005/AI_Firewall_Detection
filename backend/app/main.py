@@ -21,6 +21,7 @@ from app.api.routes import (
     compliance,
     health,
     inspect,
+    live,
     metrics,
     policies,
     process,
@@ -67,7 +68,7 @@ def create_app(settings: Settings | None = None, container: Container | None = N
     )
     routers = (
         health, system, inspect, process, policies, audit, metrics, compliance, trust,
-        canaries, quality, audio, benchmarks, sizing, breach_reports,
+        canaries, quality, audio, benchmarks, sizing, breach_reports, live,
     )
     for module in routers:
         app.include_router(module.router, prefix="/api")

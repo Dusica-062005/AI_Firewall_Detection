@@ -1,5 +1,15 @@
 import { DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideDynamicIcon } from '@lucide/angular';
@@ -7,6 +17,7 @@ import { Observable, startWith } from 'rxjs';
 
 import {
   ApiError,
+  AudioProcessResult,
   Channel,
   FirewallResult,
   ProcessingMode,
@@ -14,6 +25,7 @@ import {
   SampleTranscript,
 } from '../../core/models/api.models';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
+import { LiveCallService } from '../../core/services/live-call.service';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { DurationPipe } from '../../shared/pipes/format.pipes';
 import { InspectorResult } from './inspector-result';
@@ -43,8 +55,12 @@ export class Inspector implements OnInit {
   protected readonly submitted = this.state.submittedTranscript;
   protected readonly audio = this.state.audio;
 
-  /** Text or audio input. Audio is transcribed on the local backend and never stored. */
-  protected readonly inputKind = signal<'text' | 'audio'>('text');
+  /** Text, an audio file, or a live call. Audio is transcribed on the local backend and never stored. */
+  protected readonly inputKind = signal<'text' | 'audio' | 'live'>('text');
+  /** Live redacted captions: microphone, or a recording streamed through the same live path. */
+  protected readonly live = inject(LiveCallService);
+  protected readonly liveFile = signal<File | null>(null);
+  protected readonly liveActive = computed(() => ['connecting', 'live', 'processing'].includes(this.live.state()));
   protected readonly audioFile = signal<File | null>(null);
   protected readonly audioError = signal<string | null>(null);
   protected readonly bleep = signal(true);
@@ -87,7 +103,41 @@ export class Inspector implements OnInit {
   );
 
   constructor() {
-    this.destroyRef.onDestroy(() => this.revokeUrls());
+    this.destroyRef.onDestroy(() => {
+      this.revokeUrls();
+      if (this.liveActive()) {
+        this.live.cancel(); // leaving the page mid-call: nothing is processed
+      }
+    });
+    // A finished live call arrives as a normal audio result.
+    effect(() => {
+      const result = this.live.result();
+      if (result) {
+        untracked(() => this.applyAudioResult(result));
+      }
+    });
+  }
+
+  protected liveOptions() {
+    const { profile, channel, mode } = this.form.getRawValue();
+    return { profile, channel, mode, bleep: this.bleep() };
+  }
+
+  protected startLiveMicrophone(): void {
+    this.submitError.set(null);
+    void this.live.startMicrophone(this.liveOptions());
+  }
+
+  protected onLiveFile(event: Event): void {
+    this.liveFile.set((event.target as HTMLInputElement).files?.[0] ?? null);
+  }
+
+  protected startLiveRecording(): void {
+    const file = this.liveFile();
+    if (file) {
+      this.submitError.set(null);
+      void this.live.startRecording(file, this.liveOptions());
+    }
   }
 
   ngOnInit(): void {
@@ -172,6 +222,9 @@ export class Inspector implements OnInit {
       this.submitAudio();
       return;
     }
+    if (this.inputKind() === 'live') {
+      return; // live calls start and end with their own buttons
+    }
     this.form.markAllAsTouched();
     if (this.form.invalid || this.submitting()) {
       return;
@@ -212,14 +265,7 @@ export class Inspector implements OnInit {
     this.submitError.set(null);
     this.api.processAudio(file, profile, channel, mode, bleep).subscribe({
       next: (result) => {
-        const old = this.bleepedUrl();
-        if (old) {
-          URL.revokeObjectURL(old);
-        }
-        this.bleepedUrl.set(result.bleep ? audioUrl(result.bleep.audio_base64, result.bleep.content_type) : null);
-        this.state.submittedTranscript.set(result.transcription.transcript ?? '');
-        this.state.audio.set({ transcription: result.transcription, bleep: result.bleep });
-        this.state.result.set(result);
+        this.applyAudioResult(result);
         this.submitting.set(false);
       },
       error: (err: ApiError) => {
@@ -227,6 +273,18 @@ export class Inspector implements OnInit {
         this.submitting.set(false);
       },
     });
+  }
+
+  /** Show an audio result (uploaded file or finished live call) the same way. */
+  private applyAudioResult(result: AudioProcessResult): void {
+    const old = this.bleepedUrl();
+    if (old) {
+      URL.revokeObjectURL(old);
+    }
+    this.bleepedUrl.set(result.bleep ? audioUrl(result.bleep.audio_base64, result.bleep.content_type) : null);
+    this.state.submittedTranscript.set(result.transcription.transcript ?? '');
+    this.state.audio.set({ transcription: result.transcription, bleep: result.bleep });
+    this.state.result.set(result);
   }
 }
 

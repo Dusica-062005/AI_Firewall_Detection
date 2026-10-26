@@ -26,6 +26,12 @@ def test_patient_id_is_detected_with_exact_span(analyzer):
     assert ids[0].recognizer == "patient-id-contextual"
 
 
+def test_patient_id_with_a_space_after_the_prefix(analyzer):
+    # "P 9482913": a spoken ID, or a live-transcription chunk boundary inside the ID.
+    ids = by_type(analyzer.analyze("My patient ID is P 9482913, thanks."), "PATIENT_ID")
+    assert [i.value for i in ids] == ["P 9482913"]
+
+
 def test_bare_number_is_not_a_patient_id(analyzer):
     entities = analyzer.analyze("Please call me back in 48291 seconds about the order.")
     assert not by_type(entities, "PATIENT_ID")

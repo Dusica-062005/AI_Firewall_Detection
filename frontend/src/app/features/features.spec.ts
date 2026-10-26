@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { testProviders } from '../../testing/test-providers';
 import { FirewallResult } from '../core/models/api.models';
+import { LiveCallService } from '../core/services/live-call.service';
 import { Inspector } from './inspector/inspector';
 import { BreachReports } from './compliance/breach-reports';
 import { InspectorStateService } from './inspector/inspector-state.service';
@@ -106,6 +107,42 @@ describe('Inspector', () => {
     expect(text(el)).toContain('BLOCKED');
     expect(text(el)).toContain('No model or cloud call was made');
     expect(el.querySelector('.placeholder-token')?.textContent).toBe('[PERSON_1]');
+  });
+
+  it('shows live captions and then the whole-call result', async () => {
+    const live = TestBed.inject(LiveCallService);
+    const fixture = await setup();
+    const component = fixture.componentInstance as unknown as { inputKind: Inspector['inputKind'] };
+    component.inputKind.set('live');
+    live.state.set('live');
+    live.seconds.set(6);
+    live.captions.set([
+      { index: 0, text: 'My name is [PERSON_1].', withheld: false },
+      { index: 1, text: '[caption withheld: protection unavailable]', withheld: true },
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(text(el)).toContain('Live · 6 s');
+    expect(el.querySelectorAll('.caption').length).toBe(2);
+    expect(el.querySelector('.caption--withheld')).not.toBeNull();
+    expect(text(el)).not.toContain('Transcribe and process');
+
+    live.result.set({
+      ...blockedResult(),
+      transcription: {
+        model: 'base', language: 'en', duration_s: 6, transcription_ms: 900, format: 'wav', transcript: TRANSCRIPT, words: [],
+      },
+      bleep: null,
+    });
+    live.state.set('done');
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(text(el)).toContain('Call processed');
+    expect(text(el)).toContain('Local transcription');
+    expect(text(el)).toContain('BLOCKED');
+    live.result.set(null);
+    live.state.set('idle');
   });
 });
 

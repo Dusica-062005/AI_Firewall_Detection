@@ -97,6 +97,12 @@ The API location is read at runtime from `frontend/public/config.json`:
    ```
 
 3. To use a different model, set `OLLAMA_MODEL` in `backend/.env`.
+4. Cloud stand-in (Feature 4, section 3 of the project document): "cloud" is played by a larger
+   local model than the local path. `ollama pull llama3.1:8b` (about 4.7 GB), then set
+   `MOCK_CLOUD_MODEL=llama3.1:8b` and `CLOUDLINK_TIMEOUT_SECONDS=150` in `backend/.env` and restart
+   the backend and the mock receiver. The receiver then summarizes the tokenized transcript with
+   the 8B model, and the dial quality measurement compares local (3B) and cloud (8B) summaries on
+   the same tokenized input. Leave `MOCK_CLOUD_MODEL` empty to switch it off.
 
 ### 4. Local transcription (audio)
 
@@ -134,7 +140,8 @@ All settings live in `backend/.env`; see [backend/.env.example](backend/.env.exa
 | `QUALITY_EMBED_MODEL` / `QUALITY_REFERENCE_MODEL` | `nomic-embed-text` / empty | Dial quality score: embedding model, and the model that summarizes the raw samples (empty: `MOCK_CLOUD_MODEL`, else `OLLAMA_MODEL`) |
 | `RECEIVED_LOG_FILE` | `./data/received.log` | Every payload the mock receiver accepts; leak canaries measure against it |
 | `WHISPER_MODEL` / `WHISPER_DEVICE` / `WHISPER_COMPUTE_TYPE` | `base` / `cpu` / `int8` | Local transcription (faster-whisper) |
-| `MAX_AUDIO_SECONDS` / `MAX_AUDIO_BYTES` | `300` / `26214400` | Audio upload limits (only the audio routes accept large bodies) |
+| `MAX_AUDIO_SECONDS` / `MAX_AUDIO_BYTES` | `300` / `26214400` | Audio upload limits (only the audio routes accept large bodies); `MAX_AUDIO_SECONDS` also ends a live call |
+| `LIVE_CHUNK_SECONDS` / `LIVE_WINDOW_CHUNKS` | `4` / `3` | Live captions: seconds of audio per caption, and how many recent chunks detection looks back over |
 | `BLEEP_STYLE` | `tone` | Audio bleeping of protected words: `tone` (1 kHz) or `silence` |
 | `LIVE_ASSIST_BUDGET_S` / `POST_CALL_BUDGET_S` | `5` / `60` | Benchmark verdict and sizing budgets |
 | `AUTO_DRAFT_BREACH_REPORTS` | `true` | Draft a breach report automatically when a canary run leaks or a receipt shows a protected value left |
@@ -173,6 +180,8 @@ cd backend
 cd frontend
 npx ng serve --port 4200
 ```
+
+
 
 | URL | What |
 |---|---|
@@ -252,6 +261,15 @@ reporting a leak rate it did not measure.
 - **Audio (Inspector > Audio):** upload a synthetic `.wav`, `.mp3` or `.m4a`. It is transcribed
   locally, then processed like text. With "Bleep protected words" (WAV only) the response also
   contains the recording with every tokenized value replaced by a tone.
+- **Live call (Inspector > Live call):** speak into the microphone, or stream a recording at
+  real-time pace as a reliable demo. Audio goes over a WebSocket to the local backend, is
+  transcribed in chunks (`LIVE_CHUNK_SECONDS`), and captions appear with names, IDs and every
+  5+ digit number already replaced. Detection looks back over the last `LIVE_WINDOW_CHUNKS` chunks,
+  so a value split across chunks is caught and earlier captions are corrected. Captions never leave
+  the computer and are not stored. Nothing reaches the local model, the cloud, the audit trail or a
+  receipt until you select End call: then the whole call is transcribed and processed once, like
+  an uploaded file (summary, routing, receipt and optional bleep). Cancel processes nothing. If
+  detection fails, the caption is withheld instead of shown raw.
 - **Benchmark (Measurements > Benchmark):** times the real pipeline per stage (n, p50, p95) and
   throughput per concurrency level on this machine, and gives the NFR-2 verdict: real-time capable
   (warm p95 within `LIVE_ASSIST_BUDGET_S`) or post-call wrap-up. Each call also writes an audit
@@ -268,9 +286,10 @@ reporting a leak rate it did not measure.
   their signed receipts and a chain verification, as JSON (or CSV for spreadsheets), for an auditor.
 - **Local model down:** cloud egress fails closed too (NFR-5); detection and redaction still work.
 
-**Roadmap (not built):** a real Mitel Edge / CloudLink integration (the receiver is a mock), live
-microphone streaming, and protection against re-identification from quasi-identifiers ("the only
-cardiologist in a small town ...").
+**Roadmap (not built):** a real Mitel Edge / CloudLink integration (the receiver is a mock), real
+telephony integration (live captions take the browser microphone, not a phone line), and
+protection against re-identification from quasi-identifiers ("the only cardiologist in a small
+town ...").
 
 ### Manual verification (Milestone C)
 
@@ -287,17 +306,21 @@ cardiologist in a small town ...").
    count to match) and download the Markdown. Search it for a raw value: there is none outside the
    synthetic appendix.
 7. Trust & Controls > Verify chain: CHAIN OK.
+8. Inspector > Live call: stream `backend/tests/fixtures/audio/appointment.wav` (or speak "my name
+   is John Smith, my patient ID is P 9482913"). Captions show `[PERSON_1]` and `[PATIENT_ID_1]`;
+   the raw values never appear. Select End call (the recording ends it by itself): the full result
+   and one receipt follow. Start again and select Cancel: no receipt is added.
 
 ## Tests
 
 ```powershell
-# Backend: 263 tests (unit, integration, security). Uses real Presidio, a stub Ollama, a stub
+# Backend: 284 tests (unit, integration, security). Uses real Presidio, a stub Ollama, a stub
 # transcriber and the in-process mock receiver. No network or credentials needed. One test
 # (marked slow) runs real faster-whisper and is skipped when the model is not cached.
 cd backend
 .\.venv\Scripts\python.exe -m pytest
 
-# Frontend: 23 tests (Vitest via the Angular unit-test builder).
+# Frontend: 27 tests (Vitest via the Angular unit-test builder).
 cd frontend
 npx ng test --watch=false
 

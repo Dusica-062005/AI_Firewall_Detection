@@ -474,6 +474,28 @@ Errors, all with nothing processed or sent: `413 AUDIO_TOO_LARGE`, `422 UNSUPPOR
 `503 TRANSCRIPTION_UNAVAILABLE`. The signed receipt gains
 `"audio": {"format", "duration_s", "model", "transcription_ms"}`.
 
+## Live captions (WebSocket)
+
+`WS /live`. The `Origin` header must be one of `CORS_ORIGINS` (browsers do not apply CORS to
+WebSockets), otherwise the socket is closed with code 1008.
+
+1. Client sends `{"type": "start", "profile": "standard", "channel": "voice", "mode": "full", "bleep": false}`
+   (`channel`, `mode` and `bleep` optional).
+2. Server replies `{"type": "ready", "chunk_seconds": 4.0, "max_seconds": 300, "local_only": true}`.
+3. Client sends binary frames of 16 kHz mono 16-bit little-endian PCM.
+4. Server sends `{"type": "caption", "index": 0, "text": "My name is [PERSON_1].", "withheld": false}`
+   per chunk; a later message with the same `index` replaces an earlier caption (a value split across
+   chunks was found). `withheld: true` means detection failed and the text is
+   `[caption withheld: protection unavailable]`. It also sends `{"type": "status", "seconds": 8.0}`.
+5. Client sends `{"type": "stop"}`. The whole call is transcribed and processed once; the server
+   sends `{"type": "result", "result": <the /process-audio response>}` and closes.
+
+Captions are tokenized with the profile's policies plus every run of 5 or more digits. Until
+`stop` nothing is sent to the local model or the cloud, audited or receipted; closing the socket
+before `stop` processes nothing. Errors arrive as `{"type": "error", "code", "message"}` and close
+the socket: `INVALID_START`, `INVALID_MODE`, `UNKNOWN_PROFILE`, `POLICY_UNAVAILABLE`, `AUDIO_TOO_LONG`, `AUDIO_EMPTY`,
+`EMPTY_TRANSCRIPT` and the transcription errors above.
+
 ## Latency benchmark (NFR-2)
 
 `POST /benchmarks/runs` body (all optional):

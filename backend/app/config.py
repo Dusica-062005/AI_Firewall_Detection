@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     max_audio_bytes: int = Field(default=25 * 1024 * 1024, ge=1024, le=200 * 1024 * 1024)
     audio_temp_dir: Path | None = None  # None: the system temp folder; files are deleted after use
     bleep_style: Literal["tone", "silence"] = "tone"  # audio bleeping (FR-16): 1 kHz tone or silence
+    # Live redacted captions: seconds of audio per transcribed chunk, and how many recent chunks
+    # are checked together so identifiers said across a chunk boundary are still caught.
+    live_chunk_seconds: float = Field(default=4.0, ge=1.0, le=15.0)
+    live_window_chunks: int = Field(default=3, ge=1, le=10)
 
     # Latency benchmark (NFR-2) and sizing (Feature 7). "Real-time capable" means the warm p95 total
     # at concurrency 1 fits LIVE_ASSIST_BUDGET_S; otherwise the honest claim is post-call wrap-up.

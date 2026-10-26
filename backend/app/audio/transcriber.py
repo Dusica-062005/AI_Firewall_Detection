@@ -122,3 +122,24 @@ class Transcriber:
             transcription_ms=round((time.perf_counter() - started) * 1000, 2),
             words=words,
         )
+
+    def transcribe_array(self, samples, language: str | None = None) -> Transcript:
+        """Transcribe one live chunk: float32 mono samples at 16 kHz, in memory (never written to disk).
+
+        Voice-activity filtering skips silence, where Whisper would otherwise invent words.
+        """
+        self.load()
+        started = time.perf_counter()
+        try:
+            segments, info = self._model.transcribe(
+                samples, language=language, word_timestamps=True, vad_filter=True, condition_on_previous_text=False
+            )
+            raw = [(w.word, w.start, w.end) for segment in segments for w in (segment.words or [])]
+        except Exception as exc:  # noqa: BLE001
+            logger.error("live chunk transcription failed", extra={"error_type": type(exc).__name__})
+            raise TranscriptionError("AUDIO_UNREADABLE", "A live audio chunk could not be transcribed.") from exc
+        text, words = join_words(raw)
+        return Transcript(
+            text=text, language=info.language, duration_s=round(info.duration, 2), model=self.model_name,
+            transcription_ms=round((time.perf_counter() - started) * 1000, 2), words=words,
+        )

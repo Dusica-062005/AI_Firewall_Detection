@@ -85,3 +85,43 @@
 .transcription-card {
   margin-bottom: var(--s-4);
 }
+
+.live-intro {
+  margin: 0;
+}
+
+.live-card {
+  margin-bottom: var(--s-4);
+}
+
+.live-status {
+  font-size: var(--fs-xs);
+  color: var(--c-text-2);
+
+  &.is-live {
+    color: var(--c-error);
+    font-weight: 600;
+  }
+}
+
+.captions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.caption {
+  margin: 0;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  background: var(--c-surface-muted);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+}
+
+.caption--withheld {
+  color: var(--c-text-2);
+  font-style: italic;
+}

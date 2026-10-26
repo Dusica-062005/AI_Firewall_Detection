@@ -17,11 +17,47 @@
 
       <div class="card-body stack input-body">
         <div class="segmented" role="radiogroup" aria-label="Input type">
-          <label><input type="radio" name="inputKind" [checked]="inputKind() === 'text'" (change)="inputKind.set('text')" /> Text</label>
-          <label><input type="radio" name="inputKind" [checked]="inputKind() === 'audio'" (change)="inputKind.set('audio')" /> Audio</label>
+          <label><input type="radio" name="inputKind" [checked]="inputKind() === 'text'" (change)="inputKind.set('text')" [disabled]="liveActive()" /> Text</label>
+          <label><input type="radio" name="inputKind" [checked]="inputKind() === 'audio'" (change)="inputKind.set('audio')" [disabled]="liveActive()" /> Audio file</label>
+          <label><input type="radio" name="inputKind" [checked]="inputKind() === 'live'" (change)="inputKind.set('live')" /> Live call</label>
         </div>
 
-        @if (inputKind() === 'audio') {
+        @if (inputKind() === 'live') {
+          <p class="text-sm live-intro">
+            Speak like a caller. Captions appear every few seconds with names, IDs and numbers already replaced.
+            Captions stay on this computer; when you end the call, the whole call goes through the firewall once.
+          </p>
+          <div class="row wrap live-controls">
+            @if (liveActive()) {
+              <button type="button" class="btn btn-primary" (click)="live.stop()" [disabled]="live.state() !== 'live'">
+                <svg class="icon" lucideIcon="square" aria-hidden="true"></svg>End call
+              </button>
+              <button type="button" class="btn btn-ghost" (click)="live.cancel()" [disabled]="live.state() === 'processing'">
+                Cancel (process nothing)
+              </button>
+            } @else {
+              <button type="button" class="btn btn-primary" (click)="startLiveMicrophone()">
+                <svg class="icon" lucideIcon="mic" aria-hidden="true"></svg>Start live call (microphone)
+              </button>
+            }
+          </div>
+          @if (!liveActive()) {
+            <div class="field">
+              <label for="live-file">Or stream a recording (a reliable demo fallback)</label>
+              <div class="row">
+                <input id="live-file" type="file" class="input file-input" accept=".wav,.mp3,.m4a,audio/*" (change)="onLiveFile($event)" />
+                <button type="button" class="btn btn-secondary" (click)="startLiveRecording()" [disabled]="!liveFile()">
+                  <svg class="icon" lucideIcon="play" aria-hidden="true"></svg>Stream
+                </button>
+              </div>
+              <span class="field__hint">The recording plays aloud and is sent at real-time pace through the same live path.</span>
+            </div>
+          }
+          <label class="checkbox">
+            <input type="checkbox" [checked]="bleep()" (change)="bleep.set($any($event.target).checked)" [disabled]="liveActive()" />
+            Bleep protected words in the recording when the call ends
+          </label>
+        } @else if (inputKind() === 'audio') {
           <div class="field">
             <label for="audio-file">Call recording</label>
             <input id="audio-file" type="file" class="input file-input" accept=".wav,.mp3,.m4a,audio/wav,audio/mpeg,audio/mp4"
@@ -116,7 +152,7 @@
           <svg class="icon" lucideIcon="eraser" aria-hidden="true"></svg>
           Clear
         </button>
-        <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+        <button type="submit" class="btn btn-primary" [disabled]="submitting()" [hidden]="inputKind() === 'live'">
           @if (submitting()) {
             <span class="spinner" aria-hidden="true"></span>
             Processing
@@ -130,6 +166,41 @@
 
     <div class="results">
       <app-error-alert [error]="submitError()" title="The request was not processed" />
+
+      @if (inputKind() === 'live' && live.state() !== 'idle') {
+        <section class="card live-card" aria-live="polite">
+          <div class="card-header">
+            <h2><svg class="icon" lucideIcon="mic" aria-hidden="true"></svg>Live captions</h2>
+            <span class="live-status" [class.is-live]="live.state() === 'live'">
+              @switch (live.state()) {
+                @case ('connecting') { Connecting… }
+                @case ('live') { ● Live · {{ live.seconds() }} s · {{ live.source() === 'recording' ? 'recording' : 'microphone' }} }
+                @case ('processing') { Call ended · processing the whole call }
+                @case ('done') { Call processed }
+                @case ('error') { Stopped }
+              }
+            </span>
+          </div>
+          <div class="card-body stack">
+            <p class="text-xs muted">Captions are a local preview: they never leave this computer and are not stored. The result below the captions comes from the full call.</p>
+            @if (live.error(); as message) {
+              <div class="alert alert-error"><svg class="icon" lucideIcon="circle-x" aria-hidden="true"></svg><span>{{ message }}</span></div>
+            }
+            <div class="captions">
+              @for (line of live.captions(); track line.index) {
+                <p class="caption" [class.caption--withheld]="line.withheld">{{ line.text }}</p>
+              } @empty {
+                @if (live.state() === 'live' || live.state() === 'connecting') {
+                  <p class="text-sm muted">Waiting for speech…</p>
+                }
+              }
+            </div>
+            @if (live.state() === 'processing') {
+              <div class="row"><span class="spinner" aria-hidden="true"></span><span class="text-sm">Transcribing the whole call and running the firewall</span></div>
+            }
+          </div>
+        </section>
+      }
 
       @if (result() && audio(); as a) {
         <section class="card transcription-card">
