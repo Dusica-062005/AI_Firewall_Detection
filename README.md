@@ -49,7 +49,8 @@ cd backend
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m spacy download en_core_web_md
+
+
 Copy-Item .env.example .env        # macOS/Linux: cp .env.example .env
 ```
 
@@ -85,7 +86,7 @@ The API location is read at runtime from `frontend/public/config.json`:
 { "apiBaseUrl": "http://localhost:8000/api" }
 ```
 
-### 3. Ollama (optional)
+### 3. Ollama 
 
 1. Install Ollama from https://ollama.com/download.
 2. Pull the configured model and make sure the service is running:
