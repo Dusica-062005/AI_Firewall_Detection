@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -25,6 +26,8 @@ class Settings(BaseSettings):
     app_env: str = "development"
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:4200"
+    # Also allow origins matching this regex (dev servers on any local port). Empty disables it.
+    cors_origin_regex: str = r"^http://(localhost|127\.0\.0\.1)(:\d+)?$"
 
     database_url: str = f"sqlite:///{(BACKEND_ROOT / 'data' / 'firewall.db').as_posix()}"
     audit_retention_days: int = Field(default=30, ge=1, le=3650)
@@ -107,6 +110,11 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    def is_allowed_origin(self, origin: str) -> bool:
+        if origin in self.cors_origin_list:
+            return True
+        return bool(self.cors_origin_regex) and re.fullmatch(self.cors_origin_regex, origin) is not None
 
 
 @lru_cache

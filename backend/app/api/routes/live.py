@@ -92,7 +92,7 @@ async def live(ws: WebSocket) -> None:
     container: Container = ws.app.state.container
     settings = container.settings
     origin = ws.headers.get("origin")
-    if origin and origin not in settings.cors_origin_list:
+    if origin and not settings.is_allowed_origin(origin):
         await ws.close(code=1008)  # browsers do not apply CORS to WebSockets, so check the origin here
         return
     await ws.accept()

@@ -6,6 +6,7 @@ import { FirewallResult } from '../core/models/api.models';
 import { LiveCallService } from '../core/services/live-call.service';
 import { Inspector } from './inspector/inspector';
 import { BreachReports } from './compliance/breach-reports';
+import { InspectorDetails } from './inspector/inspector-details';
 import { InspectorStateService } from './inspector/inspector-state.service';
 import { BenchmarkTab } from './measurements/benchmark';
 import { Measurements } from './measurements/measurements';
@@ -106,7 +107,28 @@ describe('Inspector', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(text(el)).toContain('BLOCKED');
     expect(text(el)).toContain('No model or cloud call was made');
+    expect(text(el)).toContain('Nothing left the firewall.');
+    expect(el.querySelector('a[href="/inspector/result"]')?.textContent).toContain('View full details');
+  });
+
+  it('shows the full result on the details page', async () => {
+    const state = TestBed.inject(InspectorStateService);
+    state.result.set(blockedResult());
+    state.submittedTranscript.set(TRANSCRIPT);
+    const fixture = TestBed.createComponent(InspectorDetails);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(text(el)).toContain('BLOCKED');
+    expect(text(el)).toContain('Before and after');
     expect(el.querySelector('.placeholder-token')?.textContent).toBe('[PERSON_1]');
+  });
+
+  it('points back to the Inspector when there is no result', async () => {
+    const fixture = TestBed.createComponent(InspectorDetails);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(text(fixture.nativeElement)).toContain('No result to show');
   });
 
   it('shows live captions and then the whole-call result', async () => {

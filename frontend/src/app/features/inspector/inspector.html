@@ -255,7 +255,7 @@
         </section>
       }
       @if (result(); as r) {
-        <app-inspector-result [result]="r" [original]="submitted()" [class.is-stale]="submitting()" />
+        <app-inspector-summary [result]="r" [class.is-stale]="submitting()" />
       } @else if (submitting()) {
         <div class="card">
           <div class="empty-state">

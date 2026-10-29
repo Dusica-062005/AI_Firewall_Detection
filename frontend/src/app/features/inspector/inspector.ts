@@ -28,8 +28,8 @@ import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { LiveCallService, LiveStage } from '../../core/services/live-call.service';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { DurationPipe } from '../../shared/pipes/format.pipes';
-import { InspectorResult } from './inspector-result';
 import { InspectorStateService } from './inspector-state.service';
+import { InspectorSummary } from './inspector-summary';
 
 const DEFAULT_MAX_CHARS = 10000;
 
@@ -43,7 +43,7 @@ const LIVE_STAGE_LABELS: Record<LiveStage, string> = {
 
 @Component({
   selector: 'app-inspector',
-  imports: [ReactiveFormsModule, LucideDynamicIcon, DecimalPipe, DurationPipe, ErrorAlert, InspectorResult],
+  imports: [ReactiveFormsModule, LucideDynamicIcon, DecimalPipe, DurationPipe, ErrorAlert, InspectorSummary],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './inspector.html',
   styleUrl: './inspector.scss',

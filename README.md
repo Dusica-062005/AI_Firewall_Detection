@@ -27,6 +27,62 @@ localhost. It has not had a formal security review. See [docs/threat-model.md](d
 - [Threat model](docs/threat-model.md): threats, mitigations, the tests that verify them, known limits
 - [Demo script](docs/demo-script.md): the five-minute Innovation Day walkthrough
 
+## Quick start (all commands)
+
+Windows PowerShell, starting from the `AI_Firewall_Detection` folder. Details for each step are
+in [Setup](#setup) and [Running](#running).
+
+### First time only
+
+```powershell
+# Backend: virtual environment, dependencies, spaCy model, settings
+cd backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m spacy download en_core_web_md
+Copy-Item .env.example .env        # then set CLOUDLINK_API_KEY in backend\.env
+cd ..
+
+# Frontend: dependencies
+cd frontend
+npm install --legacy-peer-deps
+cd ..
+
+# Ollama (optional, for local AI summaries)
+ollama pull llama3.2:3b
+ollama pull nomic-embed-text
+```
+
+### Every time: start the app
+
+One command (opens three windows):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start-demo.ps1
+```
+
+Or start each process in its own terminal:
+
+```powershell
+# Terminal 1: mock CloudLink receiver (port 8100)
+cd backend
+.\.venv\Scripts\python.exe -m uvicorn app.integrations.mock_cloudlink:app --host 127.0.0.1 --port 8100
+
+# Terminal 2: firewall backend (port 8000)
+cd backend
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+
+# Terminal 3: Angular UI (port 4200)
+cd frontend
+npx ng serve --port 4200
+```
+
+If Ollama is installed but not running, start it with `ollama serve`.
+
+Then open http://localhost:4200. Check http://localhost:8000/api/health if the UI reports the
+backend as unreachable. Stop everything with `Ctrl+C` in each window.
+
 ## Prerequisites
 
 | Tool | Version | Notes |

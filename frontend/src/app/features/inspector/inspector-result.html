@@ -1,27 +1,6 @@
 @let r = result();
 
-<section class="card decision decision--{{ r.decision.toLowerCase() }}" aria-live="polite">
-  <div class="decision__main">
-    <div class="decision__label">
-      <span class="section-title">Final decision</span>
-      <app-status-badge [value]="r.decision" [uppercase]="true" [strong]="true" />
-    </div>
-    <p class="decision__text">{{ decisionText() }}</p>
-  </div>
-  <dl class="decision__facts">
-    <div><dt>Authorized destination</dt><dd><app-status-badge [value]="r.authorized_destination" /></dd></div>
-    <div><dt>Processing status</dt><dd><app-status-badge [value]="r.status" /></dd></div>
-    <div><dt>Total duration</dt><dd class="mono">{{ r.latency.total_ms | duration }}</dd></div>
-    <div><dt>Request ID</dt><dd class="mono" [title]="r.request_id">{{ r.request_id.slice(0, 8) }}</dd></div>
-  </dl>
-</section>
-
-@for (w of r.warnings; track $index) {
-  <div class="alert alert-warning" role="status">
-    <svg class="icon" lucideIcon="triangle-alert" aria-hidden="true"></svg>
-    <span>{{ w }}</span>
-  </div>
-}
+<app-inspector-decision [result]="r" />
 
 @if (r.routing; as route) {
   <section class="card round-trip">

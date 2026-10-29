@@ -21,6 +21,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/inspector/inspector').then((m) => m.Inspector),
       },
       {
+        path: 'inspector/result',
+        title: 'Processing Details - AI Data Firewall',
+        data: { title: 'Processing Details' },
+        loadComponent: () => import('./features/inspector/inspector-details').then((m) => m.InspectorDetails),
+      },
+      {
         path: 'policies',
         title: 'Policy Management - AI Data Firewall',
         data: { title: 'Policy Management' },

@@ -9,23 +9,16 @@ import { ErrorAlert } from '../../shared/components/error-alert';
 import { StatusBadge } from '../../shared/components/status-badge';
 import { DurationPipe, HumanizePipe } from '../../shared/pipes/format.pipes';
 import { HighlightedText } from './highlighted-text';
+import { InspectorDecision } from './inspector-decision';
 import { ProcessingSteps } from './processing-steps';
 
 type Tab = 'summary' | 'cloud' | 'policy' | 'audit';
-
-const DECISION_TEXT: Record<string, string> = {
-  ALLOWED: 'No protected data required changes. Processing was permitted by policy.',
-  REDACTED: 'Sensitive values were replaced with reversible tokens before any AI processing.',
-  LOCAL_ONLY: 'Processing is restricted to the local model. Cloud transmission is prohibited.',
-  BLOCKED: 'Policy prohibits AI processing of this communication. No model or cloud call was made.',
-  PROCESSING_FAILED: 'Enforcement could not be completed. The firewall failed closed and nothing was sent.',
-};
 
 @Component({
   selector: 'app-inspector-result',
   imports: [
     RouterLink, LucideDynamicIcon, DecimalPipe, JsonPipe, StatusBadge, ErrorAlert, DurationPipe, HumanizePipe,
-    HighlightedText, ProcessingSteps,
+    HighlightedText, InspectorDecision, ProcessingSteps,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './inspector-result.html',
@@ -40,7 +33,6 @@ export class InspectorResult {
   protected readonly tab = signal<Tab>('summary');
   protected readonly auditEvent = signal<AuditEvent | null>(null);
   protected readonly auditError = signal<ApiError | null>(null);
-  protected readonly decisionText = computed(() => DECISION_TEXT[this.result().decision] ?? '');
   protected readonly failedChecks = computed(() => this.result().outbound.validation.filter((c) => !c.passed).length);
 
   protected readonly routeLabel = computed(() => {
