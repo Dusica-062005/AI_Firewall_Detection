@@ -31,6 +31,11 @@ export class ComplianceOverviewTab implements OnInit {
   protected readonly data = signal<ComplianceOverview | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal<ApiError | null>(null);
+  protected readonly expanded = signal<string | null>(null);
+
+  protected toggleRow(id: string): void {
+    this.expanded.update((current) => (current === id ? null : id));
+  }
   protected readonly tone = scoreTone;
 
   /** Controls that are not passing, merged across frameworks, worst first. */

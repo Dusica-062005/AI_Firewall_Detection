@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header__text">
       <h1>Hardware Fit</h1>
-      <p>How much hardware a deployment needs, calculated only from latency and throughput measured on a real machine. Nothing is extrapolated.</p>
+      <p>Hardware sizing from measured benchmarks.</p>
     </div>
   </header>
 
@@ -26,7 +26,6 @@
             <label><input type="radio" formControlName="mode" value="post_call" /> Post-call wrap-up</label>
             <label><input type="radio" formControlName="mode" value="live" /> Live agent assist</label>
           </div>
-          <span class="field__hint">Live assist needs each summary within the live budget; post-call allows a longer budget.</span>
         </fieldset>
         @if (form.invalid && form.touched) {
           <span class="field__error">Enter positive numbers; the peak factor is at least 1.</span>
@@ -97,7 +96,7 @@
         <section class="card">
           <div class="empty-state">
             <svg class="icon" lucideIcon="calculator" aria-hidden="true"></svg>
-            <span class="empty-state__title">Enter a deployment and select Calculate</span>
+            <span class="empty-state__title">Enter a deployment to calculate</span>
             <span>Example: 300 seats, 1,200 calls per hour.</span>
           </div>
         </section>

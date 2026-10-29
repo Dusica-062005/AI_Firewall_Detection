@@ -6,11 +6,11 @@ import { StatusBadge } from '../../shared/components/status-badge';
 import { DurationPipe } from '../../shared/pipes/format.pipes';
 
 const DECISION_TEXT: Record<string, string> = {
-  ALLOWED: 'No protected data required changes. Processing was permitted by policy.',
-  REDACTED: 'Sensitive values were replaced with reversible tokens before any AI processing.',
-  LOCAL_ONLY: 'Processing is restricted to the local model. Cloud transmission is prohibited.',
-  BLOCKED: 'Policy prohibits AI processing of this communication. No model or cloud call was made.',
-  PROCESSING_FAILED: 'Enforcement could not be completed. The firewall failed closed and nothing was sent.',
+  ALLOWED: 'No sensitive data found. Processing allowed.',
+  REDACTED: 'Sensitive values replaced with tokens before AI.',
+  LOCAL_ONLY: 'Local model only. Nothing sent to the cloud.',
+  BLOCKED: 'AI processing not permitted. Nothing was sent.',
+  PROCESSING_FAILED: 'Failed closed. Nothing was sent.',
 };
 
 /** Final decision banner and warnings, shared by the Inspector summary and the details page. */

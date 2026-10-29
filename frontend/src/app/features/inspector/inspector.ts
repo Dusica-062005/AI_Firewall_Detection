@@ -96,9 +96,9 @@ export class Inspector implements OnInit {
   private readonly liveInput = viewChild<ElementRef<HTMLInputElement>>('liveInput');
 
   protected readonly modes: { value: ProcessingMode; label: string; hint: string }[] = [
-    { value: 'inspect', label: 'Inspect only', hint: 'Detect and evaluate policy. No model or cloud call.' },
-    { value: 'local', label: 'Local AI', hint: 'Adds a local summary when policy permits.' },
-    { value: 'full', label: 'Full pipeline', hint: 'Adds the mock CloudLink handoff when policy authorizes it.' },
+    { value: 'inspect', label: 'Inspect only', hint: 'Detection and policy only.' },
+    { value: 'local', label: 'Local AI', hint: 'Adds a local AI summary.' },
+    { value: 'full', label: 'Full pipeline', hint: 'Adds the cloud handoff when allowed.' },
   ];
   protected readonly channels: Channel[] = ['voice', 'chat', 'email', 'sms'];
   protected readonly channelLabels: Record<Channel, string> = { voice: 'Voice', chat: 'Chat', email: 'Email', sms: 'SMS' };

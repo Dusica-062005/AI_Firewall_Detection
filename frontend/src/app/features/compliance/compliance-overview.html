@@ -59,22 +59,32 @@
         <table class="data-table">
           <thead>
             <tr>
+              <th scope="col"><span class="sr-only">Expand</span></th>
               <th scope="col">Status</th>
               <th scope="col">Control</th>
               <th scope="col">Affects</th>
-              <th scope="col">What was found</th>
-              <th scope="col">How to fix</th>
             </tr>
           </thead>
           <tbody>
             @for (g of gaps(); track g.control.control_id) {
-              <tr>
+              <tr class="is-clickable" tabindex="0" [class.is-expanded]="expanded() === g.control.control_id"
+                  [attr.aria-expanded]="expanded() === g.control.control_id"
+                  (click)="toggleRow(g.control.control_id)" (keydown.enter)="toggleRow(g.control.control_id)">
+                <td class="expand-cell"><svg class="icon" lucideIcon="chevron-right" aria-hidden="true"></svg></td>
                 <td><app-status-badge [value]="g.control.status" /></td>
                 <td class="cell-wrap"><strong>{{ g.control.title }}</strong></td>
                 <td class="cell-wrap"><div class="tag-list">@for (n of g.frameworks; track n) { <span class="tag">{{ n }}</span> }</div></td>
-                <td class="cell-wrap">{{ g.control.evidence }}</td>
-                <td class="cell-wrap">{{ g.control.remediation }}</td>
               </tr>
+              @if (expanded() === g.control.control_id) {
+                <tr class="row-detail">
+                  <td colspan="4">
+                    <dl class="row-detail__grid">
+                      <div class="span-all"><dt>What was found</dt><dd>{{ g.control.evidence }}</dd></div>
+                      <div class="span-all"><dt>How to fix</dt><dd>{{ g.control.remediation }}</dd></div>
+                    </dl>
+                  </td>
+                </tr>
+              }
             }
           </tbody>
         </table>
@@ -87,8 +97,7 @@
       }
     </div>
     <p class="pager-hint text-xs muted">
-      Scores are evaluated live from the current policies, audit settings, AI inventory, incidents and requests. Pass counts 1, partial 0.5, fail 0.
-      Framework references are an indicative mapping for demonstration, not a certification.
+      Live scores (pass 1, partial 0.5, fail 0). Indicative mapping, not a certification.
     </p>
   </section>
 } @else if (loading()) {

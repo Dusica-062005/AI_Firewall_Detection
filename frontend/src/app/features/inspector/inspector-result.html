@@ -46,7 +46,7 @@
           <p class="text-xs muted">{{ view.message }}</p>
         }
         @if (r.tokens.length) {
-          <span class="section-title">Tokens restored locally from the encrypted vault</span>
+          <span class="section-title">Tokens restored locally</span>
           <div class="table-wrap bordered">
             <table class="data-table">
               <thead><tr><th scope="col">Token</th><th scope="col">Real value (stays local)</th></tr></thead>
@@ -85,16 +85,16 @@
 <section class="card">
   <div class="card-header">
     <h2><svg class="icon" lucideIcon="eye-off" aria-hidden="true"></svg>Before and after</h2>
-    <span class="card-header__meta">{{ r.transcript_chars | number }} characters, synthetic input</span>
+    <span class="card-header__meta">{{ r.transcript_chars | number }} characters</span>
   </div>
   <div class="card-body compare">
     <div class="stack compare__col">
-      <span class="section-title">Original synthetic input</span>
+      <span class="section-title">Original</span>
       <app-highlighted-text [text]="original()" [entities]="r.entities" mode="entities" />
     </div>
     <div class="compare__arrow" aria-hidden="true"><svg class="icon" lucideIcon="arrow-right"></svg></div>
     <div class="stack compare__col">
-      <span class="section-title">Protected text used for AI processing</span>
+      <span class="section-title">Protected (sent to AI)</span>
       @if (r.redacted_transcript !== null) {
         <app-highlighted-text [text]="r.redacted_transcript" mode="placeholders" />
         @if (r.decision === 'BLOCKED') {
@@ -113,41 +113,44 @@
       <svg class="icon" lucideIcon="scan-search" aria-hidden="true"></svg>Detected sensitive entities
       <span class="pill-count">{{ r.entities.length }}</span>
     </h2>
-    <span class="card-header__meta">Categories are audited; values are shown here only for synthetic data</span>
   </div>
   <div class="card-body card-body--flush table-wrap">
     @if (r.entities.length) {
       <table class="data-table">
         <thead>
           <tr>
+            <th scope="col"><span class="sr-only">Expand</span></th>
             <th scope="col">Category</th>
             <th scope="col">Detected value</th>
-            <th scope="col" class="num">Position</th>
-            <th scope="col" class="num">Confidence</th>
             <th scope="col">Policy decision</th>
-            <th scope="col">Rule</th>
           </tr>
         </thead>
         <tbody>
-          @for (e of r.entities; track $index) {
-            <tr>
-              <td><span class="tag">{{ e.entity_type | humanize }}</span></td>
+          @for (e of r.entities; track $index; let i = $index) {
+            <tr class="is-clickable" tabindex="0" [class.is-expanded]="expandedEntity() === i"
+                [attr.aria-expanded]="expandedEntity() === i" (click)="toggleEntity(i)" (keydown.enter)="toggleEntity(i)">
+              <td class="expand-cell"><svg class="icon" lucideIcon="chevron-right" aria-hidden="true"></svg></td>
+              <td>
+                <span class="tag">{{ e.entity_type | humanize }}</span>
+                @if (e.low_confidence) { <span class="badge badge-warning low-conf" title="Below the low-confidence threshold; handled conservatively">Low</span> }
+              </td>
               <td>
                 @if (e.value !== null) { <span class="mono">{{ e.value }}</span> } @else { <span class="muted">Hidden by configuration</span> }
               </td>
-              <td class="num mono">{{ e.start }}-{{ e.end }}</td>
-              <td class="num">
-                {{ e.score | number: '1.2-2' }}
-                @if (e.low_confidence) { <span class="badge badge-warning low-conf" title="Below the low-confidence threshold; handled conservatively">Low</span> }
-              </td>
               <td><app-status-badge [value]="e.action" /></td>
-              <td>
-                <div class="rule-cell">
-                  <span [title]="e.policy_id ?? ''">{{ names.policy(e.policy_id) }}</span>
-                  <span class="text-xs muted">{{ e.recognizer }}</span>
-                </div>
-              </td>
             </tr>
+            @if (expandedEntity() === i) {
+              <tr class="row-detail">
+                <td colspan="4">
+                  <dl class="row-detail__grid">
+                    <div><dt>Confidence</dt><dd>{{ e.score | number: '1.2-2' }}{{ e.low_confidence ? ' (low)' : '' }}</dd></div>
+                    <div><dt>Position</dt><dd class="mono">{{ e.start }}-{{ e.end }}</dd></div>
+                    <div><dt>Rule</dt><dd [title]="e.policy_id ?? ''">{{ names.policy(e.policy_id) }}</dd></div>
+                    <div><dt>Recognizer</dt><dd class="mono">{{ e.recognizer }}</dd></div>
+                  </dl>
+                </td>
+              </tr>
+            }
           }
         </tbody>
       </table>
@@ -155,7 +158,6 @@
       <div class="empty-state">
         <svg class="icon" lucideIcon="shield-check" aria-hidden="true"></svg>
         <span class="empty-state__title">No sensitive entities detected</span>
-        <span>Detection is probabilistic; the configured policy still governs processing.</span>
       </div>
     }
   </div>
@@ -189,7 +191,6 @@
           <span class="section-title">Local model</span>
           @if (r.summary.text) {
             <div class="text-block">{{ r.summary.text }}</div>
-            <p class="text-xs muted">Model output is untrusted. It is re-validated before it can be included in any outbound payload.</p>
           } @else {
             <p class="text-sm muted">{{ r.summary.message }}</p>
           }
@@ -203,7 +204,7 @@
             @if (r.routing?.cloud_summary) {
               <div class="text-block">{{ r.routing?.cloud_summary }}</div>
             } @else if (cloudStatus === 'DISABLED') {
-              <p class="text-sm muted">No cloud stand-in model is configured. Set MOCK_CLOUD_MODEL (for example llama3.1:8b) to enable it.</p>
+              <p class="text-sm muted">Not configured (set MOCK_CLOUD_MODEL).</p>
             }
           }
         </div>
@@ -302,7 +303,7 @@
           @if (auditEvent(); as ev) {
             <div class="alert alert-success">
               <svg class="icon" lucideIcon="lock" aria-hidden="true"></svg>
-              <span>Stored record contains entity categories and counts only. No transcript text or detected values are persisted.</span>
+              <span>Only categories and counts are stored.</span>
             </div>
             <dl class="kv">
               <dt>Event ID</dt><dd class="mono">{{ ev.event_id }}</dd>

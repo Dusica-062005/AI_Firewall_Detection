@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header__text">
       <h1>Settings</h1>
-      <p>Configuration is read from the backend environment. Change it in backend/.env and restart the backend to apply.</p>
+      <p>Read-only. Edit backend/.env and restart to change.</p>
     </div>
     <div class="toolbar">
       <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
@@ -90,7 +90,7 @@
             @if (i.ollama.status !== 'CONNECTED') {
               <div class="alert alert-warning">
                 <svg class="icon" lucideIcon="triangle-alert" aria-hidden="true"></svg>
-                <span>{{ i.ollama.message }} Detection and policy enforcement continue; summaries are reported as unavailable. There is no cloud-model fallback.</span>
+                <span>{{ i.ollama.message }} Protection continues; AI summaries are unavailable.</span>
               </div>
             }
           }
@@ -114,16 +114,12 @@
           <h2><svg class="icon" lucideIcon="cloud" aria-hidden="true"></svg>CloudLink endpoint <span class="simulated-label">Mock integration</span></h2>
         </div>
         <div class="card-body stack">
-          <div class="alert alert-info">
-            <svg class="icon" lucideIcon="info" aria-hidden="true"></svg>
-            <span>This prototype hands off to a local mock receiver. It does not connect to Mitel CloudLink services.</span>
-          </div>
           <dl class="kv">
             <dt>Status</dt><dd>@if (integrations(); as i) { <app-status-badge [value]="i.cloudlink.status" /> } @else { <ng-container *ngTemplateOutlet="checkState" /> }</dd>
             <dt>Endpoint</dt><dd class="mono">{{ c.cloudlink.base_url }}</dd>
             <dt>Integration key</dt><dd>{{ c.cloudlink.api_key.display }}</dd>
             <dt>Timeout</dt><dd>{{ c.cloudlink.timeout_seconds }} seconds</dd>
-            <dt>Automatic retries</dt><dd>{{ c.cloudlink.retries }} (no retry without a new policy decision)</dd>
+            <dt>Automatic retries</dt><dd>{{ c.cloudlink.retries }}</dd>
             @if (integrations(); as i) {
               <dt>Accepted handoffs</dt><dd>{{ i.cloudlink.receipts_count ?? '-' }} since receiver start</dd>
               <dt>Details</dt><dd class="text-sm">{{ i.cloudlink.message }}</dd>
@@ -165,9 +161,7 @@
       <section class="card">
         <div class="card-header"><h2><svg class="icon" lucideIcon="lock" aria-hidden="true"></svg>Administrator access</h2></div>
         <div class="card-body stack">
-          <p class="text-sm muted">
-            When the backend sets ADMIN_API_KEY, policy changes require it. The key is kept in this browser tab only and is never displayed.
-          </p>
+          <p class="text-sm muted">Required for policy changes when ADMIN_API_KEY is set. Kept in this tab only.</p>
           <form class="row" (ngSubmit)="saveAdminKey()">
             <label class="sr-only" for="admin-key">Administrator key</label>
             <input id="admin-key" name="adminKey" class="input" type="password" autocomplete="off"
@@ -190,16 +184,12 @@
       <div class="card-body stack">
         <dl class="kv kv--inline">
           <dt>Engine status</dt><dd><app-status-badge [value]="c.detection.status" /> <span class="text-sm muted">{{ c.detection.message }}</span></dd>
-          <dt>Score threshold</dt><dd>{{ c.detection.score_threshold }} (lower scores are ignored)</dd>
-          <dt>Low-confidence flag</dt><dd>Below {{ c.detection.low_confidence_threshold }}, still protected</dd>
-          <dt>Values shown in Inspector</dt><dd>{{ c.detection.expose_detected_values ? 'Yes, synthetic demo only; never stored' : 'No' }}</dd>
+          <dt>Score threshold</dt><dd>{{ c.detection.score_threshold }}</dd>
+          <dt>Low-confidence flag</dt><dd>Below {{ c.detection.low_confidence_threshold }}</dd>
+          <dt>Values shown in Inspector</dt><dd>{{ c.detection.expose_detected_values ? 'Yes (never stored)' : 'No' }}</dd>
           <dt>Spoken-number normalization</dt>
-          <dd>{{ c.detection.normalize_numbers ? 'On: spoken and split identifiers ("P four eight two") are detected' : 'Off' }}</dd>
+          <dd>{{ c.detection.normalize_numbers ? 'On' : 'Off' }}</dd>
         </dl>
-        <div class="alert alert-info">
-          <svg class="icon" lucideIcon="info" aria-hidden="true"></svg>
-          <span>Detection is probabilistic and does not guarantee that every identifier is found. The limitations below are enforced conservatively by policy.</span>
-        </div>
       </div>
       <div class="card-body card-body--flush table-wrap">
         <table class="data-table">
