@@ -251,3 +251,9 @@
     </div>
   </aside>
 }
+
+@if (confirmClose(); as inc) {
+  <app-confirm-dialog title="Close incident" [danger]="true" confirmLabel="Close incident" [busy]="saving()"
+                      [message]="'Close ' + inc.incident_id + ' with the resolution you entered? Closed incidents cannot be changed or reopened.'"
+                      (confirm)="advance(inc, true)" (cancel)="confirmClose.set(null)" />
+}

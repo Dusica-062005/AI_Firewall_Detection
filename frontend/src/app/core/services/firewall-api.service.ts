@@ -24,6 +24,7 @@ import {
   Controls,
   DataRequest,
   DialPosition,
+  Receipt,
   ReceiptListResponse,
   VerifyResult,
   DataRequestCreate,
@@ -178,6 +179,10 @@ export class FirewallApiService {
     return this.http.get<ReceiptListResponse>(this.url('/receipts'), {
       params: new HttpParams().set('page', page).set('page_size', pageSize),
     });
+  }
+
+  receipt(receiptId: string): Observable<Receipt> {
+    return this.http.get<Receipt>(this.url(`/receipts/${encodeURIComponent(receiptId)}`));
   }
 
   verifyReceipts(tamperDemo: boolean): Observable<VerifyResult> {

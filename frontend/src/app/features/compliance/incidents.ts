@@ -13,6 +13,7 @@ import {
 } from '../../core/models/api.models';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ConfirmDialog } from '../../shared/components/confirm-dialog';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { StatusBadge } from '../../shared/components/status-badge';
 import { HumanizePipe } from '../../shared/pipes/format.pipes';
@@ -31,7 +32,7 @@ export function formatSla(seconds: number): string {
 
 @Component({
   selector: 'app-incidents',
-  imports: [ReactiveFormsModule, DatePipe, LucideDynamicIcon, StatusBadge, ErrorAlert, HumanizePipe],
+  imports: [ReactiveFormsModule, DatePipe, LucideDynamicIcon, StatusBadge, ErrorAlert, ConfirmDialog, HumanizePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './incidents.html',
   styleUrl: './compliance.scss',
@@ -53,6 +54,8 @@ export class Incidents implements OnInit {
   protected readonly creating = signal(false);
   protected readonly selectedId = signal<string | null>(null);
   protected readonly selected = computed(() => this.items().find((i) => i.incident_id === this.selectedId()) ?? null);
+  /** The incident awaiting confirmation before it is closed; closing cannot be undone. */
+  protected readonly confirmClose = signal<Incident | null>(null);
 
   protected readonly statuses = STAGES;
   protected readonly severities: Severity[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
@@ -143,6 +146,11 @@ export class Incidents implements OnInit {
   }
 
   protected closeAll(): void {
+    // Escape first dismisses an open confirmation, not the drawer behind it.
+    if (this.confirmClose()) {
+      this.confirmClose.set(null);
+      return;
+    }
     this.creating.set(false);
     this.selectedId.set(null);
   }
@@ -179,7 +187,7 @@ export class Incidents implements OnInit {
       });
   }
 
-  protected advance(incident: Incident): void {
+  protected advance(incident: Incident, confirmed = false): void {
     const stage = this.nextStage(incident);
     const { note, text } = this.stepForm.getRawValue();
     if (!stage) {
@@ -189,6 +197,11 @@ export class Incidents implements OnInit {
       this.stepForm.controls.text.markAsTouched();
       return;
     }
+    if (stage === 'CLOSED' && !confirmed) {
+      this.confirmClose.set(incident);
+      return;
+    }
+    this.confirmClose.set(null);
     this.saving.set(true);
     this.formError.set(null);
     this.api

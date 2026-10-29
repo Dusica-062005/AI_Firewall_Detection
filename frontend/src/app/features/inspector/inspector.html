@@ -45,7 +45,7 @@
             <div class="field">
               <label for="live-file">Or stream a recording (a reliable demo fallback)</label>
               <div class="row">
-                <input id="live-file" type="file" class="input file-input" accept=".wav,.mp3,.m4a,audio/*" (change)="onLiveFile($event)" />
+                <input #liveInput id="live-file" type="file" class="input file-input" accept=".wav,.mp3,.m4a,audio/*" (change)="onLiveFile($event)" />
                 <button type="button" class="btn btn-secondary" (click)="startLiveRecording()" [disabled]="!liveFile()">
                   <svg class="icon" lucideIcon="play" aria-hidden="true"></svg>Stream
                 </button>
@@ -60,7 +60,7 @@
         } @else if (inputKind() === 'audio') {
           <div class="field">
             <label for="audio-file">Call recording</label>
-            <input id="audio-file" type="file" class="input file-input" accept=".wav,.mp3,.m4a,audio/wav,audio/mpeg,audio/mp4"
+            <input #audioInput id="audio-file" type="file" class="input file-input" accept=".wav,.mp3,.m4a,audio/wav,audio/mpeg,audio/mp4"
                    (change)="onFile($event)" />
             @if (audioError()) {
               <span class="field__error">{{ audioError() }}</span>
@@ -72,9 +72,12 @@
             <audio class="audio-player" controls [src]="url" aria-label="Original recording (local file)"></audio>
           }
           <label class="checkbox">
-            <input type="checkbox" [checked]="bleep()" (change)="bleep.set($any($event.target).checked)" [disabled]="!isWav()" />
+            <input type="checkbox" [checked]="bleep() && canBleep()" (change)="bleep.set($any($event.target).checked)" [disabled]="!canBleep()" />
             Bleep protected words in the audio (WAV only)
           </label>
+          @if (!canBleep()) {
+            <span class="field__hint">Bleeping needs a WAV file; this recording will be processed without it.</span>
+          }
         } @else {
         <div class="field">
           <label for="sample">Sample transcript</label>
@@ -124,7 +127,7 @@
             <label for="channel">Channel</label>
             <select id="channel" class="select" formControlName="channel">
               @for (c of channels; track c) {
-                <option [value]="c">{{ c.charAt(0).toUpperCase() + c.slice(1) }}</option>
+                <option [value]="c">{{ channelLabels[c] }}</option>
               }
             </select>
           </div>
@@ -132,6 +135,14 @@
         @if (selectedProfile(); as p) {
           <p class="text-xs muted profile-note">{{ p.description }} {{ p.applicable_policies }} enabled policies apply.</p>
         }
+        <p class="text-xs muted channel-note">
+          @if (channelRules().length) {
+            {{ channelLabels[form.controls.channel.value] }} only:
+            @for (rule of channelRules(); track rule.policy_id; let last = $last) { <strong>{{ rule.name }}</strong>{{ last ? '.' : ', ' }} }
+          } @else {
+            No rule is specific to {{ channelLabels[form.controls.channel.value] }}; the same rules apply as on other channels.
+          }
+        </p>
 
         <fieldset class="field mode-field">
           <legend class="field__label">Processing mode</legend>

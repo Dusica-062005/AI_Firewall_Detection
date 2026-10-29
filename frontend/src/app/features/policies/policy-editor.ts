@@ -16,6 +16,7 @@ import {
 } from '../../core/models/api.models';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { ErrorAlert } from '../../shared/components/error-alert';
+import { HumanizePipe } from '../../shared/pipes/format.pipes';
 
 export const ALLOWED_DESTINATIONS: Record<PolicyAction, Destination[]> = {
   ALLOW: ['CLOUD', 'LOCAL'],
@@ -48,7 +49,7 @@ function splitList(value: string): string[] {
 
 @Component({
   selector: 'app-policy-editor',
-  imports: [ReactiveFormsModule, LucideDynamicIcon, ErrorAlert],
+  imports: [ReactiveFormsModule, LucideDynamicIcon, ErrorAlert, HumanizePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'closed.emit()' },
   templateUrl: './policy-editor.html',

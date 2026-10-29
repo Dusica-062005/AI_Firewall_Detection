@@ -1,16 +1,23 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 
 import { ApiError, AuditEvent, AuditFilters, Policy } from '../../core/models/api.models';
+import { DisplayNamesService } from '../../core/services/display-names.service';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { StatusBadge } from '../../shared/components/status-badge';
 import { DurationPipe, HumanizePipe } from '../../shared/pipes/format.pipes';
 
 const PAGE_SIZE = 20;
+
+/** "From" after "To" can never match anything, so the form says so instead of showing an empty table. */
+function dateRangeValidator(group: AbstractControl): ValidationErrors | null {
+  const { date_from, date_to } = group.value as { date_from?: string; date_to?: string };
+  return date_from && date_to && new Date(date_from) > new Date(date_to) ? { dateRange: true } : null;
+}
 
 @Component({
   selector: 'app-audit',
@@ -23,6 +30,7 @@ const PAGE_SIZE = 20;
 export class Audit implements OnInit {
   private readonly api = inject(FirewallApiService);
   private readonly router = inject(Router);
+  protected readonly names = inject(DisplayNamesService);
 
   /** Bound from the ?event= query parameter. */
   readonly event = input<string | undefined>();
@@ -37,6 +45,9 @@ export class Audit implements OnInit {
 
   /** Evidence export for an auditor: events in the From/To range (+ receipts and chain check in JSON). */
   protected exportRecords(format: 'json' | 'csv'): void {
+    if (this.filters.hasError('dateRange')) {
+      return;
+    }
     const { date_from, date_to } = this.filters.getRawValue() as { date_from?: string; date_to?: string };
     const toIso = (value?: string) => (value ? new Date(value).toISOString() : undefined);
     this.exporting.set(true);
@@ -85,7 +96,7 @@ export class Audit implements OnInit {
     status: new FormControl('', { nonNullable: true }),
     destination: new FormControl('', { nonNullable: true }),
     request_id: new FormControl('', { nonNullable: true }),
-  });
+  }, { validators: dateRangeValidator });
 
   constructor() {
     effect(() => {
@@ -100,10 +111,14 @@ export class Audit implements OnInit {
 
   ngOnInit(): void {
     this.load(1);
+    this.names.load();
     this.api.policies().subscribe({ next: (res) => this.policies.set(res.items), error: () => undefined });
   }
 
   protected apply(): void {
+    if (this.filters.hasError('dateRange')) {
+      return; // the template shows the reason next to the To field
+    }
     this.load(1);
   }
 

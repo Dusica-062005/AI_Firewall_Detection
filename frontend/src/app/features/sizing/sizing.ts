@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -14,7 +15,7 @@ import { StatusBadge } from '../../shared/components/status-badge';
  */
 @Component({
   selector: 'app-sizing',
-  imports: [ReactiveFormsModule, RouterLink, LucideDynamicIcon, StatusBadge, ErrorAlert],
+  imports: [ReactiveFormsModule, DecimalPipe, RouterLink, LucideDynamicIcon, StatusBadge, ErrorAlert],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sizing.html',
   styleUrl: './sizing.scss',

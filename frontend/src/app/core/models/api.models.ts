@@ -485,8 +485,9 @@ export interface VerifyResult {
 // ---- Measurements: leak canaries (Feature 5) and dial quality (Feature 4) ----
 
 export type MeasurementStatus = 'RUNNING' | 'COMPLETED' | 'FAILED';
-/** main: the 200-call set; holdout: new templates that check detection changes for overfitting. */
-export type CanarySetName = 'main' | 'holdout';
+/** main: the 200-call set; holdout: new templates that check detection changes for overfitting;
+ *  random: freshly generated calls on every run (the seed is in the run's set version). */
+export type CanarySetName = 'main' | 'holdout' | 'random';
 
 export interface CanarySetSummary {
   version: string;

@@ -10,14 +10,14 @@ categories:
     description: Personal names from the spaCy named-entity model, a deny-list of common Indian names and self-introductions ("main ...", "my name is ...").
     limitations: Statistical model plus a fixed list. Misses uncommon or lowercase names and names in native scripts, and can mislabel organisations or places.
   PHONE_NUMBER:
-    description: Phone numbers validated with the phonenumbers library.
-    limitations: Base confidence is low (0.4) unless context words such as "call" or "phone" are nearby.
+    description: Phone numbers validated with the phonenumbers library, plus custom recognizers for North American numbers (any common format, with extension) and Indian mobiles.
+    limitations: A seven-digit local number is detected only after a cue word such as "call", "phone" or "number". Other international formats rely on Presidio, whose base confidence is low (0.4) unless context words are nearby.
   EMAIL_ADDRESS:
-    description: RFC-style email addresses.
-    limitations: Does not detect obfuscated addresses such as "name at example dot com".
+    description: RFC-style email addresses, plus spoken addresses such as "jane dot doe at example dot com" (custom recognizer).
+    limitations: A spoken address is detected only when its domain ends in a common suffix (com, org, net, ca, in, co dot uk and similar). Spelled-out letters ("j a n e at ...") are not joined into one address.
   LOCATION:
-    description: Cities, regions and countries from the spaCy named-entity model.
-    limitations: Statistical model. Street addresses are not reliably detected.
+    description: Cities, regions and countries from the spaCy named-entity model, plus street addresses, Canadian postal codes and US ZIP codes (custom recognizers).
+    limitations: A street address needs a house number and a street type ("350 Legget Drive"); "the corner of Bank and Somerset" is not detected. A US ZIP code needs a state or the words "zip" or "postal code" before it. PO boxes and rural routes are not covered.
   PATIENT_ID:
     description: Patient and medical record identifiers (custom recognizer).
     limitations: Only detected when introduced by context words such as "patient ID" or "MRN". A bare number is not treated as a patient ID.
@@ -28,8 +28,8 @@ categories:
     description: Payment card numbers validated with the Luhn checksum.
     limitations: Numbers that fail the Luhn check are not detected.
   GOVERNMENT_ID:
-    description: US Social Security numbers, Canadian Social Insurance numbers and Indian Aadhaar numbers.
-    limitations: US SSN uses Presidio validation, which rejects known invalid ranges. SIN requires the words "SIN" or "social insurance number" nearby. An Aadhaar number without the word "Aadhaar" nearby is detected only in the 4-4-4 grouped form and with low confidence.
+    description: US Social Security numbers, Canadian Social Insurance numbers, Indian Aadhaar numbers, passport numbers and driver's licence numbers.
+    limitations: US SSN uses Presidio validation, which rejects known invalid ranges. SIN requires the words "SIN" or "social insurance number" nearby. Passport and driver's licence numbers are detected only after the words "passport" or "driver's licence" / "driving license" / "DL"; a bare code is not. An Aadhaar number without the word "Aadhaar" nearby is detected only in the 4-4-4 grouped form and with low confidence.
   DATE_OF_BIRTH:
     description: Dates of birth introduced by "date of birth", "DOB" or "born on" (custom recognizer).
     limitations: Only numeric dates and dates with an English month name are recognized. A birth date without one of the cue words is detected as a generic DATE_TIME instead.
@@ -88,14 +88,33 @@ custom_recognizers:
     pattern: '\b(?:SSN|social\s+security\s+number)\s*(?:is|:|=)?\s*(\d{3}-\d{2}-\d{4})\b'
     group: 1
     score: 0.9
+  # Passport numbers differ by country (US 9 digits or a letter and 8 digits, Canada AB123456,
+  # India A1234567, UK 9 digits), and without the cue word they look like any product code, so the
+  # cue is required. The value must contain digits: "passport renewal" is not a number.
+  - name: passport-contextual
+    entity: GOVERNMENT_ID
+    pattern: '\bpassport\s*(?:number|num|no\.?|#)?\s*(?:is|:|=|hai)?\s*#?\s*((?:[A-Z]{1,2}\s?)?\d{6,9}[A-Z]?)\b'
+    group: 1
+    score: 0.9
+  # Driver's licence numbers ("S1234-56789-01234" in Ontario, "D1234567" in California, "123 456 789"
+  # in New York). Spaces and dashes are allowed only between digits so the match cannot run on into
+  # the following words. "licence number" alone is left out: it is just as often a vehicle plate.
+  - name: drivers-licence-contextual
+    entity: GOVERNMENT_ID
+    pattern: '(?:\b(?:driver[''’]?s?|driving)\s+licen[cs]e|\bDL)\s*(?:number|num|no\.?|#)?\s*(?:is|:|=|hai)?\s*#?\s*([A-Z]{0,3}[-\s]?\d(?:\d|[-\s](?=\d)){4,18})\b'
+    group: 1
+    score: 0.9
   - name: aadhaar-contextual
     entity: GOVERNMENT_ID
     pattern: '\b(?:aadhaar|aadhar|uidai)\s*(?:card\s*)?(?:number|no\.?|#)?\s*(?:is|:|=|hai)?\s*([2-9]\d{3}[\s-]?\d{4}[\s-]?\d{4})\b'
     group: 1
     score: 0.9
+  # The lookarounds refuse a 4-4-4 group that is part of a longer digit run: "4111 1111 1111 1111"
+  # is a card, and matching its first twelve digits here would beat the card recognizer (custom
+  # recognizers win overlaps), mislabel it and leave the last four digits in clear text.
   - name: aadhaar-grouped
     entity: GOVERNMENT_ID
-    pattern: '(?<![\d-])([2-9]\d{3}[\s-]\d{4}[\s-]\d{4})(?![\d-])'
+    pattern: '(?<![\d-][\s-]?)([2-9]\d{3}[\s-]\d{4}[\s-]\d{4})(?![\s-]?[\d-])'
     group: 1
     score: 0.5
   - name: india-mobile
@@ -105,6 +124,58 @@ custom_recognizers:
     # Above Presidio's PhoneRecognizer (0.75): Presidio keeps only one of two identical spans,
     # and this one must survive so the custom-recognizer overlap rule can apply.
     score: 0.8
+  # North American numbers ("416 555 0199", "(613) 555-0142", "+1.613.555.0142 ext 12").
+  # Presidio's phonenumbers check rejects many of these, including the 555 numbers used in demos,
+  # and spaCy then tags the digits as a DATE_TIME, which policy allows to the cloud. Area code and
+  # exchange start with 2-9. The lookarounds refuse a match touching another digit or digit group,
+  # so a card number or longer ID is never split into a "phone". Score stays below the 0.9
+  # contextual ID recognizers so an account number written as 10 digits keeps its stricter label.
+  - name: nanp-phone
+    entity: PHONE_NUMBER
+    pattern: '(?<![\d+][\s.-]?)((?:\+?1[\s.-]?)?(?:\([2-9]\d{2}\)|[2-9]\d{2})[\s.-]?[2-9]\d{2}[\s.-]?\d{4}(?:\s*(?:ext\.?|extension|x)\s*\d{1,6})?)(?![\s.-]?\d)'
+    group: 1
+    score: 0.85
+  # A seven-digit local number ("call me on 555-0142") only when a phone cue precedes it: a bare
+  # seven-digit number is just as likely to be an order or reference number.
+  - name: local-phone-contextual
+    entity: PHONE_NUMBER
+    pattern: '\b(?:call|phone|cell|mobile|number|reach|text|contact|dial)\b[^.\d\n]{0,25}?(?<![\d+])([2-9]\d{2}[\s.-]?\d{4})(?![\s.-]?\d)'
+    group: 1
+    score: 0.85
+  # Spoken email addresses, as speech-to-text writes them: "jane dot doe at example dot com",
+  # "priya underscore s at the rate gmail dot com". Presidio's email recognizer needs "@" and ".".
+  # The domain must end in a known suffix, and pronouns or filler words cannot be the whole local
+  # part or the start of the domain, so "look at this dot com bubble" is not an address. Scored
+  # above the name recognizers so "priya dot sharma at ..." stays one email, not a name plus text.
+  - name: spoken-email
+    entity: EMAIL_ADDRESS
+    pattern: '(?<![\w@.''’])((?:(?![ai]\b)[a-z]\s+)?(?!(?:me|us|him|her|them|it|you|i|we|they|look|be|is|was|back|home|work|here|there|this|that|the|a|an)\b)[a-z0-9]+(?:(?:\s*\b(?:dot|period|underscore|dash|hyphen)\b\s*|[._-])[a-z0-9]+)*\s*(?:\bat(?:\s+the\s+rate(?:\s+of)?)?\b|@)\s*(?!(?:the|a|an|this|that|my|your|our|home|work)\b)[a-z0-9-]+(?:(?:\s+dot\s+|\.)(?!(?:com|org|net|edu|gov|io|ca|in|uk|us|co|info|biz|ai|de|au)\b)[a-z0-9-]+)*(?:(?:\s+dot\s+|\.)(?:com|org|net|edu|gov|io|ca|in|uk|us|co|info|biz|ai|de|au)\b)+)'
+    group: 1
+    score: 0.9
+  # Canadian postal codes ("K2K 2W7", "k2k2w7"). Letter-digit-letter digit-letter-digit with the
+  # letters Canada Post uses is distinctive enough to need no cue word.
+  - name: canadian-postal-code
+    entity: LOCATION
+    pattern: '(?<![\w-])([ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][\s-]?\d[ABCEGHJ-NPRSTV-Z]\d)(?![\w-])'
+    group: 1
+    score: 0.85
+  # US ZIP codes ("DC 20500", "California 90210-1234", "zip code 10001"). A bare five-digit number
+  # is just as often an order or amount, so a state or a zip/postal cue must come first. State
+  # abbreviations are case-sensitive: "in", "or", "me" and "ok" are everyday words.
+  - name: us-zip-contextual
+    entity: LOCATION
+    pattern: '(?:\b(?:zip(?:\s*code)?|postal\s+code)\b\s*(?:is|:|=)?|(?-i:\b(?:AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)\b)|\b(?:Alabama|Alaska|Arizona|Arkansas|California|Colorado|Connecticut|Delaware|Florida|Georgia|Hawaii|Idaho|Illinois|Indiana|Iowa|Kansas|Kentucky|Louisiana|Maine|Maryland|Massachusetts|Michigan|Minnesota|Mississippi|Missouri|Montana|Nebraska|Nevada|New\s+Hampshire|New\s+Jersey|New\s+Mexico|New\s+York|North\s+Carolina|North\s+Dakota|Ohio|Oklahoma|Oregon|Pennsylvania|Rhode\s+Island|South\s+Carolina|South\s+Dakota|Tennessee|Texas|Utah|Vermont|Virginia|Washington|West\s+Virginia|Wisconsin|Wyoming)\b),?\s*(\d{5}(?:-\d{4})?)(?![\d-])'
+    group: 1
+    score: 0.85
+  # Street addresses: a house number, one to three name words and a street type ("350 Legget Drive",
+  # "1600 Pennsylvania Avenue NW", "42 Wallaby Way, Apt 4B"). Filler words cannot be part of the
+  # street name, so "20 minutes on the way" and "2 appointments with Dr Patel" are not addresses.
+  # Speech-to-text often writes street names in lower case, so case is not required.
+  - name: street-address
+    entity: LOCATION
+    pattern: '(?<![\w.-])(\d{1,6}[A-Z]?(?:\s+(?!(?:the|a|an|on|in|at|to|of|for|my|your|our|his|her|their|and|or|by|is|was|be|it|this|that|from|with|about|over|after|before|last|next|per|every|more|less|than|minutes?|hours?|days?|weeks?|months?|years?|times?|dollars?|percent)\b)(?:[a-z][a-z''-]*|\d{1,3}(?:st|nd|rd|th))){1,3}\s+(?:street|st|avenue|ave|road|rd|drive|dr|boulevard|blvd|lane|ln|way|court|ct|crescent|cres|place|pl|terrace|circle|cir|parkway|pkwy|highway|hwy|trail|square|sq)\b\.?(?:\s+(?-i:N|S|E|W|NE|NW|SE|SW)\b)?(?:,?\s+(?:apt\.?|apartment|unit|suite|ste\.?|\#)\s*[a-z0-9-]{1,6}\b)?)'
+    group: 1
+    score: 0.85
   # Cues in English, Hinglish ("janam ... ko hua") and native script (Hindi, Kannada, Tamil).
   # Native-script cues have no \b: combining vowel signs are not word characters. Native digits
   # in the date are matched once the spoken-number normalizer has mapped them to ASCII.

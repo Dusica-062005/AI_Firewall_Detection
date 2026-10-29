@@ -35,7 +35,8 @@ const STAGE_LABELS: Record<string, string> = {
           <label class="field calls-field">
             <span class="field__label">Calls per concurrency level</span>
             <input class="input" type="number" min="1" max="200" [value]="calls()"
-                   (change)="calls.set(+$any($event.target).value || 20)" [disabled]="running()" />
+                   (change)="setCalls($any($event.target))" [disabled]="running()" />
+            <span class="field__hint">1 to 200</span>
           </label>
           <label class="checkbox">
             <input type="checkbox" [checked]="withAudio()" (change)="withAudio.set($any($event.target).checked)" [disabled]="running()" />
@@ -132,6 +133,14 @@ export class BenchmarkTab implements OnInit {
   protected readonly starting = signal(false);
   protected readonly error = signal<ApiError | null>(null);
   protected readonly calls = signal(20);
+
+  /** Clamps to 1-200 and writes the value back, so the box always shows the number that will run. */
+  protected setCalls(input: HTMLInputElement): void {
+    const value = Math.round(Number(input.value));
+    const clamped = Number.isFinite(value) && input.value.trim() !== '' ? Math.min(200, Math.max(1, value)) : this.calls();
+    this.calls.set(clamped);
+    input.value = String(clamped);
+  }
   protected readonly withAudio = signal(false);
   protected readonly running = computed(() => this.starting() || this.latest()?.run?.status === 'RUNNING');
   protected readonly stages = Object.keys(STAGE_LABELS);
@@ -144,7 +153,8 @@ export class BenchmarkTab implements OnInit {
     this.load();
   }
 
-  protected load(): void {
+  /** Public so the page's Refresh button can reload this tab. */
+  load(): void {
     this.api.benchmarkLatest().subscribe({
       next: (latest) => {
         this.latest.set(latest);

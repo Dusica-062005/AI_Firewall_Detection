@@ -69,7 +69,7 @@
               <td class="nowrap">{{ r.created_at | date: 'MMM d, HH:mm' }}</td>
               <td>{{ r.source_type | humanize }}</td>
               <td class="num">{{ r.content.affected_requests }}</td>
-              <td><div class="tag-list">@for (c of r.content.categories | keyvalue; track c.key) { <span class="tag">{{ c.key }} x{{ c.value }}</span> }</div></td>
+              <td><div class="tag-list">@for (c of r.content.categories | keyvalue; track c.key) { <span class="tag">{{ c.key | humanize }} ×{{ c.value }}</span> }</div></td>
               <td>
                 <app-status-badge [value]="r.status" />
                 @if (r.content.auto_drafted) { <span class="tag">Auto-drafted</span> }
@@ -110,15 +110,22 @@
       <p class="text-sm">{{ r.content.what_happened }}</p>
       <dl class="kv">
         <dt>Affected requests</dt><dd>{{ r.content.affected_requests }}</dd>
-        <dt>Time window</dt><dd>{{ r.content.window.first ?? '-' }} to {{ r.content.window.last ?? '-' }}</dd>
-        <dt>Categories</dt><dd>@for (c of r.content.categories | keyvalue; track c.key) { <span class="tag">{{ c.key }} x{{ c.value }}</span> }</dd>
-        <dt>Reasons</dt><dd>@for (c of r.content.reasons | keyvalue; track c.key) { <span class="tag">{{ c.key | humanize }} x{{ c.value }}</span> }</dd>
-        <dt>Routes</dt><dd>@for (c of r.content.routes | keyvalue; track c.key) { <span class="tag">{{ c.key }} x{{ c.value }}</span> }</dd>
+        <dt>Time window</dt>
+        <dd>{{ r.content.window.first ? (r.content.window.first | date: 'MMM d, y, HH:mm') : '-' }} to {{ r.content.window.last ? (r.content.window.last | date: 'MMM d, y, HH:mm') : '-' }}</dd>
+        <dt>Categories</dt><dd>@for (c of r.content.categories | keyvalue; track c.key) { <span class="tag">{{ c.key | humanize }} ×{{ c.value }}</span> }</dd>
+        <dt>Reasons</dt><dd>@for (c of r.content.reasons | keyvalue; track c.key) { <span class="tag">{{ c.key | humanize }} ×{{ c.value }}</span> }</dd>
+        <dt>Routes</dt><dd>@for (c of r.content.routes | keyvalue; track c.key) { <span class="tag">{{ c.key | humanize }} ×{{ c.value }}</span> }</dd>
         <dt>Kill switch / dial then</dt>
-        <dd>@for (c of r.content.kill_switch | keyvalue; track c.key) { <span class="tag">kill switch {{ c.key }} x{{ c.value }}</span> }
-          @for (c of r.content.dials | keyvalue; track c.key) { <span class="tag">{{ c.key | humanize }} x{{ c.value }}</span> }</dd>
+        <dd>@for (c of r.content.kill_switch | keyvalue; track c.key) { <span class="tag">Kill switch {{ c.key === 'true' ? 'on' : c.key === 'false' ? 'off' : c.key }} ×{{ c.value }}</span> }
+          @for (c of r.content.dials | keyvalue; track c.key) { <span class="tag">{{ c.key | humanize }} ×{{ c.value }}</span> }</dd>
         <dt>Incident</dt>
-        <dd>{{ r.content.incident ? r.content.incident.incident_id + ' (' + r.content.incident.status + ', ' + r.content.incident.severity + ')' : 'None linked' }}</dd>
+        <dd>
+          @if (r.content.incident; as inc) {
+            {{ inc.incident_id }} ({{ inc.status | humanize }}, {{ inc.severity | humanize }})
+          } @else {
+            None linked
+          }
+        </dd>
         <dt>Receipts</dt><dd class="mono text-xs">{{ r.content.receipt_ids.join(', ') || 'none' }}</dd>
       </dl>
 
@@ -169,7 +176,7 @@
           <button type="button" class="btn btn-primary" (click)="review(r, 'REVIEWED')" [disabled]="busy() || reviewer().trim().length < 2">
             Mark reviewed
           </button>
-          <button type="button" class="btn btn-ghost" (click)="review(r, 'WITHDRAWN')" [disabled]="busy() || reviewer().trim().length < 2">
+          <button type="button" class="btn btn-ghost" (click)="confirmWithdraw.set(r)" [disabled]="busy() || reviewer().trim().length < 2">
             Withdraw
           </button>
         </div>
@@ -178,4 +185,10 @@
       <div class="watermark" role="note">{{ r.content.watermark }}</div>
     </div>
   </aside>
+}
+
+@if (confirmWithdraw(); as r) {
+  <app-confirm-dialog title="Withdraw draft report" [danger]="true" confirmLabel="Withdraw report"
+                      [message]="'Withdraw ' + r.report_id + '? It will be marked as withdrawn by ' + reviewer().trim() + ' and can no longer be reviewed.'"
+                      (confirm)="review(r, 'WITHDRAWN'); confirmWithdraw.set(null)" (cancel)="confirmWithdraw.set(null)" />
 }

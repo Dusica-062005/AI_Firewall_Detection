@@ -131,7 +131,7 @@
         <tbody>
           @for (e of r.entities; track $index) {
             <tr>
-              <td><span class="tag">{{ e.entity_type }}</span></td>
+              <td><span class="tag">{{ e.entity_type | humanize }}</span></td>
               <td>
                 @if (e.value !== null) { <span class="mono">{{ e.value }}</span> } @else { <span class="muted">Hidden by configuration</span> }
               </td>
@@ -143,7 +143,7 @@
               <td><app-status-badge [value]="e.action" /></td>
               <td>
                 <div class="rule-cell">
-                  <span class="mono">{{ e.policy_id }}</span>
+                  <span [title]="e.policy_id ?? ''">{{ names.policy(e.policy_id) }}</span>
                   <span class="text-xs muted">{{ e.recognizer }}</span>
                 </div>
               </td>
@@ -250,8 +250,8 @@
       @case ('policy') {
         <div class="stack">
           <dl class="kv">
-            <dt>Decisive rule</dt><dd class="mono">{{ r.decisive_policy_id ?? '-' }}</dd>
-            <dt>Profile / channel</dt><dd>{{ r.profile }} / {{ r.channel }}</dd>
+            <dt>Policy applied</dt><dd [title]="r.decisive_policy_id ?? ''">{{ names.policy(r.decisive_policy_id) }}</dd>
+            <dt>Profile / channel</dt><dd>{{ names.profile(r.profile) }} / {{ r.channel | humanize }}</dd>
             <dt>Policy set version</dt><dd class="mono">{{ r.policy_version ?? '-' }}</dd>
             @if (r.error_category) { <dt>Error category</dt><dd class="mono">{{ r.error_category }}</dd> }
           </dl>
@@ -275,7 +275,7 @@
                       <td><app-status-badge [value]="p.action" /></td>
                       <td><app-status-badge [value]="p.destination" /></td>
                       <td class="num">{{ p.priority }}</td>
-                      <td><div class="tag-list">@for (c of p.matched_categories; track c) { <span class="tag">{{ c }}</span> }</div></td>
+                      <td><div class="tag-list">@for (c of p.matched_categories; track c) { <span class="tag">{{ c | humanize }}</span> }</div></td>
                     </tr>
                   }
                 </tbody>
@@ -311,7 +311,7 @@
               <dt>Entity categories</dt>
               <dd>
                 <div class="tag-list">
-                  @for (k of objectKeys(ev.entity_counts); track k) { <span class="tag">{{ k }} x{{ ev.entity_counts[k] }}</span> } @empty { <span class="muted">None</span> }
+                  @for (k of objectKeys(ev.entity_counts); track k) { <span class="tag">{{ k | humanize }} ×{{ ev.entity_counts[k] }}</span> } @empty { <span class="muted">None</span> }
                 </div>
               </dd>
               <dt>Local AI / cloud</dt><dd>{{ ev.local_ai_status | humanize }} / {{ ev.cloud_status | humanize }}</dd>

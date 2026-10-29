@@ -29,7 +29,7 @@ import { InspectorDecision } from './inspector-decision';
           @if (categories().length) {
             <div class="tag-list">
               @for (c of categories(); track c.type) {
-                <span class="tag">{{ c.type }}{{ c.count > 1 ? ' x' + c.count : '' }}</span>
+                <span class="tag">{{ c.type | humanize }}{{ c.count > 1 ? ' ×' + c.count : '' }}</span>
               }
             </div>
           } @else {

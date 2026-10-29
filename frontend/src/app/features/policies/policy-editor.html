@@ -60,14 +60,14 @@
         @for (c of categories(); track c) {
           <label class="checkbox">
             <input type="checkbox" [checked]="hasCategory(c)" (change)="toggleCategory(c, $any($event.target).checked)" />
-            <span class="mono">{{ c }}</span>
+            <span [title]="c">{{ c | humanize }}</span>
           </label>
         }
       </div>
       @if (form.controls.entity_categories.touched && form.controls.entity_categories.invalid) {
         <span class="field__error">Select at least one category.</span>
       } @else {
-        <span class="field__hint">ANY applies the rule to every request, including requests with no detected entities.</span>
+        <span class="field__hint">"Any" applies the rule to every request, including requests with no detected entities.</span>
       }
     </section>
 
@@ -78,7 +78,7 @@
           <label for="p-action">Action</label>
           <select id="p-action" class="select" formControlName="action">
             @for (a of actions; track a) {
-              <option [value]="a">{{ a }}</option>
+              <option [value]="a">{{ a | humanize }}</option>
             }
           </select>
         </div>
@@ -86,7 +86,7 @@
           <label for="p-dest">Processing destination</label>
           <select id="p-dest" class="select" formControlName="destination">
             @for (d of destinations(); track d) {
-              <option [value]="d">{{ d }}</option>
+              <option [value]="d">{{ d | humanize }}</option>
             }
           </select>
         </div>

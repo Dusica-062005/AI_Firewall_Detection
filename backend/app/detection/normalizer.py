@@ -45,6 +45,9 @@ SPLIT_MAX_GAP_WORDS = 8
 # group is treated as its continuation. Longer first parts are left alone.
 SPLIT_MAX_FIRST_DIGITS = 3
 SPLIT_MAX_TOTAL_DIGITS = 12
+# "P972. Sorry, the line dropped. It's 2916." has two sentence ends between the parts. Allowing
+# only one let the second half through to the cloud (found by the canary runs).
+SPLIT_MAX_SENTENCE_ENDS = 2
 
 _TOKEN = regex.compile(r"[^\W\d_]+|\d+")
 _WORD = regex.compile(r"\w+")
@@ -243,7 +246,7 @@ def _join_split_ids(chars: list[tuple[str, int, int]]) -> list[tuple[str, int, i
             continue
         if not _PAUSE.search(gap):
             continue  # "14 July 1999": parts of one value; a split ID has a pause between its parts
-        if len(_WORD.findall(gap)) > SPLIT_MAX_GAP_WORDS or len(_SENTENCE_END.findall(gap)) > 1:
+        if len(_WORD.findall(gap)) > SPLIT_MAX_GAP_WORDS or len(_SENTENCE_END.findall(gap)) > SPLIT_MAX_SENTENCE_ENDS:
             continue
         if len(first.group(2)) + len(second.group(2)) > SPLIT_MAX_TOTAL_DIGITS:
             continue

@@ -30,7 +30,11 @@
       </div>
       <div class="field">
         <label for="f-to">To</label>
-        <input id="f-to" class="input" type="datetime-local" formControlName="date_to" />
+        <input id="f-to" class="input" type="datetime-local" formControlName="date_to"
+               [attr.aria-invalid]="filters.hasError('dateRange')" aria-describedby="f-to-error" />
+        @if (filters.hasError('dateRange')) {
+          <span id="f-to-error" class="field__error">"To" must be after "From".</span>
+        }
       </div>
       <div class="field">
         <label for="f-decision">Decision</label>
@@ -104,10 +108,10 @@
                 <td class="mono nowrap">{{ ev.event_id }}</td>
                 <td class="nowrap">{{ ev.created_at | date: 'MMM d, y, HH:mm:ss' }}</td>
                 <td class="mono" [title]="ev.request_id">{{ ev.request_id.slice(0, 8) }}</td>
-                <td class="mono">{{ ev.decisive_policy_id }}</td>
+                <td [title]="ev.decisive_policy_id ?? ''">{{ names.policy(ev.decisive_policy_id) }}</td>
                 <td>
                   <div class="tag-list">
-                    @for (c of categories(ev); track c) { <span class="tag">{{ c }}</span> } @empty { <span class="muted">None</span> }
+                    @for (c of categories(ev); track c) { <span class="tag">{{ c | humanize }}</span> } @empty { <span class="muted">None</span> }
                   </div>
                 </td>
                 <td><app-status-badge [value]="ev.decision" /></td>
@@ -171,7 +175,7 @@
             <dt>Timestamp</dt><dd>{{ ev.created_at | date: 'MMM d, y, HH:mm:ss.SSS' }}</dd>
             <dt>Request ID</dt><dd class="mono">{{ ev.request_id }}</dd>
             <dt>Operation / mode</dt><dd>{{ ev.operation | humanize }} / {{ ev.mode | humanize }}</dd>
-            <dt>Profile / channel</dt><dd>{{ ev.profile }} / {{ ev.channel }}</dd>
+            <dt>Profile / channel</dt><dd>{{ names.profile(ev.profile) }} / {{ ev.channel | humanize }}</dd>
             <dt>Transcript length</dt><dd>{{ ev.transcript_chars }} characters</dd>
           </dl>
         </section>
@@ -179,9 +183,9 @@
         <section class="stack">
           <span class="section-title">Policy</span>
           <dl class="kv">
-            <dt>Decisive rule</dt><dd class="mono">{{ ev.decisive_policy_id }}</dd>
+            <dt>Policy applied</dt><dd [title]="ev.decisive_policy_id ?? ''">{{ names.policy(ev.decisive_policy_id) }}</dd>
             <dt>Matched policies</dt>
-            <dd><div class="tag-list">@for (p of ev.policy_ids; track p) { <span class="tag">{{ p }}</span> } @empty { <span class="muted">None</span> }</div></dd>
+            <dd><div class="tag-list">@for (p of ev.policy_ids; track p) { <span class="tag" [title]="p">{{ names.policy(p) }}</span> } @empty { <span class="muted">None</span> }</div></dd>
             <dt>Policy set version</dt><dd class="mono">{{ ev.policy_version }}</dd>
           </dl>
         </section>
@@ -189,7 +193,7 @@
         <section class="stack">
           <span class="section-title">Detected entity categories</span>
           <div class="tag-list">
-            @for (c of categories(ev); track c) { <span class="tag">{{ c }} x{{ ev.entity_counts[c] }}</span> } @empty { <span class="muted text-sm">No sensitive entities detected</span> }
+            @for (c of categories(ev); track c) { <span class="tag">{{ c | humanize }} ×{{ ev.entity_counts[c] }}</span> } @empty { <span class="muted text-sm">No sensitive entities detected</span> }
           </div>
           <p class="text-xs muted">Categories and counts only. The detected values themselves are not stored.</p>
         </section>
@@ -200,7 +204,7 @@
             <dt>Local AI</dt><dd><app-status-badge [value]="ev.local_ai_status" /></dd>
             <dt>Cloud handoff</dt><dd><app-status-badge [value]="ev.cloud_status" /> <span class="simulated-label">Mock</span></dd>
             @if (ev.cloud_receipt_id) { <dt>Receiver receipt</dt><dd class="mono">{{ ev.cloud_receipt_id }}</dd> }
-            @if (ev.error_category) { <dt>Error category</dt><dd class="mono">{{ ev.error_category }}</dd> }
+            @if (ev.error_category) { <dt>Error category</dt><dd>{{ ev.error_category | humanize }}</dd> }
             @if (ev.warnings.length) {
               <dt>Warnings</dt><dd><div class="tag-list">@for (w of ev.warnings; track w) { <span class="tag">{{ w }}</span> }</div></dd>
             }

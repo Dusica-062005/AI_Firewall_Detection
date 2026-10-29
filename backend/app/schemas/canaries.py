@@ -15,7 +15,8 @@ class StartCanaryRun(BaseModel):
 
     rule_version: str | None = Field(default=None, pattern=r"^[A-Za-z0-9._:-]{1,64}$")
     normalize_on: bool | None = None  # None: use the NORMALIZE_NUMBERS setting
-    set: Literal["main", "holdout"] = "main"  # holdout: new templates, checks for overfitting
+    # holdout: new templates, checks for overfitting; random: new calls on every run
+    set: Literal["main", "holdout", "random"] = "main"
 
 
 class StartedRun(BaseModel):

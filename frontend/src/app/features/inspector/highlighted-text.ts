@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { EntityResult } from '../../core/models/api.models';
+import { humanize } from '../../shared/pipes/format.pipes';
 
 interface Segment {
   text: string;
@@ -46,7 +47,7 @@ export class HighlightedText {
       if (e.start > cursor) {
         out.push({ text: text.slice(cursor, e.start), kind: 'plain' });
       }
-      out.push({ text: text.slice(e.start, e.end), kind: 'entity', label: `${e.entity_type} (${e.action})` });
+      out.push({ text: text.slice(e.start, e.end), kind: 'entity', label: `${humanize(e.entity_type)} (${humanize(e.action)})` });
       cursor = e.end;
     }
     if (cursor < text.length) {

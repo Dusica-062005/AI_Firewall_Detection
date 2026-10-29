@@ -78,7 +78,7 @@ def test_oversized_body_is_rejected(harness_factory):
 def test_policy_crud_and_validation(harness):
     client = harness.client
     listing = client.get("/api/policies").json()
-    assert listing["total"] == 9
+    assert listing["total"] == 10
 
     created = client.post("/api/policies", json=NEW_POLICY)
     assert created.status_code == 201, created.text
@@ -104,7 +104,7 @@ def test_invalid_policies_are_rejected_by_api(harness):
     assert check["valid"] is False and check["errors"]
     ok = client.post("/api/policies/validate", json=NEW_POLICY).json()
     assert ok["valid"] is True
-    assert client.get("/api/policies").json()["total"] == 9  # nothing was saved
+    assert client.get("/api/policies").json()["total"] == 10  # nothing was saved
 
 
 def test_policy_change_affects_backend_behaviour(harness):
@@ -140,7 +140,16 @@ def test_policy_changes_persist_across_restarts(harness_factory):
 def test_reset_to_defaults(harness):
     harness.client.post("/api/policies", json=NEW_POLICY)
     reset = harness.client.post("/api/policies/reset").json()
-    assert reset["total"] == 9
+    assert reset["total"] == 10
+
+
+def test_written_channels_keep_contact_details_local(harness):
+    voice = harness.process(channel="voice").json()
+    email = harness.process(channel="email").json()
+    assert voice["decision"] == "REDACTED" and voice["authorized_destination"] == "CLOUD"
+    assert email["decision"] == "LOCAL_ONLY" and email["authorized_destination"] == "LOCAL"
+    assert "written-channels-contact-local" in {p["policy_id"] for p in email["matched_policies"]}
+    assert len(harness.receiver_transport.handoff_requests()) == 1  # only the voice request left the firewall
 
 
 def test_admin_key_protects_policy_mutations(harness_factory):

@@ -53,14 +53,14 @@
               <div class="big-numbers">
                 <div><span class="kpi__label text-xs muted">Machines</span><strong class="big">{{ r.recommendation!.machines }}</strong></div>
                 <div><span class="kpi__label text-xs muted">Expected latency p50 / p95</span>
-                  <strong class="big">{{ r.recommendation!.expected_latency.p50_s }} s / {{ r.recommendation!.expected_latency.p95_s }} s</strong></div>
-                <div><span class="kpi__label text-xs muted">Headroom</span><strong class="big">{{ r.recommendation!.headroom_pct }}%</strong></div>
+                  <strong class="big">{{ r.recommendation!.expected_latency.p50_s | number: '1.0-2' }} s / {{ r.recommendation!.expected_latency.p95_s | number: '1.0-2' }} s</strong></div>
+                <div><span class="kpi__label text-xs muted">Headroom</span><strong class="big">{{ r.recommendation!.headroom_pct | number: '1.0-1' }}%</strong></div>
               </div>
               <p class="text-sm">{{ r.message }}</p>
               <dl class="kv kv--inline text-sm">
                 <dt>Machine (as benchmarked)</dt>
                 <dd>{{ r.recommendation!.machine.cpu }}, {{ r.recommendation!.machine.physical_cores ?? '?' }} cores,
-                  {{ r.recommendation!.machine.ram_gb ?? '?' }} GB RAM, GPU {{ r.recommendation!.gpu }}</dd>
+                  {{ r.recommendation!.machine.ram_gb ?? '?' }} GB RAM, GPU {{ r.recommendation!.gpu ?? 'not detected' }}</dd>
                 <dt>Model</dt><dd>{{ r.recommendation!.model }}</dd>
                 <dt>Benchmark run</dt><dd class="mono">{{ r.benchmark_run_id }}</dd>
               </dl>

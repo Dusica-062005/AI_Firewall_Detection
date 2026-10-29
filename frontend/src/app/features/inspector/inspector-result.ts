@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
 
 import { ApiError, AuditEvent, FirewallResult } from '../../core/models/api.models';
+import { DisplayNamesService } from '../../core/services/display-names.service';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { StatusBadge } from '../../shared/components/status-badge';
@@ -26,6 +27,7 @@ type Tab = 'summary' | 'cloud' | 'policy' | 'audit';
 })
 export class InspectorResult {
   private readonly api = inject(FirewallApiService);
+  protected readonly names = inject(DisplayNamesService);
 
   readonly result = input.required<FirewallResult>();
   readonly original = input.required<string>();
@@ -59,6 +61,7 @@ export class InspectorResult {
   });
 
   constructor() {
+    this.names.load();
     effect(() => {
       const r = this.result();
       this.auditEvent.set(null);

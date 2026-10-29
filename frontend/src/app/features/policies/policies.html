@@ -49,7 +49,7 @@
         <label class="sr-only" for="action-filter">Filter by action</label>
         <select id="action-filter" class="select" [ngModel]="actionFilter()" (ngModelChange)="actionFilter.set($event)">
           <option value="">All actions</option>
-          @for (a of actions; track a) { <option [value]="a">{{ a }}</option> }
+          @for (a of actions; track a) { <option [value]="a">{{ a | humanize }}</option> }
         </select>
         <label class="sr-only" for="profile-filter">Filter by profile</label>
         <select id="profile-filter" class="select" [ngModel]="profileFilter()" (ngModelChange)="profileFilter.set($event)">
@@ -92,7 +92,7 @@
                   <span class="text-xs mono muted">{{ p.policy_id }} &middot; v{{ p.version }}</span>
                   @if (p.description) { <span class="text-xs muted policy-cell__desc">{{ p.description }}</span> }
                 </div></td>
-                <td><div class="tag-list">@for (c of p.entity_categories; track c) { <span class="tag">{{ c }}</span> }</div></td>
+                <td><div class="tag-list">@for (c of p.entity_categories; track c) { <span class="tag">{{ c | humanize }}</span> }</div></td>
                 <td><app-status-badge [value]="p.action" /></td>
                 <td><app-status-badge [value]="p.destination" /></td>
                 <td class="num">{{ p.priority }}</td>

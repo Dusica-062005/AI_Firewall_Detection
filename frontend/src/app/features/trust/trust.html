@@ -20,7 +20,7 @@
             <svg class="icon" [lucideIcon]="c.kill_switch ? 'cloud-off' : 'cloud'" aria-hidden="true"></svg>
             <div>
               <span class="cloud-path__label">Cloud path</span>
-              <strong class="cloud-path__state">{{ c.cloud_path }}</strong>
+              <strong class="cloud-path__state">{{ c.cloud_path === 'ACTIVE' ? 'Open' : (c.cloud_path | humanize) }}</strong>
             </div>
           </div>
           <p class="text-sm">
@@ -66,7 +66,9 @@
             }
           </div>
           <p class="text-xs muted">
-            The dial only adds protection on top of policy; it never weakens a policy rule.
+            The dial only adds protection on top of policy; it never weakens a policy rule, so names, numbers and
+            places stay redacted at every position. To see it change, process a call with a health term and a time,
+            such as "I have diabetes and need to move my appointment to Friday at 3 pm".
             @if (quality(); as q) {
               Scores from run {{ q.run_id }} ({{ q.created_at | date: 'MMM d, HH:mm' }}): similarity to the raw-text summary, not a human rating.
             }

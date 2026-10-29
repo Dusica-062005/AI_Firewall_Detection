@@ -171,7 +171,8 @@ export class DialQuality implements OnInit {
     this.load();
   }
 
-  protected load(): void {
+  /** Public so the page's Refresh button can reload this tab. */
+  load(): void {
     this.api.qualityLatest().subscribe({
       next: (latest) => {
         this.latest.set(latest);

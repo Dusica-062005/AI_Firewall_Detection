@@ -12,6 +12,7 @@ import {
   IntegrationsStatus,
   MetricsSummary,
 } from '../../core/models/api.models';
+import { DisplayNamesService } from '../../core/services/display-names.service';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { SystemStatusService } from '../../core/services/system-status.service';
 import { DecisionChart } from '../../shared/components/decision-chart';
@@ -31,6 +32,7 @@ export class Overview implements OnInit {
   private readonly api = inject(FirewallApiService);
   private readonly router = inject(Router);
   protected readonly system = inject(SystemStatusService);
+  protected readonly names = inject(DisplayNamesService);
 
   protected readonly metrics = signal<MetricsSummary | null>(null);
   protected readonly recent = signal<AuditEvent[]>([]);
@@ -55,6 +57,7 @@ export class Overview implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.names.load();
   }
 
   protected load(): void {

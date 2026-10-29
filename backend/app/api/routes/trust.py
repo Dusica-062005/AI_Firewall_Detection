@@ -36,9 +36,11 @@ router = APIRouter(tags=["trust"])
 
 VERIFIER = BACKEND_ROOT / "scripts" / "verify_chain.py"
 DIAL_DESCRIPTIONS = {
-    "max_privacy": "Tokenizes every detected entity and keeps processing on the local model.",
-    "balanced": "Tokenizes every detected entity except locations and dates; the cloud stand-in is allowed.",
-    "max_quality": "Tokenizes only what policy requires; the cloud stand-in is allowed.",
+    # The dial only changes values that policy leaves readable (with the default policies: health
+    # terms and dates). Names, numbers and places that policy redacts stay redacted at every position.
+    "max_privacy": "Also tokenizes what policy leaves readable, such as health terms and dates, and keeps processing on the local model.",
+    "balanced": "Also tokenizes what policy leaves readable, such as health terms, but keeps dates and times readable so scheduling still works. The cloud stand-in is allowed.",
+    "max_quality": "Tokenizes only what policy requires, so health terms and dates stay readable. The cloud stand-in is allowed.",
 }
 
 

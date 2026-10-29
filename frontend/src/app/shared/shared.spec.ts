@@ -3,12 +3,20 @@ import { TestBed } from '@angular/core/testing';
 import { testProviders } from '../../testing/test-providers';
 import { StatusBadge } from './components/status-badge';
 import { splitPlaceholders } from '../features/inspector/highlighted-text';
-import { formatDuration, humanize } from './pipes/format.pipes';
+import { formatBytes, formatDuration, humanize } from './pipes/format.pipes';
 
 describe('format helpers', () => {
   it('humanizes backend enums', () => {
     expect(humanize('COMPLETED_WITH_WARNINGS')).toBe('Completed with warnings');
+    expect(humanize('PATIENT_ID')).toBe('Patient ID');
+    expect(humanize('redact-contact-identifiers')).toBe('Redact contact identifiers');
     expect(humanize(null)).toBe('');
+  });
+
+  it('formats byte counts', () => {
+    expect(formatBytes(512)).toBe('512 bytes');
+    expect(formatBytes(1048576)).toBe('1 MB');
+    expect(formatBytes(26214400)).toBe('25 MB');
   });
 
   it('formats measured durations', () => {

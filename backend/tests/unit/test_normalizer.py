@@ -75,6 +75,23 @@ def test_split_id_across_a_sentence_boundary(analyzer):
     assert ids[0].value == "P48. Sorry, then 2913"
 
 
+def test_split_id_with_an_apology_sentence_between_the_parts(analyzer):
+    # Canary leaks: two sentence ends between the parts kept the join from happening, so the
+    # second half went to the cloud in clear text. Digits and spoken digits both.
+    for text, second in (
+        ("My patient ID is P972. Sorry, the line dropped. It's 2916.", "2916"),
+        ("Patient ID P947. Sorry, the line dropped. It's double zero four zero.", "double zero four zero"),
+    ):
+        ids = by_type(analyzer.analyze(text, normalize=True), "PATIENT_ID")
+        assert len(ids) == 1, text
+        assert ids[0].value.startswith("P9") and ids[0].value.endswith(second), (text, ids[0].value)
+
+
+def test_split_join_still_needs_an_id_cue_with_two_sentence_ends():
+    text = "I waited 20. Sorry, the line dropped. It's 2916."
+    assert normalize_numbers(text).text == text
+
+
 def test_split_join_stops_at_another_field():
     # Found by the canary runs: spoken digits followed by a date were glued to the date.
     text = "My number is nine four zero eight, date of birth 14 July 1999."

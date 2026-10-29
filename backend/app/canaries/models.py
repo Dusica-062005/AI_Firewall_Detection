@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
+import secrets
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Literal
@@ -13,6 +16,8 @@ CANARY_FILE = Path(__file__).resolve().parent / "canaries.json"
 # Held-out set: different templates and seed, used to check that detection changes generalize.
 HOLDOUT_FILE = Path(__file__).resolve().parent / "canaries_holdout.json"
 CANARY_SETS = {"main": CANARY_FILE, "holdout": HOLDOUT_FILE}
+# The generator that wrote both files also builds the "random" set: new calls on every run.
+GENERATOR_FILE = Path(__file__).resolve().parents[2] / "scripts" / "generate_canaries.py"
 
 Language = Literal["en", "hinglish", "hi", "kn", "ta"]
 Script = Literal["latin", "native"]
@@ -75,3 +80,14 @@ class CanarySet(BaseModel):
 
 def load_canary_set(path: Path = CANARY_FILE) -> CanarySet:
     return CanarySet.model_validate(json.loads(path.read_text(encoding="utf-8")))
+
+
+def random_canary_set(seed: int | None = None) -> CanarySet:
+    """A freshly generated set with a random seed (or the given one, to regenerate a past run)."""
+    generator = sys.modules.get("generate_canaries")
+    if generator is None:
+        spec = importlib.util.spec_from_file_location("generate_canaries", GENERATOR_FILE)
+        generator = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = generator  # dataclasses in the script look their module up here
+        spec.loader.exec_module(generator)
+    return CanarySet.model_validate(generator.build_random_set(secrets.randbelow(10**9) if seed is None else seed))

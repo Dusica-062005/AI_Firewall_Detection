@@ -8,7 +8,7 @@ from collections import Counter
 
 import pytest
 
-from app.canaries.models import CANARY_FILE, HOLDOUT_FILE, NUMERIC_TYPES, load_canary_set
+from app.canaries.models import CANARY_FILE, HOLDOUT_FILE, NUMERIC_TYPES, load_canary_set, random_canary_set
 from app.config import BACKEND_ROOT
 
 
@@ -66,6 +66,22 @@ def test_generation_is_byte_identical_and_matches_the_committed_file(name, path)
     second = generator.render(generator.build_canary_set(name))
     assert first == second
     assert path.read_bytes() == first.encode("utf-8")
+
+
+def test_random_sets_differ_by_seed_and_regenerate_exactly():
+    a, b = random_canary_set(seed=11), random_canary_set(seed=12)
+    assert a.version == "canaries-random-11" and a.generated_with_seed == 11
+    assert {c.text for c in a.calls} != {c.text for c in b.calls}
+    assert random_canary_set(seed=11) == a  # the seed in the version is enough to rebuild a run's calls
+    # Same mix as the main set, so rates are in the same range; every span is exact (model validation).
+    main = load_canary_set()
+    assert Counter((c.language, c.script, c.difficulty) for c in a.calls) == Counter(
+        (c.language, c.script, c.difficulty) for c in main.calls
+    )
+
+
+def test_unseeded_random_sets_are_new_each_time():
+    assert random_canary_set().version != random_canary_set().version
 
 
 def test_holdout_set_is_separate_and_covers_every_language():

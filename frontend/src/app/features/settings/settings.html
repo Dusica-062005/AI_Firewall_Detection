@@ -45,6 +45,20 @@
     </div>
   </section>
 
+  <!-- Integration status when there is no result: still checking, or the check itself failed. -->
+  <ng-template #checkState>
+    @if (testing()) {
+      <span class="row"><span class="spinner" aria-hidden="true"></span><span class="muted">Checking</span></span>
+    } @else if (integrationsError(); as err) {
+      <span class="row wrap">
+        <app-status-badge value="ERROR" label="Check failed" />
+        <span class="text-sm muted">{{ err.message }}</span>
+      </span>
+    } @else {
+      <span class="muted">Not checked</span>
+    }
+  </ng-template>
+
   @if (config(); as c) {
     <div class="grid grid-2">
       <section class="card">
@@ -54,8 +68,8 @@
             <dt>Environment</dt><dd>{{ c.environment }}</dd>
             <dt>API endpoint</dt><dd class="mono">{{ runtime.apiBaseUrl }}</dd>
             <dt>Allowed origins (CORS)</dt><dd class="mono">{{ c.cors_origins.join(', ') }}</dd>
-            <dt>Transcript limit</dt><dd>{{ c.max_transcript_chars }} characters</dd>
-            <dt>Request body limit</dt><dd>{{ c.max_request_bytes }} bytes</dd>
+            <dt>Transcript limit</dt><dd>{{ c.max_transcript_chars | number }} characters</dd>
+            <dt>Request body limit</dt><dd>{{ c.max_request_bytes | bytes }}</dd>
             <dt>Uncovered entities</dt><dd><app-status-badge [value]="c.detection.unmatched_entity_action" /></dd>
             <dt>Outbound default</dt><dd>Deny unless policy authorizes and validation passes</dd>
             <dt>Policy admin key</dt><dd>{{ c.admin_auth_enabled ? 'Required for policy changes' : 'Not required (trusted local environment)' }}</dd>
@@ -81,7 +95,7 @@
             }
           }
           <dl class="kv">
-            <dt>Status</dt><dd>@if (integrations(); as i) { <app-status-badge [value]="i.ollama.status" /> } @else { <span class="muted">Not checked</span> }</dd>
+            <dt>Status</dt><dd>@if (integrations(); as i) { <app-status-badge [value]="i.ollama.status" /> } @else { <ng-container *ngTemplateOutlet="checkState" /> }</dd>
             <dt>Endpoint</dt><dd class="mono">{{ c.ollama.base_url }}</dd>
             <dt>Configured model</dt><dd class="mono">{{ c.ollama.model }}</dd>
             <dt>Request timeout</dt><dd>{{ c.ollama.timeout_seconds }} seconds</dd>
@@ -105,7 +119,7 @@
             <span>This prototype hands off to a local mock receiver. It does not connect to Mitel CloudLink services.</span>
           </div>
           <dl class="kv">
-            <dt>Status</dt><dd>@if (integrations(); as i) { <app-status-badge [value]="i.cloudlink.status" /> } @else { <span class="muted">Not checked</span> }</dd>
+            <dt>Status</dt><dd>@if (integrations(); as i) { <app-status-badge [value]="i.cloudlink.status" /> } @else { <ng-container *ngTemplateOutlet="checkState" /> }</dd>
             <dt>Endpoint</dt><dd class="mono">{{ c.cloudlink.base_url }}</dd>
             <dt>Integration key</dt><dd>{{ c.cloudlink.api_key.display }}</dd>
             <dt>Timeout</dt><dd>{{ c.cloudlink.timeout_seconds }} seconds</dd>
@@ -193,7 +207,7 @@
           <tbody>
             @for (r of c.recognizers; track r.category) {
               <tr>
-                <td><span class="tag">{{ r.category }}</span></td>
+                <td><span class="tag">{{ r.category | humanize }}</span></td>
                 <td><div class="stack sources">@for (s of r.sources; track s) { <span class="text-xs mono">{{ s }}</span> }</div></td>
                 <td class="text-sm">{{ r.description }}</td>
                 <td class="text-sm muted">{{ r.limitations }}</td>

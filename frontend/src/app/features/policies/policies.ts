@@ -10,13 +10,14 @@ import { NotificationService } from '../../core/services/notification.service';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { StatusBadge } from '../../shared/components/status-badge';
+import { HumanizePipe } from '../../shared/pipes/format.pipes';
 import { PolicyEditor } from './policy-editor';
 
 type Confirm = { kind: 'delete'; policy: Policy } | { kind: 'reset' };
 
 @Component({
   selector: 'app-policies',
-  imports: [FormsModule, DatePipe, LucideDynamicIcon, StatusBadge, ErrorAlert, ConfirmDialog, PolicyEditor],
+  imports: [FormsModule, DatePipe, LucideDynamicIcon, StatusBadge, ErrorAlert, ConfirmDialog, HumanizePipe, PolicyEditor],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './policies.html',
   styleUrl: './policies.scss',

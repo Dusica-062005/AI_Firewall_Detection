@@ -5,7 +5,7 @@
       <p>How well the firewall protects data, in measured numbers: planted canary identities, per-language accuracy and the quality cost of each dial position.</p>
     </div>
     <div class="toolbar">
-      <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
+      <button type="button" class="btn btn-secondary" (click)="refresh()" [disabled]="loading()">
         <svg class="icon" lucideIcon="refresh-cw" aria-hidden="true"></svg>Refresh
       </button>
     </div>
@@ -29,7 +29,9 @@
         <section class="card">
           <div class="card-header">
             <h2><svg class="icon" lucideIcon="target" aria-hidden="true"></svg>Leak canaries</h2>
-            @if (canarySet(); as s) { <span class="card-header__meta">Set {{ s.version }}</span> }
+            @if (canarySet(); as s) {
+              <span class="card-header__meta">{{ setName() === 'random' ? 'New random calls on every run' : 'Set ' + s.version }}</span>
+            }
           </div>
           <div class="card-body stack">
             <p class="text-sm">
@@ -51,6 +53,7 @@
                         aria-label="Canary set">
                   <option value="main">Main set (200 calls)</option>
                   <option value="holdout">Held-out set (new templates)</option>
+                  <option value="random">Fresh random set (new calls each run)</option>
                 </select>
               </label>
               <label class="checkbox">
@@ -62,6 +65,12 @@
                 <svg class="icon" lucideIcon="play" aria-hidden="true"></svg>Run canary batch
               </button>
             </div>
+            @if (setName() === 'random') {
+              <p class="text-xs muted">
+                Every run plants different names and numbers, so the leak rate moves from run to run. To compare two rule
+                versions like for like, use the main or held-out set. The seed is kept with each run (shown in Compare).
+              </p>
+            }
             <app-error-alert [error]="startError()" title="The canary batch did not start" />
             @if (active(); as a) {
               @if (a.status === 'RUNNING') {
@@ -87,6 +96,9 @@
             @if (metrics(); as m) {
               <span class="kpi__value">{{ pct(m.overall.recall) }}</span>
               <span class="kpi__meta">{{ m.overall.detected }} of n={{ m.overall.n_planted }} planted values caught</span>
+            } @else if (metricsPending()) {
+              <span class="kpi__value kpi__value--empty"><span class="spinner" aria-hidden="true"></span> Loading</span>
+              <span class="kpi__meta">Reading the latest canary run.</span>
             } @else {
               <span class="kpi__value kpi__value--empty">Not measured yet</span>
               <span class="kpi__meta">Run a canary batch to measure recall.</span>
@@ -97,6 +109,9 @@
             @if (metrics(); as m) {
               <span class="kpi__value">{{ pct(m.overall.leak_rate) }}</span>
               <span class="kpi__meta">{{ m.overall.leaked }} of n={{ m.overall.n_planted }} reached the mock CloudLink receiver</span>
+            } @else if (metricsPending()) {
+              <span class="kpi__value kpi__value--empty"><span class="spinner" aria-hidden="true"></span> Loading</span>
+              <span class="kpi__meta">Reading the latest canary run.</span>
             } @else {
               <span class="kpi__value kpi__value--empty">Not measured yet</span>
               <span class="kpi__meta">Measured from what the receiver logged, not from a claim.</span>
@@ -109,6 +124,7 @@
             <dl class="kv kv--inline run-meta">
               <dt>Run</dt><dd class="mono">{{ d.run_id }}</dd>
               <dt>When</dt><dd>{{ d.created_at | date: 'MMM d, y, HH:mm:ss' }} ({{ d.duration_s }} s)</dd>
+              <dt>Canary set</dt><dd class="mono">{{ d.canary_set_version }}</dd>
               <dt>Rule version</dt><dd class="mono">{{ d.rule_version }}</dd>
               <dt>Settings</dt>
               <dd>Normalization {{ d.normalize_on ? 'on' : 'off' }}, dial {{ d.dial | humanize }}, kill switch {{ d.kill_switch_on ? 'on' : 'off' }}, low-confidence threshold {{ d.low_confidence_threshold }}</dd>
@@ -117,7 +133,7 @@
               <dd>
                 {{ m.payloads_sent }} payloads sent ({{ m.received_lines }} logged by the receiver);
                 {{ m.low_confidence_holds }} kept local by the low-confidence rule (fail closed)
-                @for (r of counts(m.route_counts); track r[0]) { <span class="tag">{{ r[0] }} {{ r[1] }}</span> }
+                @for (r of counts(m.route_counts); track r[0]) { <span class="tag">{{ r[0] | humanize }} {{ r[1] }}</span> }
               </dd>
             </dl>
 
@@ -245,7 +261,7 @@
                 <tbody>
                   @for (row of c.rows; track row.group + row.key) {
                     <tr [class.row--group]="row.group === 'overall'">
-                      <td><span class="muted text-xs">{{ row.group }}</span> {{ bucketTitle(row.group, row.a ?? row.b, row.key) | humanize }}</td>
+                      <td><span class="muted text-xs">{{ row.group | humanize }}</span> {{ bucketTitle(row.group, row.a ?? row.b, row.key) | humanize }}</td>
                       <td class="num">{{ row.a?.n_planted ?? '-' }} / {{ row.b?.n_planted ?? '-' }}</td>
                       <td class="num">{{ pct(row.a?.recall) }}</td>
                       <td class="num">{{ pct(row.b?.recall) }}</td>

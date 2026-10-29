@@ -35,7 +35,15 @@ import regex
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.canaries.models import HOLDOUT_FILE, NUMERIC_TYPES, CanaryCall, CanarySet, PlantedValue, load_canary_set
+from app.canaries.models import (
+    HOLDOUT_FILE,
+    NUMERIC_TYPES,
+    CanaryCall,
+    CanarySet,
+    PlantedValue,
+    load_canary_set,
+    random_canary_set,
+)
 from app.db.models import CanaryRunRecord
 from app.db.repositories import utcnow
 from app.detection.normalizer import NATIVE_DIGITS
@@ -92,6 +100,7 @@ class CanaryRunner:
         rule_version_source: Callable[[], str],
         canary_set_loader: Callable[[], CanarySet] = load_canary_set,
         holdout_set_loader: Callable[[], CanarySet] = lambda: load_canary_set(HOLDOUT_FILE),
+        random_set_loader: Callable[[], CanarySet] = random_canary_set,
     ) -> None:
         self._sessions = sessions
         self._processing = processing
@@ -102,6 +111,7 @@ class CanaryRunner:
         self._rule_version_source = rule_version_source
         self._loader = canary_set_loader
         self._holdout_loader = holdout_set_loader
+        self._random_loader = random_set_loader
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         # Called with the run ID when a completed run measured leaks (auto-drafts a breach report).
@@ -111,9 +121,12 @@ class CanaryRunner:
     # ---- Canary set ---------------------------------------------------------------------
 
     def canary_set(self, name: str = "main") -> CanarySet:
-        """``main`` (the 200-call set) or ``holdout`` (new templates, checks for overfitting)."""
-        if name not in ("main", "holdout"):
+        """``main`` (the 200-call set), ``holdout`` (new templates, checks for overfitting) or
+        ``random`` (freshly generated on every call; its seed is in the version)."""
+        if name not in ("main", "holdout", "random"):
             raise ValueError(f"Unknown canary set {name}.")
+        if name == "random":
+            return self._random_loader()
         return self._holdout_loader() if name == "holdout" else self._loader()
 
     # ---- Starting and executing a run --------------------------------------------------------

@@ -38,9 +38,12 @@
     <div class="card kpi">
       <span class="kpi__label"><svg class="icon icon--info" lucideIcon="eye-off" aria-hidden="true"></svg>Redacted</span>
       <span class="kpi__value">{{ metrics() ? (metrics()!.decision_counts.REDACTED | number) : '-' }}</span>
-      <span class="kpi__meta">
-        @if (metrics(); as m) { {{ m.decision_counts.LOCAL_ONLY }} restricted to local processing } @else { Sanitized before AI }
-      </span>
+      <span class="kpi__meta">Sanitized before AI; may go to the cloud</span>
+    </div>
+    <div class="card kpi">
+      <span class="kpi__label"><svg class="icon icon--local" lucideIcon="hard-drive" aria-hidden="true"></svg>Kept local</span>
+      <span class="kpi__value">{{ metrics() ? (metrics()!.decision_counts.LOCAL_ONLY | number) : '-' }}</span>
+      <span class="kpi__meta">Processed by the local model only</span>
     </div>
     <div class="card kpi">
       <span class="kpi__label"><svg class="icon icon--error" lucideIcon="shield-ban" aria-hidden="true"></svg>Blocked</span>
@@ -222,17 +225,17 @@
               <tr class="is-clickable" tabindex="0" (click)="openEvent(event)" (keydown.enter)="openEvent(event)">
                 <td class="nowrap">{{ event.created_at | date: 'MMM d, HH:mm:ss' }}</td>
                 <td class="mono">{{ event.request_id.slice(0, 8) }}</td>
-                <td>{{ event.profile }}</td>
+                <td>{{ names.profile(event.profile) }}</td>
                 <td>
                   <div class="tag-list">
                     @for (c of categories(event); track c) {
-                      <span class="tag">{{ c }}</span>
+                      <span class="tag">{{ c | humanize }}</span>
                     } @empty {
                       <span class="muted">None</span>
                     }
                   </div>
                 </td>
-                <td class="mono">{{ event.decisive_policy_id }}</td>
+                <td [title]="event.decisive_policy_id ?? ''">{{ names.policy(event.decisive_policy_id) }}</td>
                 <td><app-status-badge [value]="event.decision" /></td>
                 <td><app-status-badge [value]="event.destination" /></td>
                 <td class="num">{{ event.total_latency_ms | duration }}</td>

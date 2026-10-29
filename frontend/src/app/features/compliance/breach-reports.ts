@@ -12,6 +12,7 @@ import {
 } from '../../core/models/api.models';
 import { FirewallApiService } from '../../core/services/firewall-api.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ConfirmDialog } from '../../shared/components/confirm-dialog';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { StatusBadge } from '../../shared/components/status-badge';
 import { HumanizePipe } from '../../shared/pipes/format.pipes';
@@ -22,7 +23,7 @@ import { HumanizePipe } from '../../shared/pipes/format.pipes';
  */
 @Component({
   selector: 'app-breach-reports',
-  imports: [DatePipe, KeyValuePipe, LucideDynamicIcon, StatusBadge, ErrorAlert, HumanizePipe],
+  imports: [DatePipe, KeyValuePipe, LucideDynamicIcon, StatusBadge, ErrorAlert, ConfirmDialog, HumanizePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './breach-reports.html',
   styleUrl: './compliance.scss',
@@ -51,6 +52,8 @@ export class BreachReports implements OnInit {
   protected readonly reviewer = signal('');
   protected readonly busy = signal(false);
   protected readonly actionError = signal<ApiError | null>(null);
+  /** The report awaiting confirmation before it is withdrawn. */
+  protected readonly confirmWithdraw = signal<BreachReport | null>(null);
 
   ngOnInit(): void {
     this.load();
@@ -118,6 +121,11 @@ export class BreachReports implements OnInit {
   }
 
   protected close(): void {
+    // Escape first dismisses an open confirmation, not the drawer behind it.
+    if (this.confirmWithdraw()) {
+      this.confirmWithdraw.set(null);
+      return;
+    }
     this.selectedId.set(null);
   }
 

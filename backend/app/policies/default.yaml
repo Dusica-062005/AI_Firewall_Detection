@@ -67,6 +67,16 @@ policies:
     destination: CLOUD
     conditions: {profiles: [], channels: [], min_confidence: 0.0}
 
+  - policy_id: written-channels-contact-local
+    name: Written channels keep contact details local
+    description: Email and SMS threads are stored and forwarded as text, so names, phone numbers and email addresses in them are processed by the local model only.
+    enabled: true
+    priority: 180
+    entity_categories: [PERSON, PHONE_NUMBER, EMAIL_ADDRESS]
+    action: LOCAL_ONLY
+    destination: LOCAL
+    conditions: {profiles: [], channels: [email, sms], min_confidence: 0.0}
+
   - policy_id: allow-call-context
     name: Allow scheduling and clinical context
     description: Appointment dates and general health terms may stay in the text so summaries remain useful. The privacy-utility dial can still tokenize them.

@@ -68,8 +68,9 @@ def _get(container: Container, run_id: str) -> CanaryRunRecord:
 
 @router.get("/set", response_model=CanarySetSummary)
 def canary_set(
-    name: Literal["main", "holdout"] = Query("main", alias="set"), container: Container = Depends(get_container)
+    name: Literal["main", "holdout", "random"] = Query("main", alias="set"), container: Container = Depends(get_container)
 ) -> CanarySetSummary:
+    """For ``random`` this describes one freshly generated example; each run generates its own calls."""
     return CanarySetSummary(**container.canaries.canary_set(name).summary())
 
 

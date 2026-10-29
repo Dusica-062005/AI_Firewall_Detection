@@ -3,12 +3,14 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   OnInit,
   computed,
   effect,
   inject,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -20,6 +22,7 @@ import {
   AudioProcessResult,
   Channel,
   FirewallResult,
+  Policy,
   ProcessingMode,
   ProfileInfo,
   SampleTranscript,
@@ -87,6 +90,10 @@ export class Inspector implements OnInit {
   protected readonly originalUrl = signal<string | null>(null);
   protected readonly bleepedUrl = signal<string | null>(null);
   protected readonly isWav = computed(() => this.audioFile()?.name.toLowerCase().endsWith('.wav') ?? false);
+  /** Bleeping is offered until a non-WAV file is chosen. */
+  protected readonly canBleep = computed(() => !this.audioFile() || this.isWav());
+  private readonly audioInput = viewChild<ElementRef<HTMLInputElement>>('audioInput');
+  private readonly liveInput = viewChild<ElementRef<HTMLInputElement>>('liveInput');
 
   protected readonly modes: { value: ProcessingMode; label: string; hint: string }[] = [
     { value: 'inspect', label: 'Inspect only', hint: 'Detect and evaluate policy. No model or cloud call.' },
@@ -94,6 +101,7 @@ export class Inspector implements OnInit {
     { value: 'full', label: 'Full pipeline', hint: 'Adds the mock CloudLink handoff when policy authorizes it.' },
   ];
   protected readonly channels: Channel[] = ['voice', 'chat', 'email', 'sms'];
+  protected readonly channelLabels: Record<Channel, string> = { voice: 'Voice', chat: 'Chat', email: 'Email', sms: 'SMS' };
 
   protected readonly form = new FormGroup({
     sampleId: new FormControl('', { nonNullable: true }),
@@ -119,6 +127,15 @@ export class Inspector implements OnInit {
   );
   protected readonly selectedProfile = computed(
     () => this.profiles().find((p) => p.id === this.profileValue()) ?? null,
+  );
+  private readonly policies = signal<Policy[]>([]);
+  private readonly channelValue = toSignal(
+    this.form.controls.channel.valueChanges.pipe(startWith(this.form.controls.channel.value)),
+    { initialValue: 'voice' as Channel },
+  );
+  /** Enabled rules that apply only on the selected channel, so the form shows what Channel changes. */
+  protected readonly channelRules = computed(() =>
+    this.policies().filter((p) => p.enabled && p.conditions.channels.includes(this.channelValue())),
   );
 
   constructor() {
@@ -181,6 +198,10 @@ export class Inspector implements OnInit {
       next: (res) => this.profiles.set(res.items),
       error: (err: ApiError) => this.loadError.set(err),
     });
+    this.api.policies().subscribe({
+      next: (res) => this.policies.set(res.items),
+      error: () => this.policies.set([]), // the hint is optional; processing does not depend on it
+    });
     this.api.appConfig().subscribe({
       next: (config) => {
         this.maxChars.set(config.max_transcript_chars);
@@ -210,6 +231,13 @@ export class Inspector implements OnInit {
     this.state.submittedTranscript.set('');
     this.state.audio.set(null);
     this.selectFile(null);
+    this.liveFile.set(null);
+    // The file inputs keep showing the old file name unless their value is reset too.
+    for (const input of [this.audioInput(), this.liveInput()]) {
+      if (input) {
+        input.nativeElement.value = '';
+      }
+    }
     this.submitError.set(null);
   }
 

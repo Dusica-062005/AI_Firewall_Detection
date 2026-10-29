@@ -426,14 +426,40 @@ def build_call(
     }
 
 
+RANDOM_VERSION_PREFIX = "canaries-random-"
+
+
+def _build_calls(seed: int, schedule: list, templates: dict) -> list[dict]:
+    rng = random.Random(seed)
+    calls: list[dict] = []
+    for language, script, difficulty, count in schedule:
+        for _ in range(count):
+            calls.append(build_call(rng, f"can-{len(calls) + 1:04d}", language, script, difficulty, templates))
+    return calls
+
+
 def build_canary_set(name: str = "main") -> dict:
     config = SETS[name]
-    rng = random.Random(config.seed)
-    calls = []
-    for language, script, difficulty, count in config.schedule:
-        for _ in range(count):
-            calls.append(build_call(rng, f"can-{len(calls) + 1:04d}", language, script, difficulty, config.templates))
-    return {"version": config.version, "generated_with_seed": config.seed, "calls": calls}
+    return {
+        "version": config.version,
+        "generated_with_seed": config.seed,
+        "calls": _build_calls(config.seed, config.schedule, config.templates),
+    }
+
+
+def build_random_set(seed: int) -> dict:
+    """A fresh set for exploration: the main set's 200-call mix, templates from both sets, any seed.
+
+    Every seed gives different names, numbers and wording, so leak rates vary from run to run.
+    Use the fixed sets to compare two rule versions like for like. The seed is part of the version,
+    so a run on a random set can be regenerated exactly.
+    """
+    templates = {key: TEMPLATES[key] + HOLDOUT_TEMPLATES.get(key, []) for key in TEMPLATES}
+    return {
+        "version": f"{RANDOM_VERSION_PREFIX}{seed}",
+        "generated_with_seed": seed,
+        "calls": _build_calls(seed, SCHEDULE, templates),
+    }
 
 
 def render(data: dict) -> str:

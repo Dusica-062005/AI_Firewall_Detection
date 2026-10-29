@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideDynamicIcon } from '@lucide/angular';
@@ -76,6 +76,12 @@ export class Measurements implements OnInit {
   protected readonly running = computed(() => this.starting() || this.active()?.status === 'RUNNING');
   protected readonly completedRuns = computed(() => this.runs().filter((r) => r.status === 'COMPLETED'));
   protected readonly metrics = computed(() => this.detail()?.metrics ?? null);
+  /** True while the run list or the latest run's numbers are still on their way, so "Not measured yet" is never shown early. */
+  protected readonly metricsPending = computed(
+    () => this.loading() || (this.completedRuns().length > 0 && this.detail() === null && !this.loadError()),
+  );
+  private readonly dialTab = viewChild(DialQuality);
+  private readonly benchmarkTab = viewChild(BenchmarkTab);
   protected readonly languageRows = computed(() =>
     (this.metrics()?.by_script ?? []).map((b) => {
       const [language, script] = b.key.split('/');
@@ -115,6 +121,20 @@ export class Measurements implements OnInit {
     this.select(next.id);
     queueMicrotask(() => document.getElementById('mtab-' + next.id)?.focus());
     event.preventDefault();
+  }
+
+  /** The Refresh button reloads the tab that is showing, not only the canary data. */
+  protected refresh(): void {
+    switch (this.current()) {
+      case 'quality':
+        this.dialTab()?.load();
+        break;
+      case 'benchmark':
+        this.benchmarkTab()?.load();
+        break;
+      default:
+        this.load();
+    }
   }
 
   protected load(): void {
@@ -224,7 +244,8 @@ export class Measurements implements OnInit {
 
   protected runLabel(run: CanaryRunSummary): string {
     const when = new Date(run.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const set = run.canary_set_version.includes('holdout') ? 'held-out set' : 'main set';
+    const v = run.canary_set_version;
+    const set = v.includes('random') ? `random set, seed ${v.split('-').pop()}` : v.includes('holdout') ? 'held-out set' : 'main set';
     return `${when} - ${set}, normalization ${run.normalize_on ? 'on' : 'off'}${run.kill_switch_on ? ', kill switch on' : ''} (${run.run_id.slice(-6)})`;
   }
 

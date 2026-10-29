@@ -78,7 +78,16 @@ export class Trust implements OnInit {
         this.loading.set(false);
         const wanted = this.receipt();
         if (wanted && !this.selected()) {
-          this.selected.set(res.items.find((r) => r.receipt_id === wanted) ?? null);
+          const onPage = res.items.find((r) => r.receipt_id === wanted);
+          if (onPage) {
+            this.selected.set(onPage);
+          } else {
+            // Linked receipts are often older than the first page; fetch it directly instead of showing nothing.
+            this.api.receipt(wanted).subscribe({
+              next: (r) => this.selected.set(r),
+              error: (err: ApiError) => this.notify.error(`Receipt ${wanted} could not be opened: ${err.message}`),
+            });
+          }
         }
       },
       error: (err: ApiError) => {
