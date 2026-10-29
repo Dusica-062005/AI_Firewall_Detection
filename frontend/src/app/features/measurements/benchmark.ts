@@ -27,10 +27,7 @@ const STAGE_LABELS: Record<string, string> = {
         @if (latest()?.run; as r) { <app-status-badge [value]="r.status" /> }
       </div>
       <div class="card-body stack">
-        <p class="text-sm">
-          Times the real pipeline (mode full, models on) on the synthetic samples, or on the synthetic audio clips with
-          transcription. The first call is reported separately (cold). Each call also writes an audit event and a signed receipt.
-        </p>
+        <p class="text-sm muted">Times the full pipeline on synthetic samples. The first (cold) call is reported separately.</p>
         <div class="row wrap">
           <label class="field calls-field">
             <span class="field__label">Calls per concurrency level</span>

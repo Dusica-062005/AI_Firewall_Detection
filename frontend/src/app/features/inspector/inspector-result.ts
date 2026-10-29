@@ -31,6 +31,7 @@ export class InspectorResult {
   readonly original = input.required<string>();
 
   protected readonly tab = signal<Tab>('summary');
+  protected readonly expandedEntity = signal<number | null>(null);
   protected readonly auditEvent = signal<AuditEvent | null>(null);
   protected readonly auditError = signal<ApiError | null>(null);
   protected readonly failedChecks = computed(() => this.result().outbound.validation.filter((c) => !c.passed).length);
@@ -71,6 +72,10 @@ export class InspectorResult {
         });
       }
     });
+  }
+
+  protected toggleEntity(index: number): void {
+    this.expandedEntity.update((current) => (current === index ? null : index));
   }
 
   protected select(tab: Tab): void {

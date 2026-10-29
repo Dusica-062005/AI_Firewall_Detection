@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header__text">
       <h1>Measurements</h1>
-      <p>How well the firewall protects data, in measured numbers: planted canary identities, per-language accuracy and the quality cost of each dial position.</p>
+      <p>Measured detection, leak rate, quality and latency.</p>
     </div>
     <div class="toolbar">
       <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
@@ -32,10 +32,7 @@
             @if (canarySet(); as s) { <span class="card-header__meta">Set {{ s.version }}</span> }
           </div>
           <div class="card-body stack">
-            <p class="text-sm">
-              Synthetic calls with planted fake identities run through the real pipeline (dial at maximum quality, so the cloud path is exercised).
-              Recall is what the detector caught; the leak rate is what actually arrived at the mock CloudLink receiver.
-            </p>
+            <p class="text-sm muted">Synthetic calls with planted identities, run through the real pipeline.</p>
             @if (canarySet(); as s) {
               <div class="row wrap set-summary">
                 <span><strong>{{ s.calls }}</strong> calls</span>
@@ -89,17 +86,15 @@
               <span class="kpi__meta">{{ m.overall.detected }} of n={{ m.overall.n_planted }} planted values caught</span>
             } @else {
               <span class="kpi__value kpi__value--empty">Not measured yet</span>
-              <span class="kpi__meta">Run a canary batch to measure recall.</span>
             }
           </div>
           <div class="card kpi">
             <span class="kpi__label"><svg class="icon" lucideIcon="cloud" aria-hidden="true"></svg>Leak rate at the receiver</span>
             @if (metrics(); as m) {
               <span class="kpi__value">{{ pct(m.overall.leak_rate) }}</span>
-              <span class="kpi__meta">{{ m.overall.leaked }} of n={{ m.overall.n_planted }} reached the mock CloudLink receiver</span>
+              <span class="kpi__meta">{{ m.overall.leaked }} of n={{ m.overall.n_planted }} reached the receiver</span>
             } @else {
               <span class="kpi__value kpi__value--empty">Not measured yet</span>
-              <span class="kpi__meta">Measured from what the receiver logged, not from a claim.</span>
             }
           </div>
         </section>
@@ -160,8 +155,8 @@
                   <div class="alert alert-warning">
                     <svg class="icon" lucideIcon="file-warning" aria-hidden="true"></svg>
                     <span>
-                      A draft breach report ({{ reportId }}) was created automatically for these leaks. Nothing was sent or filed.
-                      <a routerLink="/compliance" [queryParams]="{ tab: 'breach' }">Review it in the Compliance Center</a>.
+                      Draft breach report {{ reportId }} created.
+                      <a routerLink="/compliance" [queryParams]="{ tab: 'breach' }">Review</a>
                     </span>
                   </div>
                 </div>
@@ -229,7 +224,7 @@
               </div>
               <app-error-alert [error]="compareError()" title="The runs could not be compared" />
             } @else {
-              <p class="text-sm muted">Complete two runs (for example normalization off, then on) to compare them.</p>
+              <p class="text-sm muted">Complete two runs to compare them.</p>
             }
           </div>
           @if (comparison(); as c) {
@@ -266,13 +261,7 @@
         <section class="card">
           <div class="card-header">
             <h2><svg class="icon" lucideIcon="languages" aria-hidden="true"></svg>Detection by language</h2>
-            @if (detail(); as d) { <span class="card-header__meta mono">{{ d.run_id }} · {{ d.rule_version }}</span> }
-          </div>
-          <div class="card-body stack">
-            <div class="alert alert-info">
-              <svg class="icon" lucideIcon="info" aria-hidden="true"></svg>
-              <span>Measured on our synthetic set; these numbers are not a general benchmark.</span>
-            </div>
+            <span class="card-header__meta">Synthetic set, not a general benchmark</span>
           </div>
           <div class="card-body card-body--flush table-wrap">
             @if (languageRows().length) {
@@ -290,7 +279,7 @@
               <div class="empty-state">
                 <svg class="icon" lucideIcon="languages" aria-hidden="true"></svg>
                 <span class="empty-state__title">Not measured yet</span>
-                <span>Run a canary batch on the Leak canaries tab; this table uses the latest completed run.</span>
+                <span>Run a canary batch first.</span>
               </div>
             }
           </div>

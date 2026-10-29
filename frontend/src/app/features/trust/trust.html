@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header__text">
       <h1>Trust &amp; Controls</h1>
-      <p>Emergency stop for the cloud path, the privacy-utility dial, and the signed, hash-chained receipt log that proves what happened to every call.</p>
+      <p>Cloud kill switch, privacy dial and tamper-evident receipts.</p>
     </div>
   </header>
 
@@ -25,9 +25,9 @@
           </div>
           <p class="text-sm">
             @if (c.kill_switch) {
-              Nothing can leave the firewall. Calls are still tokenized and summarized by the local model, and every call still gets a signed receipt.
+              Nothing leaves the firewall. Local processing continues.
             } @else {
-              Tokenized text may reach the cloud stand-in when policy, the dial and detection confidence all allow it.
+              Tokenized text may go to the cloud when policy allows.
             }
           </p>
           <button type="button" class="btn kill__btn" [class.btn-danger]="!c.kill_switch" [class.btn-primary]="c.kill_switch"
@@ -57,20 +57,17 @@
                 <span class="text-xs muted">{{ p.description }}</span>
                 <span class="dial__score text-xs">
                   @if (qualityFor(p.id); as q) {
-                    Quality score <strong class="mono">{{ q.score === null ? '-' : q.score.toFixed(2) }}</strong> (n={{ q.n }})
+                    Quality <strong class="mono">{{ q.score === null ? '-' : q.score.toFixed(2) }}</strong> (n={{ q.n }})
                   } @else {
-                    Quality score: not measured yet
+                    Quality not measured
                   }
                 </span>
               </button>
             }
           </div>
           <p class="text-xs muted">
-            The dial only adds protection on top of policy; it never weakens a policy rule.
-            @if (quality(); as q) {
-              Scores from run {{ q.run_id }} ({{ q.created_at | date: 'MMM d, HH:mm' }}): similarity to the raw-text summary, not a human rating.
-            }
-            <a routerLink="/measurements" fragment="quality">Measure on the Measurements page</a>.
+            The dial adds protection on top of policy; it never weakens it.
+            <a routerLink="/measurements" fragment="quality">Measure quality</a>
           </p>
         }
       </div>
@@ -91,18 +88,15 @@
       @if (receipts()?.signing?.status !== 'CONFIGURED' && receipts()) {
         <div class="alert alert-warning"><svg class="icon" lucideIcon="key-round" aria-hidden="true"></svg><span>{{ receipts()?.signing?.message }}</span></div>
       }
-      <p class="text-sm">
-        Each receipt lists categories, counts, the route and whether any protected value left the firewall. It never holds transcript text or values.
-        Every receipt is signed and includes the hash of the previous one, so editing, removing or reordering any receipt is detectable.
-      </p>
       <div class="row wrap">
         <button type="button" class="btn btn-primary" [disabled]="verifying() !== null" (click)="verify(false)">
           @if (verifying() === 'chain') { <span class="spinner" aria-hidden="true"></span> }
-          <svg class="icon" lucideIcon="link" aria-hidden="true"></svg>Verify chain (offline script)
+          <svg class="icon" lucideIcon="link" aria-hidden="true"></svg>Verify chain
         </button>
-        <button type="button" class="btn btn-secondary" [disabled]="verifying() !== null" (click)="verify(true)">
+        <button type="button" class="btn btn-secondary" [disabled]="verifying() !== null" (click)="verify(true)"
+                title="Edits a temporary copy of the database; the original is untouched">
           @if (verifying() === 'tamper') { <span class="spinner" aria-hidden="true"></span> }
-          <svg class="icon" lucideIcon="bug" aria-hidden="true"></svg>Tamper demo (edits a copy)
+          <svg class="icon" lucideIcon="bug" aria-hidden="true"></svg>Tamper demo
         </button>
         <span class="spacer"></span>
         <button type="button" class="btn btn-ghost" (click)="loadReceipts()" [disabled]="loading()">
@@ -116,11 +110,11 @@
           <div class="row wrap">
             <app-status-badge [value]="v.ok ? 'CHAIN_OK' : 'TAMPERED'" [strong]="true"
                               [label]="v.tamper_demo ? (v.ok ? 'Tampering NOT detected' : 'Tampering detected') : null" />
-            <span class="text-xs muted">{{ v.verifier === 'offline-script' ? 'scripts/verify_chain.py, run as a separate process with only the DB file and public key' : 'In-process check' }}</span>
+            <span class="text-xs muted">{{ v.verifier === 'offline-script' ? 'Offline verifier' : 'In-process check' }}</span>
           </div>
           <pre class="code-block">{{ v.output }}</pre>
           @if (v.tamper_demo) {
-            <p class="text-xs muted">The demo edits a temporary copy of the database. The original chain is untouched{{ v.in_process_ok ? ' and still verifies.' : '.' }}</p>
+            <p class="text-xs muted">Original chain untouched{{ v.in_process_ok ? ' and still valid.' : '.' }}</p>
           }
         </div>
       }
@@ -136,10 +130,8 @@
               <th scope="col">Time</th>
               <th scope="col">Decision</th>
               <th scope="col">Route</th>
-              <th scope="col">Entities</th>
-              <th scope="col" class="num">Tokens</th>
               <th scope="col">Left firewall</th>
-              <th scope="col">Hash</th>
+              <th scope="col"><span class="sr-only">Open</span></th>
             </tr>
           </thead>
           <tbody>
@@ -148,12 +140,7 @@
                 <td class="num mono">{{ r.seq }}</td>
                 <td class="nowrap">{{ r.created_at | date: 'MMM d, HH:mm:ss' }}</td>
                 <td><app-status-badge [value]="r.body.decision" /></td>
-                <td>
-                  <app-status-badge [value]="r.body.route" />
-                  <span class="text-xs muted route-reason">{{ r.body.route_reason | humanize }}</span>
-                </td>
-                <td class="cell-wrap text-xs mono">{{ entitySummary(r.body.entity_counts) }}</td>
-                <td class="num">{{ r.body.tokens_created }}</td>
+                <td><app-status-badge [value]="r.body.route" /></td>
                 <td>
                   @if (r.body.protected_values_left) {
                     <app-status-badge value="FAIL" label="Protected value left" />
@@ -163,10 +150,7 @@
                     <span class="text-sm muted">Nothing</span>
                   }
                 </td>
-                <td class="mono text-xs">
-                  {{ r.hash.slice(0, 10) }}
-                  <app-status-badge [value]="r.signed ? 'SIGNED' : 'UNSIGNED'" />
-                </td>
+                <td class="expand-cell"><svg class="icon" lucideIcon="chevron-right" aria-hidden="true"></svg></td>
               </tr>
             }
           </tbody>
@@ -177,7 +161,7 @@
         <div class="empty-state">
           <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
           <span class="empty-state__title">No receipts yet</span>
-          <span>Process a transcript in the Inspector; every call writes one signed receipt.</span>
+          <span>Each processed call adds a signed receipt.</span>
         </div>
       }
     </div>
@@ -219,6 +203,8 @@
       </div>
       <dl class="kv">
         <dt>Request ID</dt><dd class="mono">{{ r.request_id }}</dd>
+        <dt>Entities</dt><dd class="mono">{{ entitySummary(r.body.entity_counts) }}</dd>
+        <dt>Tokens created</dt><dd>{{ r.body.tokens_created }}</dd>
         <dt>Route reason</dt><dd>{{ r.body.route_reason | humanize }}</dd>
         <dt>Dial / kill switch</dt><dd>{{ r.body.dial | humanize }} / {{ r.body.kill_switch ? 'on' : 'off' }}</dd>
         <dt>Models</dt><dd>Local: {{ r.body.local_model ?? '-' }}; cloud stand-in: {{ r.body.cloud_model ?? '-' }}</dd>

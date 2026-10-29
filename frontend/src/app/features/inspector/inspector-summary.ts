@@ -47,7 +47,7 @@ import { InspectorDecision } from './inspector-decision';
             }
           </div>
           <span class="text-xs muted">
-            {{ r.outbound.reached_receiver ? 'Tokenized payload reached the mock CloudLink receiver.' : 'Nothing left the firewall.' }}
+            {{ r.outbound.reached_receiver ? 'Tokens only sent to the cloud.' : 'Nothing left the firewall.' }}
           </span>
         </div>
 
@@ -68,7 +68,6 @@ import { InspectorDecision } from './inspector-decision';
       }
 
       <div class="card-footer">
-        <span class="text-xs muted">Before and after text, entity table, policy evaluation, cloud handoff and audit record.</span>
         <a class="btn btn-primary" routerLink="/inspector/result">
           View full details
           <svg class="icon" lucideIcon="arrow-right" aria-hidden="true"></svg>
@@ -129,7 +128,7 @@ import { InspectorDecision } from './inspector-decision';
     .card-footer {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
       flex-wrap: wrap;
       gap: var(--s-3);
       padding: var(--s-3) var(--s-4);

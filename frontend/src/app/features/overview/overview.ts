@@ -7,7 +7,6 @@ import { forkJoin } from 'rxjs';
 import {
   ApiError,
   AuditEvent,
-  BenchmarkRun,
   CanaryRunSummary,
   IntegrationsStatus,
   MetricsSummary,
@@ -17,12 +16,12 @@ import { SystemStatusService } from '../../core/services/system-status.service';
 import { DecisionChart } from '../../shared/components/decision-chart';
 import { ErrorAlert } from '../../shared/components/error-alert';
 import { StatusBadge } from '../../shared/components/status-badge';
-import { DurationPipe, HumanizePipe } from '../../shared/pipes/format.pipes';
+import { DurationPipe } from '../../shared/pipes/format.pipes';
 import { pct } from '../measurements/measurement-format';
 
 @Component({
   selector: 'app-overview',
-  imports: [RouterLink, LucideDynamicIcon, DatePipe, DecimalPipe, DecisionChart, ErrorAlert, StatusBadge, DurationPipe, HumanizePipe],
+  imports: [RouterLink, LucideDynamicIcon, DatePipe, DecimalPipe, DecisionChart, ErrorAlert, StatusBadge, DurationPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './overview.html',
   styleUrl: './overview.scss',
@@ -34,23 +33,17 @@ export class Overview implements OnInit {
 
   protected readonly metrics = signal<MetricsSummary | null>(null);
   protected readonly recent = signal<AuditEvent[]>([]);
+  protected readonly expanded = signal<string | null>(null);
   protected readonly integrations = signal<IntegrationsStatus | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<ApiError | null>(null);
   protected readonly integrationsError = signal<ApiError | null>(null);
-
-  protected readonly topCategories = computed(() => {
-    const counts = this.metrics()?.entity_category_counts ?? {};
-    return Object.entries(counts).slice(0, 4);
-  });
 
   protected readonly hasActivity = computed(() => (this.metrics()?.total_requests ?? 0) > 0);
 
   /** Latest completed leak-canary run (Feature 5); null means not measured yet. */
   protected readonly lastCanary = signal<CanaryRunSummary | null>(null);
   protected readonly canaryError = signal<ApiError | null>(null);
-  /** NFR-2 verdict of the latest completed benchmark; null means not measured yet. */
-  protected readonly benchmark = signal<BenchmarkRun | null>(null);
   protected readonly pct = pct;
 
   ngOnInit(): void {
@@ -96,11 +89,11 @@ export class Overview implements OnInit {
         this.canaryError.set(err);
       },
     });
-    this.api.benchmarkLatest().subscribe({
-      next: (latest) => this.benchmark.set(latest.completed),
-      error: () => this.benchmark.set(null),
-    });
     this.system.refresh();
+  }
+
+  protected toggleRow(id: string): void {
+    this.expanded.update((current) => (current === id ? null : id));
   }
 
   protected openEvent(event: AuditEvent): void {

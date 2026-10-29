@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header__text">
       <h1>Transcript Inspector</h1>
-      <p>Send a synthetic transcript through the firewall and see what AI is allowed to see, process and send.</p>
+      <p>See exactly what AI is allowed to see and send.</p>
     </div>
   </header>
 
@@ -12,7 +12,6 @@
     <form class="card input-panel" [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div class="card-header">
         <h2><svg class="icon" lucideIcon="file-text" aria-hidden="true"></svg>Input</h2>
-        <span class="simulated-label">Synthetic data only</span>
       </div>
 
       <div class="card-body stack input-body">
@@ -23,10 +22,7 @@
         </div>
 
         @if (inputKind() === 'live') {
-          <p class="text-sm live-intro">
-            Speak like a caller. Captions appear every few seconds with names, IDs and numbers already replaced.
-            Captions stay on this computer; when you end the call, the whole call goes through the firewall once.
-          </p>
+          <p class="text-sm live-intro">Speak like a caller. Captions are redacted live; the full call is processed when it ends.</p>
           <div class="row wrap live-controls">
             @if (liveActive()) {
               <button type="button" class="btn btn-primary" (click)="live.stop()" [disabled]="live.state() !== 'live'">
@@ -43,19 +39,18 @@
           </div>
           @if (!liveActive()) {
             <div class="field">
-              <label for="live-file">Or stream a recording (a reliable demo fallback)</label>
+              <label for="live-file">Or stream a recording</label>
               <div class="row">
                 <input id="live-file" type="file" class="input file-input" accept=".wav,.mp3,.m4a,audio/*" (change)="onLiveFile($event)" />
                 <button type="button" class="btn btn-secondary" (click)="startLiveRecording()" [disabled]="!liveFile()">
                   <svg class="icon" lucideIcon="play" aria-hidden="true"></svg>Stream
                 </button>
               </div>
-              <span class="field__hint">The recording plays aloud and is sent at real-time pace through the same live path.</span>
             </div>
           }
           <label class="checkbox">
             <input type="checkbox" [checked]="bleep()" (change)="bleep.set($any($event.target).checked)" [disabled]="liveActive()" />
-            Bleep protected words in the recording when the call ends
+            Bleep protected words in the recording
           </label>
         } @else if (inputKind() === 'audio') {
           <div class="field">
@@ -65,7 +60,7 @@
             @if (audioError()) {
               <span class="field__error">{{ audioError() }}</span>
             } @else {
-              <span class="field__hint">Transcribed locally with faster-whisper; the audio is never stored or sent. Synthetic recordings only.</span>
+              <span class="field__hint">Transcribed locally. Audio is never stored or sent.</span>
             }
           </div>
           @if (originalUrl(); as url) {
@@ -143,7 +138,7 @@
               </label>
             }
           </div>
-          <span class="field__hint">{{ modeHint() }} The mode can only narrow what policy allows.</span>
+          <span class="field__hint">{{ modeHint() }}</span>
         </fieldset>
       </div>
 
@@ -182,7 +177,6 @@
             </span>
           </div>
           <div class="card-body stack">
-            <p class="text-xs muted">Captions are a local preview: they never leave this computer and are not stored. The result below the captions comes from the full call.</p>
             @if (live.error(); as message) {
               <div class="alert alert-error"><svg class="icon" lucideIcon="circle-x" aria-hidden="true"></svg><span>{{ message }}</span></div>
             }
@@ -210,7 +204,7 @@
                 }
               </ol>
               @if (live.state() === 'processing') {
-                <p class="text-xs muted">The AI summaries run on this computer's CPU and take most of the time. The protected transcript below is already final.</p>
+                <p class="text-xs muted">Generating AI summaries locally…</p>
               }
             } @else if (live.state() === 'processing') {
               <div class="row"><span class="spinner" aria-hidden="true"></span><span class="text-sm">Ending the call</span></div>
@@ -229,7 +223,6 @@
         <section class="card transcription-card">
           <div class="card-header">
             <h2><svg class="icon" lucideIcon="mic" aria-hidden="true"></svg>Local transcription</h2>
-            <span class="card-header__meta">Audio processed locally; not stored</span>
           </div>
           <div class="card-body stack">
             <dl class="kv kv--inline text-sm">
@@ -260,8 +253,7 @@
         <div class="card">
           <div class="empty-state">
             <span class="spinner" aria-hidden="true"></span>
-            <span class="empty-state__title">Processing through the firewall</span>
-            <span>Detection, policy evaluation and enforcement are running on the backend.</span>
+            <span class="empty-state__title">Processing…</span>
           </div>
         </div>
       } @else {
@@ -269,7 +261,7 @@
           <div class="empty-state">
             <svg class="icon" lucideIcon="scan-search" aria-hidden="true"></svg>
             <span class="empty-state__title">No result yet</span>
-            <span>Load a sample or enter a synthetic transcript, then select Process.</span>
+            <span>Load a sample or paste a transcript to begin.</span>
           </div>
         </div>
       }

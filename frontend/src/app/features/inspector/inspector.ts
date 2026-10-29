@@ -89,9 +89,9 @@ export class Inspector implements OnInit {
   protected readonly isWav = computed(() => this.audioFile()?.name.toLowerCase().endsWith('.wav') ?? false);
 
   protected readonly modes: { value: ProcessingMode; label: string; hint: string }[] = [
-    { value: 'inspect', label: 'Inspect only', hint: 'Detect and evaluate policy. No model or cloud call.' },
-    { value: 'local', label: 'Local AI', hint: 'Adds a local summary when policy permits.' },
-    { value: 'full', label: 'Full pipeline', hint: 'Adds the mock CloudLink handoff when policy authorizes it.' },
+    { value: 'inspect', label: 'Inspect only', hint: 'Detection and policy only.' },
+    { value: 'local', label: 'Local AI', hint: 'Adds a local AI summary.' },
+    { value: 'full', label: 'Full pipeline', hint: 'Adds the cloud handoff when allowed.' },
   ];
   protected readonly channels: Channel[] = ['voice', 'chat', 'email', 'sms'];
 

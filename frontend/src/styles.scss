@@ -182,10 +182,16 @@ a {
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--s-5);
+  gap: var(--s-6);
   max-width: 1440px;
   margin: 0 auto;
-  padding: var(--s-6);
+  padding: var(--s-8) var(--s-8) 48px;
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: var(--s-4);
+  }
 }
 
 .page-header {
@@ -204,7 +210,49 @@ a {
 
   p {
     color: var(--c-text-2);
-    font-size: var(--fs-md);
+    font-size: var(--fs-sm);
+  }
+}
+
+/* Collapsed-by-default explainer card: keeps reference text available without crowding the page. */
+.disclosure {
+  > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: var(--s-4) var(--s-5);
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--c-text-2);
+    cursor: pointer;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      margin-left: auto;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: rotate(45deg);
+      transition: transform 0.15s ease;
+    }
+
+    .card-header__meta {
+      margin-left: var(--s-2);
+    }
+
+    &:hover {
+      color: var(--c-text);
+    }
+  }
+
+  &[open] > summary::after {
+    transform: rotate(-135deg);
   }
 }
 
@@ -217,7 +265,7 @@ a {
 
 .grid {
   display: grid;
-  gap: var(--s-4);
+  gap: var(--s-5);
 }
 
 .grid-kpi {
@@ -270,9 +318,9 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: var(--s-3);
-  padding: var(--s-3) var(--s-4);
+  padding: var(--s-4) var(--s-5);
   border-bottom: 1px solid var(--c-border);
-  min-height: 48px;
+  min-height: 56px;
 
   h2,
   h3 {
@@ -289,7 +337,7 @@ a {
 }
 
 .card-body {
-  padding: var(--s-4);
+  padding: var(--s-5);
 }
 
 .card-body--flush {
@@ -307,10 +355,10 @@ a {
 /* ---------- KPI ---------- */
 
 .kpi {
-  padding: var(--s-4);
+  padding: var(--s-5);
   display: flex;
   flex-direction: column;
-  gap: var(--s-1);
+  gap: var(--s-2);
 
   .kpi__label {
     display: flex;
@@ -508,13 +556,13 @@ a {
     text-transform: uppercase;
     letter-spacing: 0.03em;
     background: var(--c-surface-muted);
-    padding: var(--s-2) var(--s-3);
+    padding: 10px var(--s-4);
     border-bottom: 1px solid var(--c-border);
     white-space: nowrap;
   }
 
   td {
-    padding: 10px var(--s-3);
+    padding: 14px var(--s-4);
     border-bottom: 1px solid var(--c-border);
     vertical-align: middle;
   }
@@ -536,6 +584,66 @@ a {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
+
+  /* Expandable rows: secondary columns live in a detail row under the clicked row. */
+  .expand-cell {
+    width: 28px;
+    padding-right: 0;
+    color: var(--c-text-2);
+
+    .icon {
+      transition: transform 0.15s ease;
+    }
+  }
+
+  tbody tr.is-expanded {
+    background: var(--c-surface-muted);
+
+    td {
+      border-bottom-color: transparent;
+    }
+
+    .expand-cell .icon {
+      transform: rotate(90deg);
+    }
+  }
+
+  tbody tr.row-detail > td {
+    padding: var(--s-2) var(--s-5) var(--s-5) calc(var(--s-4) + 28px);
+    background: var(--c-surface-muted);
+  }
+}
+
+.row-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--s-3) var(--s-5);
+  margin: 0;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .span-all {
+    grid-column: 1 / -1;
+  }
+
+  dt {
+    font-size: var(--fs-xs);
+    color: var(--c-text-2);
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.row-detail .detail-link {
+  margin: var(--s-3) 0 0 calc(-1 * var(--s-2));
 }
 
 /* ---------- Forms ---------- */

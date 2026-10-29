@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header__text">
       <h1>Overview</h1>
-      <p>Current state of the governance boundary between communication workloads and AI services.</p>
+      <p>Live view of what reaches AI services.</p>
     </div>
     <div class="toolbar">
       <button type="button" class="btn btn-secondary" (click)="load()" [disabled]="loading()">
@@ -24,7 +24,7 @@
       <span class="kpi__value">{{ metrics() ? (metrics()!.total_requests | number) : '-' }}</span>
       <span class="kpi__meta">
         @if (metrics(); as m) {
-          {{ m.status_counts['FAILED'] ?? 0 }} failed, {{ m.cloud_handoffs_sent }} cloud handoffs
+          {{ m.cloud_handoffs_sent }} sent to cloud
         } @else {
           {{ loading() ? 'Loading' : 'Unavailable' }}
         }
@@ -33,31 +33,20 @@
     <div class="card kpi">
       <span class="kpi__label"><svg class="icon icon--success" lucideIcon="circle-check" aria-hidden="true"></svg>Allowed</span>
       <span class="kpi__value">{{ metrics() ? (metrics()!.decision_counts.ALLOWED | number) : '-' }}</span>
-      <span class="kpi__meta">No sensitive data required protection</span>
+      <span class="kpi__meta">No changes needed</span>
     </div>
     <div class="card kpi">
       <span class="kpi__label"><svg class="icon icon--info" lucideIcon="eye-off" aria-hidden="true"></svg>Redacted</span>
       <span class="kpi__value">{{ metrics() ? (metrics()!.decision_counts.REDACTED | number) : '-' }}</span>
       <span class="kpi__meta">
-        @if (metrics(); as m) { {{ m.decision_counts.LOCAL_ONLY }} restricted to local processing } @else { Sanitized before AI }
+        @if (metrics(); as m) { {{ m.total_entities | number }} sensitive values protected } @else { Sanitized before AI }
       </span>
     </div>
     <div class="card kpi">
       <span class="kpi__label"><svg class="icon icon--error" lucideIcon="shield-ban" aria-hidden="true"></svg>Blocked</span>
       <span class="kpi__value">{{ metrics() ? (metrics()!.decision_counts.BLOCKED | number) : '-' }}</span>
       <span class="kpi__meta">
-        @if (metrics(); as m) { {{ m.decision_counts.PROCESSING_FAILED }} technical failures (failed closed) } @else { No AI processing permitted }
-      </span>
-    </div>
-    <div class="card kpi">
-      <span class="kpi__label"><svg class="icon" lucideIcon="scan-search" aria-hidden="true"></svg>Sensitive entities</span>
-      <span class="kpi__value">{{ metrics() ? (metrics()!.total_entities | number) : '-' }}</span>
-      <span class="kpi__meta">
-        @for (c of topCategories(); track c[0]; let last = $last) {
-          {{ c[0] | humanize }} {{ c[1] }}{{ last ? '' : ', ' }}
-        } @empty {
-          Categories only, values are never stored
-        }
+        @if (metrics(); as m) { {{ m.decision_counts.PROCESSING_FAILED }} failed closed } @else { No AI processing }
       </span>
     </div>
   </section>
@@ -65,9 +54,9 @@
   <section class="grid grid-main-side">
     <div class="card">
       <div class="card-header">
-        <h2><svg class="icon" lucideIcon="activity" aria-hidden="true"></svg>Processing decisions, last 24 hours</h2>
+        <h2><svg class="icon" lucideIcon="activity" aria-hidden="true"></svg>Decisions, last 24 hours</h2>
         @if (metrics(); as m) {
-          <span class="card-header__meta">Live data, updated {{ m.generated_at | date: 'HH:mm:ss' }}</span>
+          <span class="card-header__meta">Updated {{ m.generated_at | date: 'HH:mm:ss' }}</span>
         }
       </div>
       <div class="card-body">
@@ -78,7 +67,7 @@
             <div class="empty-state">
               <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
               <span class="empty-state__title">No requests processed yet</span>
-              <span>Run a synthetic transcript through the Inspector to populate this view.</span>
+              <span>Run a transcript in the Inspector to see activity.</span>
             </div>
           }
         } @else if (loading()) {
@@ -96,7 +85,7 @@
     <div class="stack side-column">
     <div class="card">
       <div class="card-header">
-        <h2><svg class="icon" lucideIcon="server" aria-hidden="true"></svg>System status</h2>
+        <h2><svg class="icon" lucideIcon="server" aria-hidden="true"></svg>System health</h2>
         <a class="btn btn-ghost btn-sm" routerLink="/settings">Details</a>
       </div>
       <div class="card-body stack">
@@ -112,20 +101,16 @@
           }
         </div>
         <div class="status-row">
-          <span class="status-row__label"><svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>Local model (Ollama)</span>
+          <span class="status-row__label" [title]="integrations()?.ollama?.model ?? ''"><svg class="icon" lucideIcon="cpu" aria-hidden="true"></svg>Local model</span>
           @if (integrations(); as i) {
             <app-status-badge [value]="i.ollama.status" />
           } @else {
             <app-status-badge [value]="integrationsError() ? 'UNREACHABLE' : 'PENDING'" [label]="integrationsError() ? 'Unknown' : 'Checking'" />
           }
         </div>
-        @if (integrations(); as i) {
-          <p class="text-xs muted status-note">{{ i.ollama.model }}. {{ i.ollama.message }}</p>
-        }
         <div class="status-row">
-          <span class="status-row__label">
-            <svg class="icon" lucideIcon="cloud" aria-hidden="true"></svg>CloudLink endpoint
-            <span class="simulated-label">Mock</span>
+          <span class="status-row__label" title="Mock integration">
+            <svg class="icon" lucideIcon="cloud" aria-hidden="true"></svg>CloudLink
           </span>
           @if (integrations(); as i) {
             <app-status-badge [value]="i.cloudlink.status" />
@@ -134,61 +119,24 @@
           }
         </div>
 
-        <div class="latency">
-          <span class="section-title">Measured latency</span>
-          @if (metrics(); as m) {
-            <table class="data-table latency-table">
-              <thead>
-                <tr><th scope="col">Stage</th><th scope="col" class="num">Avg</th><th scope="col" class="num">p95</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>Total</td><td class="num">{{ m.latency.total.avg_ms | duration }}</td><td class="num">{{ m.latency.total.p95_ms | duration }}</td></tr>
-                <tr><td>Detection</td><td class="num">{{ m.latency.detection.avg_ms | duration }}</td><td class="num">{{ m.latency.detection.p95_ms | duration }}</td></tr>
-                <tr><td>Local AI</td><td class="num">{{ m.latency.local_ai.avg_ms | duration }}</td><td class="num">{{ m.latency.local_ai.p95_ms | duration }}</td></tr>
-                <tr><td>Cloud handoff</td><td class="num">{{ m.latency.cloud.avg_ms | duration }}</td><td class="num">{{ m.latency.cloud.p95_ms | duration }}</td></tr>
-              </tbody>
-            </table>
-          } @else {
-            <p class="text-sm muted">Unavailable</p>
-          }
-        </div>
-      </div>
-    </div>
-
-    <div class="card canary-card">
-      <div class="card-header">
-        <h2><svg class="icon" lucideIcon="target" aria-hidden="true"></svg>Last canary run</h2>
-        <a class="btn btn-ghost btn-sm" routerLink="/measurements">Measurements</a>
-      </div>
-      <div class="card-body">
-        @if (lastCanary(); as c) {
-          <div class="canary-numbers">
-            <div>
-              <span class="kpi__label text-xs muted">Detection recall</span>
-              <strong class="canary-value">{{ pct(c.recall) }}</strong>
-            </div>
-            <div>
-              <span class="kpi__label text-xs muted">Leak rate at receiver</span>
-              <strong class="canary-value">{{ pct(c.leak_rate) }}</strong>
-            </div>
+        <dl class="stats">
+          <div>
+            <dt>Avg latency</dt>
+            <dd>{{ metrics() ? (metrics()!.latency.total.avg_ms | duration) : '-' }}</dd>
           </div>
-          <p class="text-xs muted">n={{ c.n_planted }} planted values, {{ c.created_at | date: 'MMM d, HH:mm' }}, normalization {{ c.normalize_on ? 'on' : 'off' }}</p>
-        } @else {
-          <p class="text-sm muted">{{ canaryError() ? 'Unavailable' : 'Not measured yet' }}</p>
-        }
-        <div class="status-row benchmark-row">
-          <span class="status-row__label"><svg class="icon" lucideIcon="timer" aria-hidden="true"></svg>Latency (NFR-2)</span>
-          @if (benchmark(); as b) {
-            <app-status-badge [value]="b.verdict" />
-          } @else {
-            <span class="text-sm muted">Not measured yet</span>
-          }
-        </div>
-        @if (benchmark(); as b) {
-          @if (b.levels[0]?.stages?.['total']; as t) {
-            <p class="text-xs muted">Warm p95 {{ t.p95_ms / 1000 | number: '1.1-1' }} s (n={{ t.n }}) on {{ b.machine.cpu }}</p>
-          }
-        }
+          <div>
+            <dt>p95 latency</dt>
+            <dd>{{ metrics() ? (metrics()!.latency.total.p95_ms | duration) : '-' }}</dd>
+          </div>
+          <div [title]="lastCanary() ? 'Last canary run, n=' + lastCanary()!.n_planted : ''">
+            <dt>Detection recall</dt>
+            <dd>{{ lastCanary() ? pct(lastCanary()!.recall) : '-' }}</dd>
+          </div>
+          <div>
+            <dt>Leak rate</dt>
+            <dd>{{ lastCanary() ? pct(lastCanary()!.leak_rate) : '-' }}</dd>
+          </div>
+        </dl>
       </div>
     </div>
     </div>
@@ -196,7 +144,7 @@
 
   <section class="card">
     <div class="card-header">
-      <h2><svg class="icon" lucideIcon="file-text" aria-hidden="true"></svg>Recent activity and policy decisions</h2>
+      <h2><svg class="icon" lucideIcon="file-text" aria-hidden="true"></svg>Recent activity</h2>
       <a class="btn btn-ghost btn-sm" routerLink="/audit">
         View audit trail
         <svg class="icon" lucideIcon="arrow-right" aria-hidden="true"></svg>
@@ -207,22 +155,20 @@
         <table class="data-table">
           <thead>
             <tr>
+              <th scope="col"><span class="sr-only">Expand</span></th>
               <th scope="col">Time</th>
-              <th scope="col">Request</th>
-              <th scope="col">Profile</th>
               <th scope="col">Entity categories</th>
-              <th scope="col">Decisive policy</th>
               <th scope="col">Decision</th>
-              <th scope="col">Destination</th>
               <th scope="col" class="num">Latency</th>
             </tr>
           </thead>
           <tbody>
             @for (event of recent(); track event.event_id) {
-              <tr class="is-clickable" tabindex="0" (click)="openEvent(event)" (keydown.enter)="openEvent(event)">
+              <tr class="is-clickable" tabindex="0" [class.is-expanded]="expanded() === event.event_id"
+                  [attr.aria-expanded]="expanded() === event.event_id"
+                  (click)="toggleRow(event.event_id)" (keydown.enter)="toggleRow(event.event_id)">
+                <td class="expand-cell"><svg class="icon" lucideIcon="chevron-right" aria-hidden="true"></svg></td>
                 <td class="nowrap">{{ event.created_at | date: 'MMM d, HH:mm:ss' }}</td>
-                <td class="mono">{{ event.request_id.slice(0, 8) }}</td>
-                <td>{{ event.profile }}</td>
                 <td>
                   <div class="tag-list">
                     @for (c of categories(event); track c) {
@@ -232,11 +178,24 @@
                     }
                   </div>
                 </td>
-                <td class="mono">{{ event.decisive_policy_id }}</td>
                 <td><app-status-badge [value]="event.decision" /></td>
-                <td><app-status-badge [value]="event.destination" /></td>
                 <td class="num">{{ event.total_latency_ms | duration }}</td>
               </tr>
+              @if (expanded() === event.event_id) {
+                <tr class="row-detail">
+                  <td colspan="5">
+                    <dl class="row-detail__grid">
+                      <div><dt>Request ID</dt><dd class="mono">{{ event.request_id }}</dd></div>
+                      <div><dt>Profile</dt><dd>{{ event.profile }}</dd></div>
+                      <div><dt>Decisive policy</dt><dd class="mono">{{ event.decisive_policy_id }}</dd></div>
+                      <div><dt>Destination</dt><dd><app-status-badge [value]="event.destination" /></dd></div>
+                    </dl>
+                    <button type="button" class="btn btn-ghost btn-sm detail-link" (click)="openEvent(event)">
+                      Open in audit trail<svg class="icon" lucideIcon="arrow-right" aria-hidden="true"></svg>
+                    </button>
+                  </td>
+                </tr>
+              }
             }
           </tbody>
         </table>
@@ -244,7 +203,7 @@
         <div class="empty-state">
           <svg class="icon" lucideIcon="inbox" aria-hidden="true"></svg>
           <span class="empty-state__title">{{ error() ? 'Activity unavailable' : 'No activity recorded' }}</span>
-          <span>{{ error() ? 'The audit trail could not be loaded.' : 'Processed requests appear here with their policy decisions.' }}</span>
+          <span>{{ error() ? 'The audit trail could not be loaded.' : 'Processed requests will appear here.' }}</span>
         </div>
       }
     </div>

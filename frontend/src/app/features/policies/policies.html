@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="page-header__text">
       <h1>Policy Management</h1>
-      <p>Rules the backend evaluates for every request. Changes take effect immediately and persist across restarts.</p>
+      <p>Rules applied to every request. Changes take effect immediately.</p>
     </div>
     <div class="toolbar">
       <button type="button" class="btn btn-secondary" (click)="confirm.set({ kind: 'reset' })">
@@ -16,20 +16,20 @@
     </div>
   </header>
 
-  <section class="card precedence" aria-labelledby="precedence-title">
-    <div class="card-header">
-      <h2 id="precedence-title"><svg class="icon" lucideIcon="info" aria-hidden="true"></svg>How precedence works</h2>
+  <details class="card disclosure">
+    <summary>
+      <svg class="icon" lucideIcon="info" aria-hidden="true"></svg>How precedence works
       @if (policyVersion()) {
         <span class="card-header__meta mono">Active set {{ policyVersion() }}</span>
       }
-    </div>
+    </summary>
     <ol class="precedence__list">
-      <li><strong>Most restrictive wins.</strong> BLOCK, then LOCAL_ONLY, then REDACT, then ALLOW. A broad allow never overrides a restriction.</li>
-      <li><strong>Priority breaks ties only.</strong> Among rules with the same action, the lower number is reported as decisive.</li>
-      <li><strong>Destinations narrow.</strong> The request uses the most restrictive destination of every matching rule: NONE, LOCAL, CLOUD.</li>
-      <li><strong>Deny by default.</strong> Uncovered entities are kept local; no applicable policy or any failure blocks cloud transmission.</li>
+      <li><strong>Most restrictive wins</strong> BLOCK › LOCAL_ONLY › REDACT › ALLOW</li>
+      <li><strong>Priority breaks ties</strong> Lower number is decisive</li>
+      <li><strong>Destinations narrow</strong> NONE › LOCAL › CLOUD</li>
+      <li><strong>Deny by default</strong> Uncovered or failed requests stay local</li>
     </ol>
-  </section>
+  </details>
 
   <app-error-alert [error]="error()" title="Policies could not be loaded" [retryable]="true" (retry)="load()" />
 
@@ -66,21 +66,21 @@
         <table class="data-table">
           <thead>
             <tr>
+              <th scope="col"><span class="sr-only">Expand</span></th>
               <th scope="col">Enabled</th>
               <th scope="col">Policy</th>
               <th scope="col">Entity categories</th>
               <th scope="col">Action</th>
-              <th scope="col">Destination</th>
-              <th scope="col" class="num">Priority</th>
-              <th scope="col">Conditions</th>
-              <th scope="col">Updated</th>
               <th scope="col"><span class="sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
             @for (p of filtered(); track p.policy_id) {
-              <tr [class.is-disabled]="!p.enabled">
-                <td>
+              <tr class="is-clickable" tabindex="0" [class.is-disabled]="!p.enabled" [class.is-expanded]="expanded() === p.policy_id"
+                  [attr.aria-expanded]="expanded() === p.policy_id"
+                  (click)="toggleRow(p.policy_id)" (keydown.enter)="toggleRow(p.policy_id)">
+                <td class="expand-cell"><svg class="icon" lucideIcon="chevron-right" aria-hidden="true"></svg></td>
+                <td (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
                   <label class="switch">
                     <input type="checkbox" [checked]="p.enabled" [disabled]="busyId() === p.policy_id"
                            (change)="toggleEnabled(p, $any($event.target))"
@@ -89,16 +89,11 @@
                 </td>
                 <td><div class="policy-cell">
                   <span class="policy-cell__name">{{ p.name }}</span>
-                  <span class="text-xs mono muted">{{ p.policy_id }} &middot; v{{ p.version }}</span>
-                  @if (p.description) { <span class="text-xs muted policy-cell__desc">{{ p.description }}</span> }
+                  <span class="text-xs mono muted">{{ p.policy_id }}</span>
                 </div></td>
                 <td><div class="tag-list">@for (c of p.entity_categories; track c) { <span class="tag">{{ c }}</span> }</div></td>
                 <td><app-status-badge [value]="p.action" /></td>
-                <td><app-status-badge [value]="p.destination" /></td>
-                <td class="num">{{ p.priority }}</td>
-                <td class="text-sm">{{ conditionsText(p) }}</td>
-                <td class="nowrap text-sm muted" [title]="'Created ' + (p.created_at | date: 'medium')">{{ p.updated_at | date: 'MMM d, HH:mm' }}</td>
-                <td class="nowrap row-actions">
+                <td class="nowrap row-actions" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
                   <button type="button" class="btn btn-ghost btn-icon btn-sm" [attr.aria-label]="'Edit ' + p.name" (click)="editing.set(p)">
                     <svg class="icon" lucideIcon="pencil" aria-hidden="true"></svg>
                   </button>
@@ -107,6 +102,21 @@
                   </button>
                 </td>
               </tr>
+              @if (expanded() === p.policy_id) {
+                <tr class="row-detail">
+                  <td colspan="6">
+                    <dl class="row-detail__grid">
+                      @if (p.description) { <div class="span-all"><dt>Description</dt><dd>{{ p.description }}</dd></div> }
+                      <div><dt>Destination</dt><dd><app-status-badge [value]="p.destination" /></dd></div>
+                      <div><dt>Priority</dt><dd>{{ p.priority }}</dd></div>
+                      <div><dt>Conditions</dt><dd>{{ conditionsText(p) }}</dd></div>
+                      <div><dt>Version</dt><dd class="mono">v{{ p.version }}</dd></div>
+                      <div><dt>Updated</dt><dd>{{ p.updated_at | date: 'MMM d, y, HH:mm' }}</dd></div>
+                      <div><dt>Created</dt><dd>{{ p.created_at | date: 'MMM d, y, HH:mm' }}</dd></div>
+                    </dl>
+                  </td>
+                </tr>
+              }
             }
           </tbody>
         </table>

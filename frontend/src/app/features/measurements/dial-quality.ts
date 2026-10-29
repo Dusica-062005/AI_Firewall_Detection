@@ -16,7 +16,7 @@ export const POSITION_LABELS: Record<DialPosition, string> = {
   max_quality: 'Maximum quality',
 };
 export const QUALITY_NOTE =
-  'The score measures how close the protected summary is to the summary of the raw text. It is a similarity number, not a human quality rating.';
+  'Similarity of the protected summary to the raw-text summary (not a human rating).';
 
 /** Dial quality tab (Feature 4): measured similarity per dial position, from the latest completed run. */
 @Component({
@@ -30,14 +30,7 @@ export const QUALITY_NOTE =
         @if (latest()?.run; as r) { <app-status-badge [value]="r.status" /> }
       </div>
       <div class="card-body stack">
-        <div class="alert alert-info">
-          <svg class="icon" lucideIcon="info" aria-hidden="true"></svg>
-          <span>{{ note }}</span>
-        </div>
-        <p class="text-sm">
-          Each synthetic sample is summarized from its raw text (the reference, locally) and through the real pipeline at every dial
-          position. The score is the cosine similarity of their embeddings, averaged over the samples that produced a summary.
-        </p>
+        <p class="text-sm muted">{{ note }}</p>
         <div class="row wrap">
           <button type="button" class="btn btn-primary" (click)="run()" [disabled]="running() || loading()">
             @if (running()) { <span class="spinner" aria-hidden="true"></span> }
@@ -45,7 +38,7 @@ export const QUALITY_NOTE =
           </button>
           @if (latest()?.run; as r) {
             @if (r.status === 'RUNNING') {
-              <span class="text-xs muted">Running: {{ r.progress_done }} / {{ r.progress_total }} steps. Local model calls take a while.</span>
+              <span class="text-xs muted">Running: {{ r.progress_done }} / {{ r.progress_total }} steps</span>
             }
           }
         </div>

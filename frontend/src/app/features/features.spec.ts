@@ -106,7 +106,7 @@ describe('Inspector', () => {
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
     expect(text(el)).toContain('BLOCKED');
-    expect(text(el)).toContain('No model or cloud call was made');
+    expect(text(el)).toContain('AI processing not permitted');
     expect(text(el)).toContain('Nothing left the firewall.');
     expect(el.querySelector('a[href="/inspector/result"]')?.textContent).toContain('View full details');
   });
@@ -418,7 +418,7 @@ describe('Settings', () => {
     await fixture.whenStable();
     const el = text(fixture.nativeElement);
     expect(el).toContain('ollama pull llama3.2:3b');
-    expect(el).toContain('There is no cloud-model fallback');
+    expect(el).toContain('AI summaries are unavailable');
     expect(el).toContain('configured (hidden)');
     expect(el).toContain('Mock integration');
     expect(el).toContain('Backend health unavailable');

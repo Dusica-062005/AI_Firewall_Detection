@@ -34,6 +34,7 @@ export class Policies implements OnInit {
   protected readonly busyId = signal<string | null>(null);
 
   protected readonly editing = signal<Policy | null | undefined>(undefined); // undefined = closed, null = new
+  protected readonly expanded = signal<string | null>(null);
   protected readonly confirm = signal<Confirm | null>(null);
   protected readonly confirmBusy = signal(false);
 
@@ -76,6 +77,10 @@ export class Policies implements OnInit {
       },
     });
     this.api.profiles().subscribe({ next: (res) => this.profiles.set(res.items), error: () => undefined });
+  }
+
+  protected toggleRow(id: string): void {
+    this.expanded.update((current) => (current === id ? null : id));
   }
 
   protected clearFilters(): void {
